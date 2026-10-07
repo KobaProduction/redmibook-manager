@@ -112,7 +112,7 @@ impl WindowsMifsWmiTransport {
 impl FactoryWmiTransport for WindowsMifsWmiTransport {
     type Error = WindowsMifsWmiError;
 
-    fn call(
+    fn invoke_wmaa(
         &self,
         request: [u8; MIFS_PACKET_SIZE],
     ) -> Result<[u8; MIFS_PACKET_SIZE], Self::Error> {
