@@ -18,7 +18,7 @@ This inventory tracks user-facing capabilities rather than raw firmware identifi
 | Performance / cooling profile | yes | yes | Contract ready; same-model execution corroborated; local execution pending | Balanced, quiet, performance/Turbo and full-speed profiles are mapped to one canonical platform state. TM2309 runtime testing independently confirms mode application. |
 | Battery charge protection | yes | yes | Contract ready; same-model execution corroborated; local execution pending | TM2309 runtime testing independently confirms 80% protection and transition back to 100% when cleared. |
 | Adapter-power threshold status | yes | no | Partial | Static threshold behavior is known; physical unit/meaning of the raw source is not fully closed. |
-| Microphone-mute platform state | yes | yes | Partial | Static route is closed; outward boolean polarity still needs target execution proof. |
+| Microphone-mute platform state | yes | yes | Partial | Static route is closed; outward boolean polarity still needs target execution proof. The Rust factory backend includes a neutral State0/State1 validation transport, but the capability remains unpublished to UI until local polarity proof. |
 | Keyboard-backlight state | yes/event | no confirmed safe write | Partial | State/event values are known; safe software setter is still unresolved. |
 | CPU fan #1 speed | yes | no | Contract ready; Windows transport pending | Intel PTID operating-state element 1 is explicitly labelled CPU Fan #1 Speed, unit RPM. The semantic contract is closed; the preferred Windows user-mode transport still must be selected. |
 | CPU fan duty | yes | no | Partial | Value source is known, but scaling is RAW rather than proven percent. |

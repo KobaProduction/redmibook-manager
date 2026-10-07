@@ -36,6 +36,12 @@ pub enum BatteryControlSubcommand {
     AdapterPowerThresholdStatus = 3,
 }
 
+#[repr(u16)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MicrophoneControlSubcommand {
+    MuteState = 5,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MifsRequest {
     bytes: [u8; MIFS_PACKET_SIZE],
@@ -85,6 +91,25 @@ impl MifsRequest {
         Self::new(MifsOperation::Set, MifsFunction::BatteryControl)
             .with_value0_u16(BatteryControlSubcommand::ChargeProtection80 as u16)
             .with_value1_u32(if enabled { 1 } else { 0 })
+    }
+
+    /// Build the confirmed factory microphone-control read request.
+    ///
+    /// The returned outward 0/1 signal is intentionally not named muted/unmuted
+    /// until local execution proof closes the user-facing polarity.
+    pub fn read_microphone_mute_signal() -> Self {
+        Self::new(MifsOperation::Get, MifsFunction::MicrophoneControl)
+            .with_value0_u16(MicrophoneControlSubcommand::MuteState as u16)
+    }
+
+    /// Build the confirmed factory microphone-control write request.
+    ///
+    /// outward_state is the firmware-visible boolean signal, not a claimed
+    /// user-facing muted/unmuted value.
+    pub fn write_microphone_mute_signal(outward_state: bool) -> Self {
+        Self::new(MifsOperation::Set, MifsFunction::MicrophoneControl)
+            .with_value0_u16(MicrophoneControlSubcommand::MuteState as u16)
+            .with_value1_u32(if outward_state { 1 } else { 0 })
     }
 
     pub fn read_display_configuration() -> Self {
@@ -169,7 +194,38 @@ mod tests {
         assert_eq!(bytes[1], MifsOperation::Set as u8);
         assert_eq!(bytes[3], MifsFunction::BatteryControl as u8);
         assert_eq!(u16::from_le_bytes([bytes[4], bytes[5]]), 2);
-        assert_eq!(u32::from_le_bytes([bytes[6], bytes[7], bytes[8], bytes[9]]), 1);
+        assert_eq!(
+            u32::from_le_bytes([bytes[6], bytes[7], bytes[8], bytes[9]]),
+            1
+        );
+    }
+
+    #[test]
+    fn microphone_control_uses_confirmed_subcommand_5() {
+        let read = MifsRequest::read_microphone_mute_signal();
+        assert_eq!(read.as_bytes()[1], MifsOperation::Get as u8);
+        assert_eq!(read.as_bytes()[3], MifsFunction::MicrophoneControl as u8);
+        assert_eq!(
+            u16::from_le_bytes([read.as_bytes()[4], read.as_bytes()[5]]),
+            MicrophoneControlSubcommand::MuteState as u16
+        );
+
+        let write = MifsRequest::write_microphone_mute_signal(true);
+        assert_eq!(write.as_bytes()[1], MifsOperation::Set as u8);
+        assert_eq!(write.as_bytes()[3], MifsFunction::MicrophoneControl as u8);
+        assert_eq!(
+            u16::from_le_bytes([write.as_bytes()[4], write.as_bytes()[5]]),
+            MicrophoneControlSubcommand::MuteState as u16
+        );
+        assert_eq!(
+            u32::from_le_bytes([
+                write.as_bytes()[6],
+                write.as_bytes()[7],
+                write.as_bytes()[8],
+                write.as_bytes()[9],
+            ]),
+            1
+        );
     }
 
     #[test]

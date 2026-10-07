@@ -1,5 +1,7 @@
 use crate::backend::{BackendKind, PlatformBackend};
-use crate::capability::{CapabilityDescriptor, DisplayConfiguration, PerformanceProfile, FACTORY_CAPABILITIES};
+use crate::capability::{
+    CapabilityDescriptor, DisplayConfiguration, PerformanceProfile, FACTORY_CAPABILITIES,
+};
 use crate::factory_protocol::{
     BatteryControlSubcommand, MifsRequest, MifsResponse, MIFS_PACKET_SIZE, MIFS_STATUS_SUCCESS,
 };
@@ -34,6 +36,26 @@ pub enum FactoryBackendError<E> {
     InvalidPerformanceProfile(u16),
     InvalidBoolean(u32),
     InvalidDisplayConfiguration(u16),
+    InvalidMicrophoneMuteSignal(u32),
+}
+
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FactoryMicrophoneMuteSignal {
+    State0 = 0,
+    State1 = 1,
+}
+
+impl TryFrom<u32> for FactoryMicrophoneMuteSignal {
+    type Error = u32;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::State0),
+            1 => Ok(Self::State1),
+            other => Err(other),
+        }
+    }
 }
 
 pub struct FactoryFirmwareBackend<T> {
@@ -68,9 +90,7 @@ where
         Ok(())
     }
 
-    pub fn read_charge_protection_80(
-        &self,
-    ) -> Result<bool, FactoryBackendError<T::Error>> {
+    pub fn read_charge_protection_80(&self) -> Result<bool, FactoryBackendError<T::Error>> {
         let response = self.call(MifsRequest::read_battery(
             BatteryControlSubcommand::ChargeProtection80,
         ))?;
@@ -90,6 +110,32 @@ where
         Ok(())
     }
 
+    /// Read the factory firmware's outward microphone-mute boolean signal.
+    ///
+    /// The signal is intentionally neutral (State0/State1) until local
+    /// execution proof establishes which value is user-facing muted/unmuted.
+    pub fn read_microphone_mute_signal(
+        &self,
+    ) -> Result<FactoryMicrophoneMuteSignal, FactoryBackendError<T::Error>> {
+        let response = self.call(MifsRequest::read_microphone_mute_signal())?;
+        FactoryMicrophoneMuteSignal::try_from(response.value1_u32())
+            .map_err(FactoryBackendError::InvalidMicrophoneMuteSignal)
+    }
+
+    /// Write the factory firmware's outward microphone-mute boolean signal.
+    ///
+    /// This method exists for execution validation and is deliberately not part
+    /// of the semantic PlatformBackend surface yet.
+    pub fn write_microphone_mute_signal(
+        &self,
+        signal: FactoryMicrophoneMuteSignal,
+    ) -> Result<(), FactoryBackendError<T::Error>> {
+        self.call(MifsRequest::write_microphone_mute_signal(
+            signal == FactoryMicrophoneMuteSignal::State1,
+        ))?;
+        Ok(())
+    }
+
     pub fn read_display_configuration(
         &self,
     ) -> Result<DisplayConfiguration, FactoryBackendError<T::Error>> {
@@ -106,10 +152,7 @@ where
         Ok(())
     }
 
-    fn call(
-        &self,
-        request: MifsRequest,
-    ) -> Result<MifsResponse, FactoryBackendError<T::Error>> {
+    fn call(&self, request: MifsRequest) -> Result<MifsResponse, FactoryBackendError<T::Error>> {
         let raw = self
             .transport
             .invoke_wmaa(request.into_bytes())
@@ -181,6 +224,44 @@ mod tests {
     }
 
     #[test]
+    fn microphone_signal_transport_stays_polarity_neutral() {
+        let backend = FactoryFirmwareBackend::new(
+            |request: [u8; MIFS_PACKET_SIZE]| -> Result<[u8; MIFS_PACKET_SIZE], ()> {
+                assert_eq!(request[1], MifsOperation::Get as u8);
+                assert_eq!(request[3], MifsFunction::MicrophoneControl as u8);
+                assert_eq!(u16::from_le_bytes([request[4], request[5]]), 5);
+                Ok(success_with_value1(1))
+            },
+        );
+
+        assert_eq!(
+            backend.read_microphone_mute_signal(),
+            Ok(FactoryMicrophoneMuteSignal::State1)
+        );
+    }
+
+    #[test]
+    fn writes_neutral_microphone_signal_without_claiming_user_polarity() {
+        let backend = FactoryFirmwareBackend::new(
+            |request: [u8; MIFS_PACKET_SIZE]| -> Result<[u8; MIFS_PACKET_SIZE], ()> {
+                assert_eq!(request[1], MifsOperation::Set as u8);
+                assert_eq!(request[3], MifsFunction::MicrophoneControl as u8);
+                assert_eq!(u16::from_le_bytes([request[4], request[5]]), 5);
+                assert_eq!(
+                    u32::from_le_bytes([request[6], request[7], request[8], request[9]]),
+                    0
+                );
+                Ok(success_with_value1(0))
+            },
+        );
+
+        assert_eq!(
+            backend.write_microphone_mute_signal(FactoryMicrophoneMuteSignal::State0),
+            Ok(())
+        );
+    }
+
+    #[test]
     fn accepts_successful_set_without_function_echo() {
         let backend = FactoryFirmwareBackend::new(
             |request: [u8; MIFS_PACKET_SIZE]| -> Result<[u8; MIFS_PACKET_SIZE], ()> {
@@ -217,7 +298,6 @@ mod tests {
     }
 }
 
-
 impl<T> PlatformBackend for FactoryFirmwareBackend<T>
 where
     T: FactoryWmiTransport,
@@ -236,10 +316,7 @@ where
         FactoryFirmwareBackend::read_performance_profile(self)
     }
 
-    fn write_performance_profile(
-        &self,
-        profile: PerformanceProfile,
-    ) -> Result<(), Self::Error> {
+    fn write_performance_profile(&self, profile: PerformanceProfile) -> Result<(), Self::Error> {
         FactoryFirmwareBackend::write_performance_profile(self, profile)
     }
 
@@ -249,5 +326,13 @@ where
 
     fn write_charge_protection_80(&self, enabled: bool) -> Result<(), Self::Error> {
         FactoryFirmwareBackend::write_charge_protection_80(self, enabled)
+    }
+
+    fn read_display_configuration(&self) -> Result<DisplayConfiguration, Self::Error> {
+        FactoryFirmwareBackend::read_display_configuration(self)
+    }
+
+    fn write_display_configuration(&self, state: DisplayConfiguration) -> Result<(), Self::Error> {
+        FactoryFirmwareBackend::write_display_configuration(self, state)
     }
 }

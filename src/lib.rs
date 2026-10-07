@@ -14,4 +14,6 @@ pub use capability::{
     DisplayConfiguration, FanModeSelection, KeyboardBacklightPolicy, PerformanceProfile,
     TurboFanSpeedSelection, UsbChargeMode, UsbChargeThresholdPercent, FACTORY_CAPABILITIES,
 };
-pub use factory_backend::{FactoryBackendError, FactoryFirmwareBackend, FactoryWmiTransport};
+pub use factory_backend::{
+    FactoryBackendError, FactoryFirmwareBackend, FactoryMicrophoneMuteSignal, FactoryWmiTransport,
+};
