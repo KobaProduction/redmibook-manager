@@ -181,6 +181,26 @@ mod tests {
     }
 
     #[test]
+    fn accepts_successful_set_without_function_echo() {
+        let backend = FactoryFirmwareBackend::new(
+            |request: [u8; MIFS_PACKET_SIZE]| -> Result<[u8; MIFS_PACKET_SIZE], ()> {
+                assert_eq!(request[1], MifsOperation::Set as u8);
+                assert_eq!(request[3], MifsFunction::PerformanceProfile as u8);
+
+                let mut bytes = [0u8; MIFS_PACKET_SIZE];
+                bytes[0..2].copy_from_slice(&MIFS_STATUS_SUCCESS.to_le_bytes());
+                // TM2309 may leave returned_function at zero on successful SET.
+                Ok(bytes)
+            },
+        );
+
+        assert_eq!(
+            backend.write_performance_profile(PerformanceProfile::Quiet),
+            Ok(())
+        );
+    }
+
+    #[test]
     fn rejects_unknown_firmware_status() {
         let backend = FactoryFirmwareBackend::new(
             |_request: [u8; MIFS_PACKET_SIZE]| -> Result<[u8; MIFS_PACKET_SIZE], ()> {

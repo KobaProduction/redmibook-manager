@@ -142,6 +142,10 @@ pub const FACTORY_CAPABILITIES: [CapabilityDescriptor; 14] = [
     },
 ];
 
+pub fn factory_capability(id: CapabilityId) -> Option<&'static CapabilityDescriptor> {
+    FACTORY_CAPABILITIES.iter().find(|descriptor| descriptor.id == id)
+}
+
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PerformanceProfile {
@@ -236,6 +240,26 @@ mod tests {
         assert_eq!(PerformanceProfile::try_from(4), Ok(PerformanceProfile::FullSpeed));
         assert_eq!(PerformanceProfile::try_from(0), Err(0));
         assert_eq!(PerformanceProfile::try_from(5), Err(5));
+    }
+
+    #[test]
+    fn factory_capability_lookup_uses_semantic_ids() {
+        let profile = factory_capability(CapabilityId::PerformanceProfile).unwrap();
+        assert_eq!(profile.availability, CapabilityAvailability::RuntimeReadWrite);
+        assert_eq!(profile.readiness, CapabilityReadiness::ContractReady);
+
+        let telemetry = factory_capability(CapabilityId::CoolingTelemetry).unwrap();
+        assert_eq!(telemetry.availability, CapabilityAvailability::NotPublished);
+        assert_eq!(telemetry.readiness, CapabilityReadiness::Partial);
+    }
+
+    #[test]
+    fn factory_capability_ids_are_unique() {
+        for (index, left) in FACTORY_CAPABILITIES.iter().enumerate() {
+            for right in &FACTORY_CAPABILITIES[index + 1..] {
+                assert_ne!(left.id, right.id);
+            }
+        }
     }
 
     #[test]
