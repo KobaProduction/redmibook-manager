@@ -8,6 +8,7 @@ pub mod capability;
 pub mod factory_backend;
 pub mod factory_protocol;
 pub mod factory_telemetry;
+pub mod windows_wmi_contract;
 
 pub use backend::{BackendKind, CoolingTelemetryBackend, PlatformBackend};
 pub use capability::{
@@ -22,4 +23,8 @@ pub use factory_backend::{
 
 pub use factory_telemetry::{
     FactoryCoolingTelemetryBackend, FactoryPtIdTransport, FactoryTelemetryError,
+};
+
+pub use windows_wmi_contract::{
+    WindowsWmiSchema, FACTORY_WINDOWS_WMI_SCHEMA, WINDOWS_WMI_INSTANCE_QUERY,
 };

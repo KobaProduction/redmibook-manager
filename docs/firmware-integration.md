@@ -39,6 +39,8 @@ Raw firmware identifiers remain backend details. The Manager API should expose s
 
 Factory firmware is intentionally multi-transport. WMI is the confirmed runtime control transport for the supported TM2309 profile/battery paths, while CPU fan RPM is a separate Intel PTID/ACPI telemetry contract. The semantic core therefore separates control operations from cooling telemetry instead of forcing both through one raw transport.
 
+The Windows ACPI-WMI schema for the control transport is explicit: namespace ROOT\\WMI, class MICommonInterface, method MiInterface, input property InData[32], and output properties OutData[30] plus Reserved (u16). The adapter must discover the active InstanceName at runtime rather than hard-coding a path such as ACPI\\PNP0C14\\MIFS_0. The 30-byte OutData plus the little-endian Reserved word reconstruct the firmware's 32-byte response packet used by the core protocol parser.
+
 For Windows PTID access, prefer an already-installed Intel provider when it exposes the required value safely. If no suitable provider surface exists, a project helper may be used only as a scoped read-only device-stack component for the confirmed PTID telemetry operation. It must not expose arbitrary ACPI method evaluation, arbitrary physical-memory access, or a generic privileged command channel to the desktop application.
 
 ## Project firmware backend

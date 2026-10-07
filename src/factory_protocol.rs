@@ -1,7 +1,16 @@
 use crate::capability::PerformanceProfile;
 
 pub const TM2309_WMI_CONTROL_GUID: &str = "B60BFB48-3E5B-49E4-A0E9-8CFFE1B3434B";
+pub const WINDOWS_WMI_NAMESPACE: &str = r"ROOT\WMI";
+pub const WINDOWS_WMI_CLASS: &str = "MICommonInterface";
+pub const WINDOWS_WMI_METHOD: &str = "MiInterface";
+pub const WINDOWS_WMI_INSTANCE_PROPERTY: &str = "InstanceName";
+pub const WINDOWS_WMI_ACTIVE_PROPERTY: &str = "Active";
+pub const WINDOWS_WMI_INPUT_PROPERTY: &str = "InData";
+pub const WINDOWS_WMI_OUTPUT_PROPERTY: &str = "OutData";
+pub const WINDOWS_WMI_RESERVED_PROPERTY: &str = "Reserved";
 pub const MIFS_PACKET_SIZE: usize = 32;
+pub const WINDOWS_WMI_OUT_DATA_SIZE: usize = 30;
 pub const MIFS_STATUS_SUCCESS: u16 = 0x8000;
 pub const MIFS_STATUS_ERROR: u16 = 0xE000;
 
@@ -125,6 +134,19 @@ impl MifsResponse {
         Self { bytes }
     }
 
+    /// Reconstruct the firmware's 32-byte result from the Windows WMI method
+    /// output shape declared by MICommonInterface.MiInterface:
+    /// OutData[30] followed by Reserved (u16).
+    pub fn from_windows_wmi_output(
+        out_data: [u8; WINDOWS_WMI_OUT_DATA_SIZE],
+        reserved: u16,
+    ) -> Self {
+        let mut bytes = [0u8; MIFS_PACKET_SIZE];
+        bytes[..WINDOWS_WMI_OUT_DATA_SIZE].copy_from_slice(&out_data);
+        bytes[WINDOWS_WMI_OUT_DATA_SIZE..].copy_from_slice(&reserved.to_le_bytes());
+        Self { bytes }
+    }
+
     pub fn status(&self) -> u16 {
         u16::from_le_bytes([self.bytes[0], self.bytes[1]])
     }
@@ -232,6 +254,27 @@ mod tests {
                 write.as_bytes()[9],
             ]),
             1
+        );
+    }
+
+    #[test]
+    fn windows_wmi_output_reconstructs_full_firmware_packet() {
+        let mut out_data = [0u8; WINDOWS_WMI_OUT_DATA_SIZE];
+        out_data[0..2].copy_from_slice(&MIFS_STATUS_SUCCESS.to_le_bytes());
+        out_data[2..4].copy_from_slice(&(MifsSelector::PerformanceProfile as u16).to_le_bytes());
+        out_data[4..6].copy_from_slice(&3u16.to_le_bytes());
+
+        let response = MifsResponse::from_windows_wmi_output(out_data, 0xBBAA);
+
+        assert_eq!(response.status(), MIFS_STATUS_SUCCESS);
+        assert_eq!(
+            response.returned_selector(),
+            MifsSelector::PerformanceProfile as u16
+        );
+        assert_eq!(response.value0_u16(), 3);
+        assert_eq!(
+            response.bytes[30..32],
+            0xBBAAu16.to_le_bytes()
         );
     }
 
