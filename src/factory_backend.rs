@@ -1,3 +1,4 @@
+use crate::backend::{BackendKind, PlatformBackend};
 use crate::capability::{CapabilityDescriptor, DisplayConfiguration, PerformanceProfile, FACTORY_CAPABILITIES};
 use crate::factory_protocol::{
     BatteryControlSubcommand, MifsRequest, MifsResponse, MIFS_PACKET_SIZE, MIFS_STATUS_SUCCESS,
@@ -193,5 +194,40 @@ mod tests {
             backend.read_performance_profile(),
             Err(FactoryBackendError::FirmwareStatus(0xE000))
         );
+    }
+}
+
+
+impl<T> PlatformBackend for FactoryFirmwareBackend<T>
+where
+    T: FactoryWmiTransport,
+{
+    type Error = FactoryBackendError<T::Error>;
+
+    fn kind(&self) -> BackendKind {
+        BackendKind::FactoryFirmware
+    }
+
+    fn capabilities(&self) -> &'static [CapabilityDescriptor] {
+        FactoryFirmwareBackend::capabilities(self)
+    }
+
+    fn read_performance_profile(&self) -> Result<PerformanceProfile, Self::Error> {
+        FactoryFirmwareBackend::read_performance_profile(self)
+    }
+
+    fn write_performance_profile(
+        &self,
+        profile: PerformanceProfile,
+    ) -> Result<(), Self::Error> {
+        FactoryFirmwareBackend::write_performance_profile(self, profile)
+    }
+
+    fn read_charge_protection_80(&self) -> Result<bool, Self::Error> {
+        FactoryFirmwareBackend::read_charge_protection_80(self)
+    }
+
+    fn write_charge_protection_80(&self, enabled: bool) -> Result<(), Self::Error> {
+        FactoryFirmwareBackend::write_charge_protection_80(self, enabled)
     }
 }

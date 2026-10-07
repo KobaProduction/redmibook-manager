@@ -84,7 +84,7 @@ impl MifsRequest {
     pub fn write_charge_protection_80(enabled: bool) -> Self {
         Self::new(MifsOperation::Set, MifsFunction::BatteryControl)
             .with_value0_u16(BatteryControlSubcommand::ChargeProtection80 as u16)
-            .with_value1_u32(u32::from(enabled))
+            .with_value1_u32(if enabled { 1 } else { 0 })
     }
 
     pub fn read_display_configuration() -> Self {
