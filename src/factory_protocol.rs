@@ -5,27 +5,28 @@ pub const MIFS_PACKET_SIZE: usize = 32;
 pub const MIFS_STATUS_SUCCESS: u16 = 0x8000;
 pub const MIFS_STATUS_ERROR: u16 = 0xE000;
 
-const OPERATION_OFFSET: usize = 1;
-const FUNCTION_OFFSET: usize = 3;
+const OPERATION_OFFSET: usize = 0;
+const SELECTOR_OFFSET: usize = 2;
 const VALUE0_OFFSET: usize = 4;
 const VALUE1_OFFSET: usize = 6;
 const VALUE2_OFFSET: usize = 10;
 const VALUE3_OFFSET: usize = 14;
 
-#[repr(u8)]
+#[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MifsOperation {
-    Get = 0xFA,
-    Set = 0xFB,
+    Get = 0xFA00,
+    Set = 0xFB00,
 }
 
-#[repr(u8)]
+#[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum MifsFunction {
-    PerformanceProfile = 0x08,
-    MicrophoneControl = 0x0A,
-    DisplayConfiguration = 0x0B,
-    BatteryControl = 0x10,
+pub enum MifsSelector {
+    PerformanceProfile = 0x0800,
+    TelemetryGroup0900 = 0x0900,
+    MicrophoneControl = 0x0A00,
+    DisplayConfiguration = 0x0B00,
+    BatteryControl = 0x1000,
 }
 
 #[repr(u16)]
@@ -48,10 +49,12 @@ pub struct MifsRequest {
 }
 
 impl MifsRequest {
-    pub fn new(operation: MifsOperation, function: MifsFunction) -> Self {
+    pub fn new(operation: MifsOperation, selector: MifsSelector) -> Self {
         let mut bytes = [0u8; MIFS_PACKET_SIZE];
-        bytes[OPERATION_OFFSET] = operation as u8;
-        bytes[FUNCTION_OFFSET] = function as u8;
+        bytes[OPERATION_OFFSET..OPERATION_OFFSET + 2]
+            .copy_from_slice(&(operation as u16).to_le_bytes());
+        bytes[SELECTOR_OFFSET..SELECTOR_OFFSET + 2]
+            .copy_from_slice(&(selector as u16).to_le_bytes());
         Self { bytes }
     }
 
@@ -74,21 +77,25 @@ impl MifsRequest {
     }
 
     pub fn read_performance_profile() -> Self {
-        Self::new(MifsOperation::Get, MifsFunction::PerformanceProfile)
+        Self::new(MifsOperation::Get, MifsSelector::PerformanceProfile)
+    }
+
+    pub fn read_telemetry_0900() -> Self {
+        Self::new(MifsOperation::Get, MifsSelector::TelemetryGroup0900)
     }
 
     pub fn write_performance_profile(profile: PerformanceProfile) -> Self {
-        Self::new(MifsOperation::Set, MifsFunction::PerformanceProfile)
+        Self::new(MifsOperation::Set, MifsSelector::PerformanceProfile)
             .with_value0_u16(profile as u16)
     }
 
     pub fn read_battery(subcommand: BatteryControlSubcommand) -> Self {
-        Self::new(MifsOperation::Get, MifsFunction::BatteryControl)
+        Self::new(MifsOperation::Get, MifsSelector::BatteryControl)
             .with_value0_u16(subcommand as u16)
     }
 
     pub fn write_charge_protection_80(enabled: bool) -> Self {
-        Self::new(MifsOperation::Set, MifsFunction::BatteryControl)
+        Self::new(MifsOperation::Set, MifsSelector::BatteryControl)
             .with_value0_u16(BatteryControlSubcommand::ChargeProtection80 as u16)
             .with_value1_u32(if enabled { 1 } else { 0 })
     }
@@ -98,7 +105,7 @@ impl MifsRequest {
     /// The returned outward 0/1 signal is intentionally not named muted/unmuted
     /// until local execution proof closes the user-facing polarity.
     pub fn read_microphone_mute_signal() -> Self {
-        Self::new(MifsOperation::Get, MifsFunction::MicrophoneControl)
+        Self::new(MifsOperation::Get, MifsSelector::MicrophoneControl)
             .with_value0_u16(MicrophoneControlSubcommand::MuteState as u16)
     }
 
@@ -107,17 +114,17 @@ impl MifsRequest {
     /// outward_state is the firmware-visible boolean signal, not a claimed
     /// user-facing muted/unmuted value.
     pub fn write_microphone_mute_signal(outward_state: bool) -> Self {
-        Self::new(MifsOperation::Set, MifsFunction::MicrophoneControl)
+        Self::new(MifsOperation::Set, MifsSelector::MicrophoneControl)
             .with_value0_u16(MicrophoneControlSubcommand::MuteState as u16)
             .with_value1_u32(if outward_state { 1 } else { 0 })
     }
 
     pub fn read_display_configuration() -> Self {
-        Self::new(MifsOperation::Get, MifsFunction::DisplayConfiguration)
+        Self::new(MifsOperation::Get, MifsSelector::DisplayConfiguration)
     }
 
     pub fn write_display_configuration(state: DisplayConfiguration) -> Self {
-        Self::new(MifsOperation::Set, MifsFunction::DisplayConfiguration)
+        Self::new(MifsOperation::Set, MifsSelector::DisplayConfiguration)
             .with_value0_u16(state as u16)
     }
 }
@@ -136,7 +143,7 @@ impl MifsResponse {
         u16::from_le_bytes([self.bytes[0], self.bytes[1]])
     }
 
-    pub fn returned_function(&self) -> u16 {
+    pub fn returned_selector(&self) -> u16 {
         u16::from_le_bytes([self.bytes[2], self.bytes[3]])
     }
 
@@ -174,16 +181,34 @@ fn read_u32(bytes: &[u8; MIFS_PACKET_SIZE], offset: usize) -> u32 {
 mod tests {
     use super::*;
 
+    fn request_operation(request: &[u8; MIFS_PACKET_SIZE]) -> u16 {
+        u16::from_le_bytes([request[0], request[1]])
+    }
+
+    fn request_selector(request: &[u8; MIFS_PACKET_SIZE]) -> u16 {
+        u16::from_le_bytes([request[2], request[3]])
+    }
+
     #[test]
     fn performance_set_packet_matches_tm2309_layout() {
         let request = MifsRequest::write_performance_profile(PerformanceProfile::Turbo);
         let bytes = request.as_bytes();
 
         assert_eq!(bytes[0], 0);
-        assert_eq!(bytes[1], MifsOperation::Set as u8);
+        assert_eq!(request_operation(bytes), MifsOperation::Set as u16);
         assert_eq!(bytes[2], 0);
-        assert_eq!(bytes[3], MifsFunction::PerformanceProfile as u8);
+        assert_eq!(request_selector(bytes), MifsSelector::PerformanceProfile as u16);
         assert_eq!(u16::from_le_bytes([bytes[4], bytes[5]]), 3);
+    }
+
+    #[test]
+    fn telemetry_0900_request_uses_full_u16_wire_words() {
+        let request = MifsRequest::read_telemetry_0900();
+        assert_eq!(request_operation(request.as_bytes()), MifsOperation::Get as u16);
+        assert_eq!(
+            request_selector(request.as_bytes()),
+            MifsSelector::TelemetryGroup0900 as u16
+        );
     }
 
     #[test]
@@ -191,8 +216,8 @@ mod tests {
         let request = MifsRequest::write_charge_protection_80(true);
         let bytes = request.as_bytes();
 
-        assert_eq!(bytes[1], MifsOperation::Set as u8);
-        assert_eq!(bytes[3], MifsFunction::BatteryControl as u8);
+        assert_eq!(request_operation(bytes), MifsOperation::Set as u16);
+        assert_eq!(request_selector(bytes), MifsSelector::BatteryControl as u16);
         assert_eq!(u16::from_le_bytes([bytes[4], bytes[5]]), 2);
         assert_eq!(
             u32::from_le_bytes([bytes[6], bytes[7], bytes[8], bytes[9]]),
@@ -203,16 +228,22 @@ mod tests {
     #[test]
     fn microphone_control_uses_confirmed_subcommand_5() {
         let read = MifsRequest::read_microphone_mute_signal();
-        assert_eq!(read.as_bytes()[1], MifsOperation::Get as u8);
-        assert_eq!(read.as_bytes()[3], MifsFunction::MicrophoneControl as u8);
+        assert_eq!(request_operation(read.as_bytes()), MifsOperation::Get as u16);
+        assert_eq!(
+            request_selector(read.as_bytes()),
+            MifsSelector::MicrophoneControl as u16
+        );
         assert_eq!(
             u16::from_le_bytes([read.as_bytes()[4], read.as_bytes()[5]]),
             MicrophoneControlSubcommand::MuteState as u16
         );
 
         let write = MifsRequest::write_microphone_mute_signal(true);
-        assert_eq!(write.as_bytes()[1], MifsOperation::Set as u8);
-        assert_eq!(write.as_bytes()[3], MifsFunction::MicrophoneControl as u8);
+        assert_eq!(request_operation(write.as_bytes()), MifsOperation::Set as u16);
+        assert_eq!(
+            request_selector(write.as_bytes()),
+            MifsSelector::MicrophoneControl as u16
+        );
         assert_eq!(
             u16::from_le_bytes([write.as_bytes()[4], write.as_bytes()[5]]),
             MicrophoneControlSubcommand::MuteState as u16
@@ -238,7 +269,7 @@ mod tests {
 
         let response = MifsResponse::from_bytes(bytes);
         assert!(response.is_success());
-        assert_eq!(response.returned_function(), 0x0800);
+        assert_eq!(response.returned_selector(), 0x0800);
         assert_eq!(response.value0_u16(), 3);
         assert_eq!(response.value1_u32(), 1);
     }

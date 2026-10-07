@@ -15,5 +15,6 @@ pub use capability::{
     TurboFanSpeedSelection, UsbChargeMode, UsbChargeThresholdPercent, FACTORY_CAPABILITIES,
 };
 pub use factory_backend::{
-    FactoryBackendError, FactoryFirmwareBackend, FactoryMicrophoneMuteSignal, FactoryWmiTransport,
+    FactoryBackendError, FactoryFirmwareBackend, FactoryMicrophoneMuteSignal,
+    FactoryRawTelemetry0900, FactoryWmiTransport,
 };

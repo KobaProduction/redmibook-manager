@@ -22,6 +22,7 @@ This inventory tracks user-facing capabilities rather than raw firmware identifi
 | Keyboard-backlight state | yes/event | no confirmed safe write | Partial | State/event values are known; safe software setter is still unresolved. |
 | CPU fan #1 speed | yes | no | Contract ready; Windows transport pending | Intel PTID operating-state element 1 is explicitly labelled CPU Fan #1 Speed, unit RPM. The semantic contract is closed; the preferred Windows user-mode transport still must be selected. |
 | CPU fan duty | yes | no | Partial | Value source is known, but scaling is RAW rather than proven percent. |
+| Factory WMI cooling-correlation packet | raw diagnostic read | no | Partial; local execution correlation pending | Selector group 0x0900 returns four values through the confirmed 32-byte MIFS packet. The Rust factory backend exposes them only as neutral value0..value3 diagnostics; no CPU/GPU temperature or fan labels are published until runtime correlation proves the mapping. |
 | Skin temperature 0 | yes | no | Partial | Value source is known, but RAW-to-Celsius conversion is unresolved. |
 | Second physical fan speed | unknown | unknown | Partial | Factory Setup displays a GPU-fan field, but no independently proven runtime provider is mapped yet. |
 | USB charging mode | persisted policy | persisted policy | Contract ready; live OS apply pending | Setup +0xF3 is 0 Off / 1 Always on / 2 One time only. HQDxeService applies it to EC AOUF during boot; no live OS setter is proven. |

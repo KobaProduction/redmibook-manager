@@ -58,6 +58,15 @@ impl TryFrom<u32> for FactoryMicrophoneMuteSignal {
     }
 }
 
+/// Raw factory WMI telemetry group 0x0900.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FactoryRawTelemetry0900 {
+    pub value0: u16,
+    pub value1: u32,
+    pub value2: u32,
+    pub value3: u32,
+}
+
 pub struct FactoryFirmwareBackend<T> {
     transport: T,
 }
@@ -152,6 +161,25 @@ where
         Ok(())
     }
 
+    /// Read the factory WMI selector group 0x0900 without assigning product
+    /// meaning to the four returned values.
+    ///
+    /// This is intentionally a factory-specific diagnostic API used to obtain
+    /// execution proof. It is not part of PlatformBackend and must not be
+    /// surfaced as CPU/GPU temperature or fan telemetry until runtime
+    /// correlation proves the mapping.
+    pub fn read_raw_telemetry_0900(
+        &self,
+    ) -> Result<FactoryRawTelemetry0900, FactoryBackendError<T::Error>> {
+        let response = self.call(MifsRequest::read_telemetry_0900())?;
+        Ok(FactoryRawTelemetry0900 {
+            value0: response.value0_u16(),
+            value1: response.value1_u32(),
+            value2: response.value2_u32(),
+            value3: response.value3_u32(),
+        })
+    }
+
     fn call(&self, request: MifsRequest) -> Result<MifsResponse, FactoryBackendError<T::Error>> {
         let raw = self
             .transport
@@ -173,7 +201,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::factory_protocol::{MifsFunction, MifsOperation};
+    use crate::factory_protocol::{MifsOperation, MifsSelector};
 
     fn success_with_value0(value: u16) -> [u8; MIFS_PACKET_SIZE] {
         let mut bytes = [0u8; MIFS_PACKET_SIZE];
@@ -189,12 +217,23 @@ mod tests {
         bytes
     }
 
+    fn request_operation(request: &[u8; MIFS_PACKET_SIZE]) -> u16 {
+        u16::from_le_bytes([request[0], request[1]])
+    }
+
+    fn request_selector(request: &[u8; MIFS_PACKET_SIZE]) -> u16 {
+        u16::from_le_bytes([request[2], request[3]])
+    }
+
     #[test]
     fn reads_typed_performance_profile() {
         let backend = FactoryFirmwareBackend::new(
             |request: [u8; MIFS_PACKET_SIZE]| -> Result<[u8; MIFS_PACKET_SIZE], ()> {
-                assert_eq!(request[1], MifsOperation::Get as u8);
-                assert_eq!(request[3], MifsFunction::PerformanceProfile as u8);
+                assert_eq!(request_operation(&request), MifsOperation::Get as u16);
+                assert_eq!(
+                    request_selector(&request),
+                    MifsSelector::PerformanceProfile as u16
+                );
                 Ok(success_with_value0(3))
             },
         );
@@ -209,8 +248,11 @@ mod tests {
     fn writes_charge_protection_through_tm2309_specific_function_10() {
         let backend = FactoryFirmwareBackend::new(
             |request: [u8; MIFS_PACKET_SIZE]| -> Result<[u8; MIFS_PACKET_SIZE], ()> {
-                assert_eq!(request[1], MifsOperation::Set as u8);
-                assert_eq!(request[3], MifsFunction::BatteryControl as u8);
+                assert_eq!(request_operation(&request), MifsOperation::Set as u16);
+                assert_eq!(
+                    request_selector(&request),
+                    MifsSelector::BatteryControl as u16
+                );
                 assert_eq!(u16::from_le_bytes([request[4], request[5]]), 2);
                 assert_eq!(
                     u32::from_le_bytes([request[6], request[7], request[8], request[9]]),
@@ -227,8 +269,11 @@ mod tests {
     fn microphone_signal_transport_stays_polarity_neutral() {
         let backend = FactoryFirmwareBackend::new(
             |request: [u8; MIFS_PACKET_SIZE]| -> Result<[u8; MIFS_PACKET_SIZE], ()> {
-                assert_eq!(request[1], MifsOperation::Get as u8);
-                assert_eq!(request[3], MifsFunction::MicrophoneControl as u8);
+                assert_eq!(request_operation(&request), MifsOperation::Get as u16);
+                assert_eq!(
+                    request_selector(&request),
+                    MifsSelector::MicrophoneControl as u16
+                );
                 assert_eq!(u16::from_le_bytes([request[4], request[5]]), 5);
                 Ok(success_with_value1(1))
             },
@@ -244,8 +289,11 @@ mod tests {
     fn writes_neutral_microphone_signal_without_claiming_user_polarity() {
         let backend = FactoryFirmwareBackend::new(
             |request: [u8; MIFS_PACKET_SIZE]| -> Result<[u8; MIFS_PACKET_SIZE], ()> {
-                assert_eq!(request[1], MifsOperation::Set as u8);
-                assert_eq!(request[3], MifsFunction::MicrophoneControl as u8);
+                assert_eq!(request_operation(&request), MifsOperation::Set as u16);
+                assert_eq!(
+                    request_selector(&request),
+                    MifsSelector::MicrophoneControl as u16
+                );
                 assert_eq!(u16::from_le_bytes([request[4], request[5]]), 5);
                 assert_eq!(
                     u32::from_le_bytes([request[6], request[7], request[8], request[9]]),
@@ -262,11 +310,45 @@ mod tests {
     }
 
     #[test]
+    fn reads_raw_telemetry_0900_without_claiming_semantics() {
+        let backend = FactoryFirmwareBackend::new(
+            |request: [u8; MIFS_PACKET_SIZE]| -> Result<[u8; MIFS_PACKET_SIZE], ()> {
+                assert_eq!(request_operation(&request), MifsOperation::Get as u16);
+                assert_eq!(
+                    request_selector(&request),
+                    MifsSelector::TelemetryGroup0900 as u16
+                );
+
+                let mut bytes = [0u8; MIFS_PACKET_SIZE];
+                bytes[0..2].copy_from_slice(&MIFS_STATUS_SUCCESS.to_le_bytes());
+                bytes[4..6].copy_from_slice(&11u16.to_le_bytes());
+                bytes[6..10].copy_from_slice(&22u32.to_le_bytes());
+                bytes[10..14].copy_from_slice(&33u32.to_le_bytes());
+                bytes[14..18].copy_from_slice(&44u32.to_le_bytes());
+                Ok(bytes)
+            },
+        );
+
+        assert_eq!(
+            backend.read_raw_telemetry_0900(),
+            Ok(FactoryRawTelemetry0900 {
+                value0: 11,
+                value1: 22,
+                value2: 33,
+                value3: 44,
+            })
+        );
+    }
+
+    #[test]
     fn accepts_successful_set_without_function_echo() {
         let backend = FactoryFirmwareBackend::new(
             |request: [u8; MIFS_PACKET_SIZE]| -> Result<[u8; MIFS_PACKET_SIZE], ()> {
-                assert_eq!(request[1], MifsOperation::Set as u8);
-                assert_eq!(request[3], MifsFunction::PerformanceProfile as u8);
+                assert_eq!(request_operation(&request), MifsOperation::Set as u16);
+                assert_eq!(
+                    request_selector(&request),
+                    MifsSelector::PerformanceProfile as u16
+                );
 
                 let mut bytes = [0u8; MIFS_PACKET_SIZE];
                 bytes[0..2].copy_from_slice(&MIFS_STATUS_SUCCESS.to_le_bytes());
