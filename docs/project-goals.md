@@ -50,3 +50,20 @@ For example, a cooling profile should have one semantic representation in Manage
 - project firmware later exposes the same operation through a cleaner project-owned interface.
 
 Backend differences must not create duplicate user concepts.
+
+
+## Current execution priority
+
+Manager is now the primary near-term implementation target.
+
+The work order is:
+
+1. finish recovery of factory-firmware contracts that expose useful hardware functions;
+2. define those functions once in the Manager capability model;
+3. implement a **FactoryFirmwareBackend** against the confirmed factory interfaces;
+4. validate the recovered behavior on the target machine through Manager;
+5. later add an **OpenFirmwareBackend** for project firmware without changing the user-facing capability model.
+
+The UI and application logic must depend on semantic capabilities, not directly on WMI selectors, embedded-controller offsets, firmware GUIDs, raw addresses, or other backend-specific identities.
+
+A single user concept such as a performance profile, charge limit, fan mode, or temperature source should remain the same capability regardless of whether its provider is the factory firmware or project firmware.
