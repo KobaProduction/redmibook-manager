@@ -38,6 +38,16 @@ pub const FACTORY_WINDOWS_WMI_SCHEMA: WindowsWmiSchema = WindowsWmiSchema {
 pub const WINDOWS_WMI_INSTANCE_QUERY: &str =
     "SELECT __Path, InstanceName, Active FROM MICommonInterface";
 
+/// The target firmware declares ACPI WMI UID MIFS. Match the UID component
+/// without assuming any fixed device index or a specific ACPI instance path.
+pub fn is_mifs_instance_name(name: &str) -> bool {
+    let component = name.rsplit(['\\', '/']).next().unwrap_or(name);
+    component.eq_ignore_ascii_case("MIFS")
+        || component
+            .get(..5)
+            .is_some_and(|prefix| prefix.eq_ignore_ascii_case("MIFS_"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -50,6 +60,15 @@ mod tests {
         assert_eq!(FACTORY_WINDOWS_WMI_SCHEMA.input_property, "InData");
         assert_eq!(FACTORY_WINDOWS_WMI_SCHEMA.output_property, "OutData");
         assert_eq!(FACTORY_WINDOWS_WMI_SCHEMA.reserved_property, "Reserved");
+    }
+
+    #[test]
+    fn identifies_mifs_uid_without_hardcoding_instance_number() {
+        assert!(is_mifs_instance_name(r"ACPI\PNP0C14\MIFS_0"));
+        assert!(is_mifs_instance_name(r"acpi\pnp0c14\mifs_17"));
+        assert!(is_mifs_instance_name("MIFS"));
+        assert!(!is_mifs_instance_name(r"ACPI\PNP0C14\OTHER_0"));
+        assert!(!is_mifs_instance_name("NOT_MIFS_0"));
     }
 
     #[test]

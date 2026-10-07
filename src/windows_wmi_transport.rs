@@ -8,12 +8,13 @@ use crate::factory_protocol::{
     MifsResponse, MIFS_PACKET_SIZE, WINDOWS_WMI_METHOD, WINDOWS_WMI_NAMESPACE,
     WINDOWS_WMI_OUT_DATA_SIZE,
 };
-use crate::windows_wmi_contract::WINDOWS_WMI_INSTANCE_QUERY;
+use crate::windows_wmi_contract::{is_mifs_instance_name, WINDOWS_WMI_INSTANCE_QUERY};
 
 #[derive(Debug)]
 pub enum WindowsMifsWmiError {
     Wmi(WMIError),
-    NoActiveInstance,
+    NoActiveMifsInstance,
+    AmbiguousMifsInstances(usize),
     InvalidOutDataLength(usize),
 }
 
@@ -67,10 +68,19 @@ impl WindowsMifsWmiTransport {
         let instances: Vec<MiCommonInterface> =
             connection.raw_query(WINDOWS_WMI_INSTANCE_QUERY)?;
 
-        let instance = instances
+        let mut matching = instances
             .into_iter()
-            .find(|instance| instance.active)
-            .ok_or(WindowsMifsWmiError::NoActiveInstance)?;
+            .filter(|instance| instance.active && is_mifs_instance_name(&instance.instance_name));
+
+        let instance = matching
+            .next()
+            .ok_or(WindowsMifsWmiError::NoActiveMifsInstance)?;
+        let additional_matches = matching.count();
+        if additional_matches != 0 {
+            return Err(WindowsMifsWmiError::AmbiguousMifsInstances(
+                additional_matches + 1,
+            ));
+        }
 
         Ok(Self {
             connection,

@@ -64,3 +64,5 @@ The probe reads:
 - the microphone-mute outward signal as neutral `State0` / `State1` until local execution proof closes its user-facing polarity.
 
 It does not issue any SET request, does not expose arbitrary WMI/ACPI execution, and does not touch the internal native-only selectors that are unavailable through the TM2309 Windows WMAA surface.
+
+GitHub Actions builds the Windows diagnostic executable as the `redmibook-factory-read-probe-windows` artifact. The diagnostic refuses unrelated active WMI instances and reports ambiguity rather than silently choosing a different device. The binary is build-validated in CI; executing it on the actual TM2309 laptop remains a separate acceptance step.

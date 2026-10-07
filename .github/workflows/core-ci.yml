@@ -24,3 +24,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Test core
         run: cargo test --all-targets
+      - name: Build read-only Windows diagnostic
+        if: matrix.os == 'windows-latest'
+        run: cargo build --release --example factory_read_probe
+      - name: Publish read-only diagnostic
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: redmibook-factory-read-probe-windows
+          path: target/release/examples/factory_read_probe.exe
+          if-no-files-found: error
+          retention-days: 14
