@@ -15,8 +15,8 @@ This inventory tracks user-facing capabilities rather than raw firmware identifi
 
 | Capability | Read | Write | State | Notes |
 | --- | --- | --- | --- | --- |
-| Performance / cooling profile | yes | yes | Contract ready; execution pending | Balanced, quiet, performance/Turbo, full-speed profiles are mapped to one canonical platform state. |
-| Battery charge protection | yes | yes | Contract ready; execution pending | Factory route controls the confirmed protection bit; same-model evidence associates it with 80% charge protection. |
+| Performance / cooling profile | yes | yes | Contract ready; same-model execution corroborated; local execution pending | Balanced, quiet, performance/Turbo and full-speed profiles are mapped to one canonical platform state. TM2309 runtime testing independently confirms mode application. |
+| Battery charge protection | yes | yes | Contract ready; same-model execution corroborated; local execution pending | TM2309 runtime testing independently confirms 80% protection and transition back to 100% when cleared. |
 | Adapter-power threshold status | yes | no | Partial | Static threshold behavior is known; physical unit/meaning of the raw source is not fully closed. |
 | Microphone-mute platform state | yes | yes | Partial | Static route is closed; outward boolean polarity still needs target execution proof. |
 | Keyboard-backlight state | yes/event | no confirmed safe write | Partial | State/event values are known; safe software setter is still unresolved. |
@@ -67,3 +67,20 @@ The first FactoryFirmwareBackend slice should target, in order:
 6. microphone-mute state/control after polarity execution proof.
 
 Partial capabilities should not be exposed as writable UI controls until their missing contract is closed.
+
+
+## Factory-backend compatibility rules
+
+TM2309 must use a model-specific command table.
+
+Do not assume that generic MIFS/Bitland functions are implemented merely because a generic driver defines them. Same-model execution testing shows that the operating-system-visible firmware implements only a narrow subset and returns unsupported status for several generic fan, temperature, keyboard and GPU operations.
+
+The backend must:
+
+- probe or statically declare support per semantic capability;
+- treat unsupported status as unavailable rather than zero-valued telemetry;
+- use TM2309-specific interpretation for function 0x10, which is the battery/power group on this board;
+- not expose generic keyboard-mode controls that collide numerically with the battery charge-protection command;
+- tolerate the TM2309 SET-response quirk where the operation is applied and status reports success but the returned function identifier is not echoed as on GET.
+
+These rules are backend behavior; the UI should only see supported/unsupported semantic capabilities.
