@@ -23,7 +23,6 @@ pub enum MifsOperation {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MifsSelector {
     PerformanceProfile = 0x0800,
-    TelemetryGroup0900 = 0x0900,
     MicrophoneControl = 0x0A00,
     DisplayConfiguration = 0x0B00,
     BatteryControl = 0x1000,
@@ -78,10 +77,6 @@ impl MifsRequest {
 
     pub fn read_performance_profile() -> Self {
         Self::new(MifsOperation::Get, MifsSelector::PerformanceProfile)
-    }
-
-    pub fn read_telemetry_0900() -> Self {
-        Self::new(MifsOperation::Get, MifsSelector::TelemetryGroup0900)
     }
 
     pub fn write_performance_profile(profile: PerformanceProfile) -> Self {
@@ -199,16 +194,6 @@ mod tests {
         assert_eq!(bytes[2], 0);
         assert_eq!(request_selector(bytes), MifsSelector::PerformanceProfile as u16);
         assert_eq!(u16::from_le_bytes([bytes[4], bytes[5]]), 3);
-    }
-
-    #[test]
-    fn telemetry_0900_request_uses_full_u16_wire_words() {
-        let request = MifsRequest::read_telemetry_0900();
-        assert_eq!(request_operation(request.as_bytes()), MifsOperation::Get as u16);
-        assert_eq!(
-            request_selector(request.as_bytes()),
-            MifsSelector::TelemetryGroup0900 as u16
-        );
     }
 
     #[test]

@@ -58,15 +58,6 @@ impl TryFrom<u32> for FactoryMicrophoneMuteSignal {
     }
 }
 
-/// Raw factory WMI telemetry group 0x0900.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct FactoryRawTelemetry0900 {
-    pub value0: u16,
-    pub value1: u32,
-    pub value2: u32,
-    pub value3: u32,
-}
-
 pub struct FactoryFirmwareBackend<T> {
     transport: T,
 }
@@ -159,25 +150,6 @@ where
     ) -> Result<(), FactoryBackendError<T::Error>> {
         self.call(MifsRequest::write_display_configuration(state))?;
         Ok(())
-    }
-
-    /// Read the factory WMI selector group 0x0900 without assigning product
-    /// meaning to the four returned values.
-    ///
-    /// This is intentionally a factory-specific diagnostic API used to obtain
-    /// execution proof. It is not part of PlatformBackend and must not be
-    /// surfaced as CPU/GPU temperature or fan telemetry until runtime
-    /// correlation proves the mapping.
-    pub fn read_raw_telemetry_0900(
-        &self,
-    ) -> Result<FactoryRawTelemetry0900, FactoryBackendError<T::Error>> {
-        let response = self.call(MifsRequest::read_telemetry_0900())?;
-        Ok(FactoryRawTelemetry0900 {
-            value0: response.value0_u16(),
-            value1: response.value1_u32(),
-            value2: response.value2_u32(),
-            value3: response.value3_u32(),
-        })
     }
 
     fn call(&self, request: MifsRequest) -> Result<MifsResponse, FactoryBackendError<T::Error>> {
@@ -306,37 +278,6 @@ mod tests {
         assert_eq!(
             backend.write_microphone_mute_signal(FactoryMicrophoneMuteSignal::State0),
             Ok(())
-        );
-    }
-
-    #[test]
-    fn reads_raw_telemetry_0900_without_claiming_semantics() {
-        let backend = FactoryFirmwareBackend::new(
-            |request: [u8; MIFS_PACKET_SIZE]| -> Result<[u8; MIFS_PACKET_SIZE], ()> {
-                assert_eq!(request_operation(&request), MifsOperation::Get as u16);
-                assert_eq!(
-                    request_selector(&request),
-                    MifsSelector::TelemetryGroup0900 as u16
-                );
-
-                let mut bytes = [0u8; MIFS_PACKET_SIZE];
-                bytes[0..2].copy_from_slice(&MIFS_STATUS_SUCCESS.to_le_bytes());
-                bytes[4..6].copy_from_slice(&11u16.to_le_bytes());
-                bytes[6..10].copy_from_slice(&22u32.to_le_bytes());
-                bytes[10..14].copy_from_slice(&33u32.to_le_bytes());
-                bytes[14..18].copy_from_slice(&44u32.to_le_bytes());
-                Ok(bytes)
-            },
-        );
-
-        assert_eq!(
-            backend.read_raw_telemetry_0900(),
-            Ok(FactoryRawTelemetry0900 {
-                value0: 11,
-                value1: 22,
-                value2: 33,
-                value3: 44,
-            })
         );
     }
 
