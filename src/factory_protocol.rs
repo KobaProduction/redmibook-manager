@@ -147,6 +147,10 @@ impl MifsResponse {
         Self { bytes }
     }
 
+    pub fn into_bytes(self) -> [u8; MIFS_PACKET_SIZE] {
+        self.bytes
+    }
+
     pub fn status(&self) -> u16 {
         u16::from_le_bytes([self.bytes[0], self.bytes[1]])
     }

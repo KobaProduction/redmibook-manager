@@ -9,6 +9,8 @@ pub mod factory_backend;
 pub mod factory_protocol;
 pub mod factory_telemetry;
 pub mod windows_wmi_contract;
+#[cfg(windows)]
+pub mod windows_wmi_transport;
 
 pub use backend::{BackendKind, CoolingTelemetryBackend, PlatformBackend};
 pub use capability::{
@@ -28,3 +30,5 @@ pub use factory_telemetry::{
 pub use windows_wmi_contract::{
     WindowsWmiSchema, FACTORY_WINDOWS_WMI_SCHEMA, WINDOWS_WMI_INSTANCE_QUERY,
 };
+#[cfg(windows)]
+pub use windows_wmi_transport::{WindowsMifsWmiError, WindowsMifsWmiTransport};

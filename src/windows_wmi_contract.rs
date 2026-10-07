@@ -36,7 +36,7 @@ pub const FACTORY_WINDOWS_WMI_SCHEMA: WindowsWmiSchema = WindowsWmiSchema {
 /// Discover an active instance at runtime instead of hard-coding a device path
 /// such as ACPI\PNP0C14\MIFS_0.
 pub const WINDOWS_WMI_INSTANCE_QUERY: &str =
-    "SELECT InstanceName, Active FROM MICommonInterface";
+    "SELECT __Path, InstanceName, Active FROM MICommonInterface";
 
 #[cfg(test)]
 mod tests {

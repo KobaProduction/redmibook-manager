@@ -9,3 +9,7 @@ description = "Typed RedmiBook platform capability and factory-firmware backend 
 path = "src/lib.rs"
 
 [dependencies]
+
+[target.'cfg(windows)'.dependencies]
+serde = { version = "1", features = ["derive"] }
+wmi = "0.18.4"
