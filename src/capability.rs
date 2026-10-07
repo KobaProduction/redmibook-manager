@@ -154,6 +154,19 @@ pub fn factory_capability(id: CapabilityId) -> Option<&'static CapabilityDescrip
     FACTORY_CAPABILITIES.iter().find(|descriptor| descriptor.id == id)
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct CpuFanSpeedRpm(u32);
+
+impl CpuFanSpeedRpm {
+    pub const fn new(value: u32) -> Self {
+        Self(value)
+    }
+
+    pub const fn value(self) -> u32 {
+        self.0
+    }
+}
+
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PerformanceProfile {
@@ -239,6 +252,12 @@ impl TryFrom<u16> for DisplayConfiguration {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cpu_fan_speed_rpm_preserves_semantic_unit() {
+        let speed = CpuFanSpeedRpm::new(3250);
+        assert_eq!(speed.value(), 3250);
+    }
 
     #[test]
     fn performance_profile_mapping_is_tm2309_specific() {

@@ -7,13 +7,19 @@ pub mod backend;
 pub mod capability;
 pub mod factory_backend;
 pub mod factory_protocol;
+pub mod factory_telemetry;
 
-pub use backend::{BackendKind, PlatformBackend};
+pub use backend::{BackendKind, CoolingTelemetryBackend, PlatformBackend};
 pub use capability::{
     CapabilityAvailability, CapabilityDescriptor, CapabilityId, CapabilityReadiness,
-    DisplayConfiguration, FanModeSelection, KeyboardBacklightPolicy, PerformanceProfile,
+    CpuFanSpeedRpm, DisplayConfiguration, FanModeSelection, KeyboardBacklightPolicy,
+    PerformanceProfile,
     TurboFanSpeedSelection, UsbChargeMode, UsbChargeThresholdPercent, FACTORY_CAPABILITIES,
 };
 pub use factory_backend::{
     FactoryBackendError, FactoryFirmwareBackend, FactoryMicrophoneMuteSignal, FactoryWmiTransport,
+};
+
+pub use factory_telemetry::{
+    FactoryCoolingTelemetryBackend, FactoryPtIdTransport, FactoryTelemetryError,
 };

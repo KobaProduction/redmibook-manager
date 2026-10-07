@@ -37,6 +37,10 @@ Current examples include:
 
 Raw firmware identifiers remain backend details. The Manager API should expose semantic capabilities.
 
+Factory firmware is intentionally multi-transport. WMI is the confirmed runtime control transport for the supported TM2309 profile/battery paths, while CPU fan RPM is a separate Intel PTID/ACPI telemetry contract. The semantic core therefore separates control operations from cooling telemetry instead of forcing both through one raw transport.
+
+For Windows PTID access, prefer an already-installed Intel provider when it exposes the required value safely. If no suitable provider surface exists, a project helper may be used only as a scoped read-only device-stack component for the confirmed PTID telemetry operation. It must not expose arbitrary ACPI method evaluation, arbitrary physical-memory access, or a generic privileged command channel to the desktop application.
+
 ## Project firmware backend
 
 Future project firmware should expose an explicit versioned capability interface.

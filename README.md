@@ -39,6 +39,7 @@ The initial implemented factory slice is deliberately small:
 
 - performance/cooling profile read/write;
 - 80% battery charge-protection read/write;
+- a semantic CPU-fan-RPM telemetry interface with the concrete Windows PTID transport still pending;
 
 Other capabilities remain represented in the capability inventory and are not promoted to runtime APIs until both their semantic contract and an operating-system-visible transport are proven. A native firmware handler by itself is not sufficient evidence that Windows can invoke the operation.
 
