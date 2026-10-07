@@ -1,0 +1,69 @@
+# Capability inventory
+
+Target: Xiaomi Redmi Book Pro 16 2024 / TM2309.
+
+This inventory tracks user-facing capabilities rather than raw firmware identifiers. The firmware repository remains the authority for the underlying evidence.
+
+## Readiness states
+
+- **Contract ready** — static target evidence closes the operation and value semantics well enough to implement a factory-firmware backend.
+- **Execution pending** — static contract is ready but has not yet been exercised on this exact target through Manager.
+- **Partial** — the route exists, but scaling, polarity, provider, or safe write behavior is unresolved.
+- **Future firmware** — intended for OpenFirmwareBackend; not available as a confirmed factory-firmware operation.
+
+## Factory-firmware capability matrix
+
+| Capability | Read | Write | State | Notes |
+| --- | --- | --- | --- | --- |
+| Performance / cooling profile | yes | yes | Contract ready; execution pending | Balanced, quiet, performance/Turbo, full-speed profiles are mapped to one canonical platform state. |
+| Battery charge protection | yes | yes | Contract ready; execution pending | Factory route controls the confirmed protection bit; same-model evidence associates it with 80% charge protection. |
+| Adapter-power threshold status | yes | no | Partial | Static threshold behavior is known; physical unit/meaning of the raw source is not fully closed. |
+| Microphone-mute platform state | yes | yes | Partial | Static route is closed; outward boolean polarity still needs target execution proof. |
+| Keyboard-backlight state | yes/event | no confirmed safe write | Partial | State/event values are known; safe software setter is still unresolved. |
+| CPU fan #1 speed | yes | no | Contract ready; execution pending | Intel PTID operating-state element 1 is explicitly labelled CPU Fan #1 Speed, unit RPM. |
+| CPU fan duty | yes | no | Partial | Value source is known, but scaling is RAW rather than proven percent. |
+| Skin temperature 0 | yes | no | Partial | Value source is known, but RAW-to-Celsius conversion is unresolved. |
+| Second physical fan speed | unknown | unknown | Partial | Factory Setup displays a GPU-fan field, but no independently proven runtime provider is mapped yet. |
+| USB charging mode | setup semantics only | setup semantics only | Partial | Visible Setup values are known; runtime apply path has not been tied to the visible field strongly enough for Manager. |
+| USB charging threshold | setup semantics only | setup semantics only | Partial | Visible 10/20/30% values are known; runtime software control path is unresolved. |
+| Wake-on-USB / keyboard wake | boot-time firmware state | boot-time firmware state | Partial | Hidden Setup-to-EC synchronization exists; user-facing runtime contract is not closed. |
+| Display configuration | yes | yes | Contract ready statically | Native firmware handler maps the factory selector to the confirmed Setup field; user impact still needs execution validation. |
+| S5 wake configuration | route exists | route exists | Partial | OEM command exists, but exact value semantics are not yet closed. |
+
+## Future OpenFirmwareBackend capabilities
+
+These are design goals, not current factory-firmware claims:
+
+- configurable fan curves;
+- richer per-fan control;
+- richer temperature/sensor export;
+- processor undervolting where hardware permits it;
+- power-limit tuning;
+- memory tuning;
+- optional controller policy for USB/Thunderbolt/USB4;
+- explicit Intel Management Engine policy;
+- additional low-level telemetry intentionally exported by project firmware.
+
+## Backend rule
+
+FactoryFirmwareBackend and OpenFirmwareBackend must expose the same semantic capability when they implement the same user concept.
+
+For example:
+
+- PerformanceProfile.Quiet remains the same Manager value whether the factory backend maps it to the recovered OEM route or project firmware implements it through a new interface.
+- CpuFan1SpeedRpm remains an RPM telemetry capability even if the transport changes.
+
+Raw WMI selectors, ACPI names, embedded-controller offsets, GUIDs and protocol slots belong only to backend implementation/evidence layers.
+
+## Immediate implementation candidates
+
+The first FactoryFirmwareBackend slice should target, in order:
+
+1. capability discovery and firmware identity;
+2. performance/cooling profile read/write;
+3. battery charge-protection read/write;
+4. CPU fan #1 RPM read;
+5. keyboard-backlight state/events;
+6. microphone-mute state/control after polarity execution proof.
+
+Partial capabilities should not be exposed as writable UI controls until their missing contract is closed.
