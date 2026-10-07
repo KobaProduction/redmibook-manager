@@ -5,6 +5,7 @@ pub enum CapabilityId {
     BatteryChargeProtection80,
     CpuFan1SpeedRpm,
     KeyboardBacklightState,
+    KeyboardBacklightPolicy,
     MicrophoneMuteState,
     DisplayConfiguration,
     UsbChargeMode,
@@ -41,7 +42,7 @@ pub struct CapabilityDescriptor {
     pub local_execution_proof: bool,
 }
 
-pub const FACTORY_CAPABILITIES: [CapabilityDescriptor; 14] = [
+pub const FACTORY_CAPABILITIES: [CapabilityDescriptor; 15] = [
     CapabilityDescriptor {
         id: CapabilityId::FirmwareIdentity,
         availability: CapabilityAvailability::RuntimeReadOnly,
@@ -78,6 +79,13 @@ pub const FACTORY_CAPABILITIES: [CapabilityDescriptor; 14] = [
         local_execution_proof: false,
     },
     CapabilityDescriptor {
+        id: CapabilityId::KeyboardBacklightPolicy,
+        availability: CapabilityAvailability::PersistedFirmwarePolicy,
+        readiness: CapabilityReadiness::ContractReady,
+        same_model_execution_corroborated: false,
+        local_execution_proof: false,
+    },
+    CapabilityDescriptor {
         id: CapabilityId::MicrophoneMuteState,
         availability: CapabilityAvailability::NotPublished,
         readiness: CapabilityReadiness::Partial,
@@ -94,28 +102,28 @@ pub const FACTORY_CAPABILITIES: [CapabilityDescriptor; 14] = [
     CapabilityDescriptor {
         id: CapabilityId::UsbChargeMode,
         availability: CapabilityAvailability::PersistedFirmwarePolicy,
-        readiness: CapabilityReadiness::Partial,
+        readiness: CapabilityReadiness::ContractReady,
         same_model_execution_corroborated: false,
         local_execution_proof: false,
     },
     CapabilityDescriptor {
         id: CapabilityId::UsbChargeThreshold,
         availability: CapabilityAvailability::PersistedFirmwarePolicy,
-        readiness: CapabilityReadiness::Partial,
+        readiness: CapabilityReadiness::ContractReady,
         same_model_execution_corroborated: false,
         local_execution_proof: false,
     },
     CapabilityDescriptor {
         id: CapabilityId::InternalKeyboardWake,
         availability: CapabilityAvailability::PersistedFirmwarePolicy,
-        readiness: CapabilityReadiness::Partial,
+        readiness: CapabilityReadiness::ContractReady,
         same_model_execution_corroborated: false,
         local_execution_proof: false,
     },
     CapabilityDescriptor {
         id: CapabilityId::WakeOnUsb,
         availability: CapabilityAvailability::PersistedFirmwarePolicy,
-        readiness: CapabilityReadiness::Partial,
+        readiness: CapabilityReadiness::ContractReady,
         same_model_execution_corroborated: false,
         local_execution_proof: false,
     },
@@ -251,6 +259,17 @@ mod tests {
         let telemetry = factory_capability(CapabilityId::CoolingTelemetry).unwrap();
         assert_eq!(telemetry.availability, CapabilityAvailability::NotPublished);
         assert_eq!(telemetry.readiness, CapabilityReadiness::Partial);
+
+        let backlight_policy =
+            factory_capability(CapabilityId::KeyboardBacklightPolicy).unwrap();
+        assert_eq!(
+            backlight_policy.availability,
+            CapabilityAvailability::PersistedFirmwarePolicy
+        );
+        assert_eq!(
+            backlight_policy.readiness,
+            CapabilityReadiness::ContractReady
+        );
     }
 
     #[test]

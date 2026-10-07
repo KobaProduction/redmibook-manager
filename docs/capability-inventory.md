@@ -6,7 +6,7 @@ This inventory tracks user-facing capabilities rather than raw firmware identifi
 
 ## Readiness states
 
-- **Contract ready** — static target evidence closes the operation and value semantics well enough to implement a factory-firmware backend.
+- **Contract ready** — static target evidence closes the semantic contract for its declared availability. This may be a live runtime operation or a persisted firmware policy; the availability field decides which.
 - **Execution pending** — static contract is ready but has not yet been exercised on this exact target through Manager.
 - **Partial** — the route exists, but scaling, polarity, provider, or safe write behavior is unresolved.
 - **Future firmware** — intended for OpenFirmwareBackend; not available as a confirmed factory-firmware operation.
@@ -24,10 +24,14 @@ This inventory tracks user-facing capabilities rather than raw firmware identifi
 | CPU fan duty | yes | no | Partial | Value source is known, but scaling is RAW rather than proven percent. |
 | Skin temperature 0 | yes | no | Partial | Value source is known, but RAW-to-Celsius conversion is unresolved. |
 | Second physical fan speed | unknown | unknown | Partial | Factory Setup displays a GPU-fan field, but no independently proven runtime provider is mapped yet. |
-| USB charging mode | setup semantics only | setup semantics only | Partial | Visible Setup values are known; runtime apply path has not been tied to the visible field strongly enough for Manager. |
-| USB charging threshold | setup semantics only | setup semantics only | Partial | Visible 10/20/30% values are known; runtime software control path is unresolved. |
-| Wake-on-USB / keyboard wake | boot-time firmware state | boot-time firmware state | Partial | Hidden Setup-to-EC synchronization exists; user-facing runtime contract is not closed. |
+| USB charging mode | persisted policy | persisted policy | Contract ready; live OS apply pending | Setup +0xF3 is 0 Off / 1 Always on / 2 One time only. HQDxeService applies it to EC AOUF during boot; no live OS setter is proven. |
+| USB charging threshold | persisted policy | persisted policy | Contract ready; live OS apply pending | Setup +0xF4 is 10/20/30%. HQDxeService applies it to EC UCBT during boot; no live OS setter is proven. |
+| Internal-keyboard wake | persisted policy | persisted policy | Contract ready; live OS apply pending | Setup +0xE9 maps to EC IKBW during boot-time synchronization. |
+| Wake-on-USB | persisted policy | persisted policy | Contract ready; live OS apply pending | Setup +0xEA maps to EC WOUB during boot-time synchronization. |
+| Keyboard-backlight policy | persisted policy | persisted policy | Contract ready; live OS apply pending | Setup +0x102: Standard / Power Saving. HQDxeService maps it to EC KBMD; this is separate from live KBLL backlight state. |
 | Display configuration | yes | yes | Contract ready statically | Native firmware handler maps the factory selector to the confirmed Setup field; user impact still needs execution validation. |
+| Auto fan preset | persisted policy | persisted policy | Partial | Setup +0xF5/+0xF6: Gaming / Normal / Office. Immediate BIOS route persists and refreshes UI/model; hardware apply route is not yet proven. |
+| Turbo fan speed preset | persisted policy | persisted policy | Partial | Setup +0xF7/+0xF8: Max / Medium with raw value 2 as a platform compatibility alias for Medium. Hardware apply route is not yet proven. |
 | S5 wake configuration | route exists | route exists | Partial | OEM command exists, but exact value semantics are not yet closed. |
 
 ## Future OpenFirmwareBackend capabilities
