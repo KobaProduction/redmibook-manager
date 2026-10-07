@@ -1,0 +1,11 @@
+[package]
+name = "redmibook-manager-core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Typed RedmiBook platform capability and factory-firmware backend core"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]

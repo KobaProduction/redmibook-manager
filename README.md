@@ -18,15 +18,37 @@ Primary documents:
 
 - [Manager goals](docs/project-goals.md)
 - [Firmware integration contract](docs/firmware-integration.md)
+- [Capability inventory](docs/capability-inventory.md)
 
 The firmware project remains the authority for low-level policy and hardware ownership. Manager discovers and uses capabilities that firmware intentionally exposes.
 
+## Core implementation
+
+The first implementation layer is the dependency-free Rust core in `src/`.
+
+It defines:
+
+- semantic capabilities consumed by future UI code;
+- TM2309-specific factory WMI packet encoding/response parsing;
+- `FactoryFirmwareBackend` typed operations for confirmed controls;
+- unit tests for the recovered packet/value mappings.
+
+Raw firmware selectors, EC offsets and GUIDs stay inside the backend/protocol layer. UI code must depend on semantic types such as `PerformanceProfile` instead.
+
+The initial implemented factory slice is deliberately small:
+
+- performance/cooling profile read/write;
+- 80% battery charge-protection read/write;
+- binary Display Configuration read/write with neutral state names until user-facing semantics are proven.
+
+Other capabilities remain represented in the capability inventory and are not promoted to writable runtime APIs until their missing contracts are closed.
+
 ## Current scope
 
-Research stage. Current work is driven by recovered factory contracts for performance/fan modes, battery and charging behavior, keyboard/backlight controls, platform events and other TM2309-specific interfaces.
+Factory-backend core implementation is now in progress. The next layers are the platform transport implementation, local execution validation on TM2309, and then the desktop UI.
 
 No replacement firmware is required for the initial Manager feature set; factory-firmware support remains a first-class target.
 
 ## Status
 
-Research only. No stable public API or supported feature set has been defined yet.
+Early implementation. The semantic core and confirmed factory protocol slice are being established before UI work.
