@@ -1,4 +1,4 @@
-use crate::capability::{CapabilityDescriptor, DisplayConfiguration, PerformanceProfile};
+use crate::capability::{CapabilityDescriptor, PerformanceProfile};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BackendKind {
@@ -25,7 +25,4 @@ pub trait PlatformBackend {
 
     fn write_charge_protection_80(&self, enabled: bool) -> Result<(), Self::Error>;
 
-    fn read_display_configuration(&self) -> Result<DisplayConfiguration, Self::Error>;
-
-    fn write_display_configuration(&self, state: DisplayConfiguration) -> Result<(), Self::Error>;
 }

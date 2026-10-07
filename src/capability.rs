@@ -94,9 +94,9 @@ pub const FACTORY_CAPABILITIES: [CapabilityDescriptor; 15] = [
     },
     CapabilityDescriptor {
         id: CapabilityId::DisplayConfiguration,
-        availability: CapabilityAvailability::RuntimeReadWrite,
+        availability: CapabilityAvailability::TransportPending,
         readiness: CapabilityReadiness::ContractReady,
-        same_model_execution_corroborated: false,
+        same_model_execution_corroborated: true,
         local_execution_proof: false,
     },
     CapabilityDescriptor {

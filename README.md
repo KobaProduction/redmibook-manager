@@ -39,9 +39,8 @@ The initial implemented factory slice is deliberately small:
 
 - performance/cooling profile read/write;
 - 80% battery charge-protection read/write;
-- binary Display Configuration read/write with neutral state names until user-facing semantics are proven.
 
-Other capabilities remain represented in the capability inventory and are not promoted to writable runtime APIs until their missing contracts are closed.
+Other capabilities remain represented in the capability inventory and are not promoted to runtime APIs until both their semantic contract and an operating-system-visible transport are proven. A native firmware handler by itself is not sufficient evidence that Windows can invoke the operation.
 
 ## Current scope
 

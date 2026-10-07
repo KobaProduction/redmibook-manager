@@ -1,4 +1,4 @@
-use crate::capability::{DisplayConfiguration, PerformanceProfile};
+use crate::capability::PerformanceProfile;
 
 pub const TM2309_WMI_CONTROL_GUID: &str = "B60BFB48-3E5B-49E4-A0E9-8CFFE1B3434B";
 pub const MIFS_PACKET_SIZE: usize = 32;
@@ -24,7 +24,6 @@ pub enum MifsOperation {
 pub enum MifsSelector {
     PerformanceProfile = 0x0800,
     MicrophoneControl = 0x0A00,
-    DisplayConfiguration = 0x0B00,
     BatteryControl = 0x1000,
 }
 
@@ -114,14 +113,6 @@ impl MifsRequest {
             .with_value1_u32(if outward_state { 1 } else { 0 })
     }
 
-    pub fn read_display_configuration() -> Self {
-        Self::new(MifsOperation::Get, MifsSelector::DisplayConfiguration)
-    }
-
-    pub fn write_display_configuration(state: DisplayConfiguration) -> Self {
-        Self::new(MifsOperation::Set, MifsSelector::DisplayConfiguration)
-            .with_value0_u16(state as u16)
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

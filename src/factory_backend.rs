@@ -1,7 +1,5 @@
 use crate::backend::{BackendKind, PlatformBackend};
-use crate::capability::{
-    CapabilityDescriptor, DisplayConfiguration, PerformanceProfile, FACTORY_CAPABILITIES,
-};
+use crate::capability::{CapabilityDescriptor, PerformanceProfile, FACTORY_CAPABILITIES};
 use crate::factory_protocol::{
     BatteryControlSubcommand, MifsRequest, MifsResponse, MIFS_PACKET_SIZE, MIFS_STATUS_SUCCESS,
 };
@@ -35,7 +33,6 @@ pub enum FactoryBackendError<E> {
     FirmwareStatus(u16),
     InvalidPerformanceProfile(u16),
     InvalidBoolean(u32),
-    InvalidDisplayConfiguration(u16),
     InvalidMicrophoneMuteSignal(u32),
 }
 
@@ -136,21 +133,6 @@ where
         Ok(())
     }
 
-    pub fn read_display_configuration(
-        &self,
-    ) -> Result<DisplayConfiguration, FactoryBackendError<T::Error>> {
-        let response = self.call(MifsRequest::read_display_configuration())?;
-        DisplayConfiguration::try_from(response.value0_u16())
-            .map_err(FactoryBackendError::InvalidDisplayConfiguration)
-    }
-
-    pub fn write_display_configuration(
-        &self,
-        state: DisplayConfiguration,
-    ) -> Result<(), FactoryBackendError<T::Error>> {
-        self.call(MifsRequest::write_display_configuration(state))?;
-        Ok(())
-    }
 
     fn call(&self, request: MifsRequest) -> Result<MifsResponse, FactoryBackendError<T::Error>> {
         let raw = self
@@ -351,11 +333,4 @@ where
         FactoryFirmwareBackend::write_charge_protection_80(self, enabled)
     }
 
-    fn read_display_configuration(&self) -> Result<DisplayConfiguration, Self::Error> {
-        FactoryFirmwareBackend::read_display_configuration(self)
-    }
-
-    fn write_display_configuration(&self, state: DisplayConfiguration) -> Result<(), Self::Error> {
-        FactoryFirmwareBackend::write_display_configuration(self, state)
-    }
 }
