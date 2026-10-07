@@ -52,3 +52,15 @@ No replacement firmware is required for the initial Manager feature set; factory
 ## Status
 
 Early implementation. The semantic core and confirmed factory protocol slice are being established before UI work.
+
+## Read-only factory probe
+
+The first target execution check is intentionally read-only. On Windows, run the `factory_read_probe` example to discover the active `MICommonInterface` instance and read the confirmed factory-firmware control state without changing platform settings.
+
+The probe reads:
+
+- the semantic performance profile;
+- the 80% battery charge-protection state;
+- the microphone-mute outward signal as neutral `State0` / `State1` until local execution proof closes its user-facing polarity.
+
+It does not issue any SET request, does not expose arbitrary WMI/ACPI execution, and does not touch the internal native-only selectors that are unavailable through the TM2309 Windows WMAA surface.
