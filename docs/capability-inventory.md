@@ -105,3 +105,16 @@ For TM2309 the confirmed factory interfaces are intentionally split:
 The Manager capability model must hide this transport split from the UI.
 
 For Windows, CpuFan1SpeedRpm remains implementation-blocked only on choosing a safe access transport to the PTID method. If the installed Intel PTID provider does not expose a suitable user-mode interface, a minimal read-only privileged helper is allowed. Such a helper must expose named telemetry operations rather than arbitrary ACPI evaluation or arbitrary physical-memory access.
+
+
+## Recovery-to-Manager checkpoint — 2026-10-07
+
+**Active denominator:** recovery and semantic materialization of the user-useful factory-firmware hardware contracts needed before the first FactoryFirmwareBackend/Manager integration stage. This is **not** whole-firmware behavior coverage, total firmware replacement progress, Manager UI implementation progress, or target-hardware acceptance.
+
+**Last user-facing progress:** 83% → **88%** (single approximate scalar, same active denominator). The delta reflects closing the Windows WMI transport contract and source implementation, validating its build/tests on Windows and Linux, and materializing the separate typed PTID RPM boundary. It is a scope-based planning estimate, not a percentage derived from firmware bytes or named action counts.
+
+**Closed at implementation/build-validation level:** canonical 32-byte factory WMI packet, full 16-bit operation/selector words, performance-profile and 80% charge-protection read/write semantics, neutral microphone-mute read/write validation transport, target-scoped Windows MICommonInterface discovery, read-only Windows factory probe, typed CPU-fan-RPM semantic interface, and PTID transport ownership split. Factory-only native handlers unavailable through OS-visible WMAA are not advertised as runtime capabilities.
+
+**Evidence/validation boundary:** CI compile and unit tests pass on Windows and Linux for the read-only probe baseline. Local target execution proof is still pending; CI on a generic runner is not TM2309 hardware acceptance. Fine fan presets/USB/backlight boot-time Setup policies are known but must not be represented as immediate OS setters.
+
+**Next decision boundary:** run the read-only WMI probe on the exact target and record three GET results; resolve the Windows provider/device binding for PTID CPU fan RPM; then expose only capabilities proven reachable on that installation. Internal WMAA 0x0900 and Display Configuration 0x0B00 are specifically held back from the factory runtime API pending an independent accessible transport.
