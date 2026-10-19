@@ -55,23 +55,41 @@ Pane {
                 ColumnLayout {
                     width: parent.width
                     spacing: 10
-                    Label { text: qsTr("Device profile · Demo"); font.pixelSize: 18; font.bold: true }
-                    Label { text: qsTr("Sample data, not detected hardware."); color: palette.placeholderText }
+                    Label { text: qsTr("Device profile"); font.pixelSize: 18; font.bold: true }
                     GridLayout {
                         columns: 2
                         Layout.fillWidth: true
                         columnSpacing: 24
                         Label { text: qsTr("Laptop") }
-                        Label { text: root.about.model; Layout.fillWidth: true; wrapMode: Text.WordWrap }
-                        Label { text: qsTr("BIOS vendor") }
-                        Label { text: root.about.biosVendor }
-                        Label { text: qsTr("BIOS version") }
-                        Label { text: root.about.biosVersion }
-                        Label { text: qsTr("Embedded controller") }
-                        Label { text: root.about.controller }
-                        Label { text: qsTr("BIOS flash chip") }
-                        Label { text: root.about.firmwareChip }
+                        Label { text: root.about.model || qsTr("Device information unavailable"); Layout.fillWidth: true; wrapMode: Text.WordWrap }
+                        Label { text: qsTr("Manufacturer"); visible: root.about.manufacturer.length > 0 }
+                        Label { text: root.about.manufacturer; visible: root.about.manufacturer.length > 0 }
+                        Label { text: qsTr("Baseboard model"); visible: root.about.boardModel.length > 0 }
+                        Label { text: root.about.boardModel; visible: root.about.boardModel.length > 0 }
+                        Label { text: qsTr("BIOS vendor"); visible: root.about.biosVendor.length > 0 }
+                        Label { text: root.about.biosVendor; visible: root.about.biosVendor.length > 0 }
+                        Label { text: qsTr("BIOS version"); visible: root.about.biosVersion.length > 0 }
+                        Label { text: root.about.biosVersion; visible: root.about.biosVersion.length > 0 }
+                        Label { text: qsTr("BIOS release date"); visible: root.about.biosDate.length > 0 }
+                        Label { text: root.about.biosDate; visible: root.about.biosDate.length > 0 }
+                        Label { text: qsTr("EC firmware revision"); visible: root.about.controller.length > 0 }
+                        Label { text: root.about.controller; visible: root.about.controller.length > 0 }
                     }
+                }
+            }
+            Surface {
+                cornerRadius: root.manager.cornerRadius
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: 12
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Label { text: qsTr("Background components"); font.pixelSize: 18; font.bold: true; Layout.fillWidth: true }
+                        Button { text: qsTr("Refresh status"); enabled: !root.manager.busy; onClicked: root.manager.refresh() }
+                    }
+                    Label { text: root.manager.runtimeStatus; Layout.fillWidth: true; wrapMode: Text.WordWrap }
+                    Label { text: root.manager.daemonDetails; color: palette.placeholderText; Layout.fillWidth: true; wrapMode: Text.WordWrap }
                 }
             }
             Surface {

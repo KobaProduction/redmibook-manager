@@ -17,11 +17,11 @@ has personally checked the app and explicitly authorizes the corresponding Git a
 
 ## Version and immutable builds
 
-`VERSION.txt` owns the application and package base version, currently `0.1.0`.
+`VERSION.txt` owns the application and package base version, currently `1.1.1`.
 Only the owner authorizes a base-version change. No automatic major/minor/patch bump.
 
-An alpha publication from `release` uses `v0.1.0-alpha.<workflow-run-number>`.
-The suffix identifies an immutable build; the executable still reports `0.1.0`.
+An alpha publication from `release` uses `v1.1.1-alpha.<workflow-run-number>`.
+The suffix identifies an immutable build; the executable still reports `1.1.1`.
 CI embeds the same run number as `MANAGER_RELEASE_SEQUENCE` for update comparison.
 The default `MANAGER_RELEASE_CHANNEL` is alpha; stable must be selected explicitly
 when the owner authorizes a stable publication.

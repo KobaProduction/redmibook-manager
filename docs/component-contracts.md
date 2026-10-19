@@ -75,3 +75,51 @@ Session status responses append the resident session version/build after the dae
 identity. The shared adapter codec accepts the previous seven-field reply for
 recovery/diagnostics, but missing session identity is incompatible, never Ready.
 Ready requires the UI, session and daemon to share version and payload build ID.
+
+## Native request execution
+
+Manager microphone/display operations and session hotkey actions run native ports
+on workers and deliver completion on the Qt GUI thread. No operation captures a
+presentation object into a worker: shared ownership of the injected ports keeps
+dependencies alive if a window closes. Each controller admits one request at a time.
+Controls show pending/busy state and do not dispatch repeated overlapping changes.
+
+The presentation deadline is ten seconds. On expiry, discard stale observations and
+do not turn a late completion into a success popup. A synchronous OS call can still
+be running after that deadline: do not imply cancellation or free its dependencies.
+The WMI adapter uses semisynchronous completion with one bounded result wait. Native
+completion and authoritative readback replace Sleep/fixed-delay retries. Readback
+confirms the reported setting, never an unobserved physical effect.
+
+The developer launcher awaits named-pipe availability and process-completion events
+with cancellation deadlines. It queries the session executable for its endpoint;
+PowerShell does not duplicate the session identity/hash algorithm. CLI entry points
+may wait at their console boundary while GUI event loops remain responsive.
+
+VendorInputPort delivers typed firmware intentions/announcements from a bounded
+worker queue; Ready means subscription accepted, not physical-key acceptance.
+Stop invalidates callback reservations immediately and exposes cleanup completion
+through shared_future. An already-reserved callback can finish, so session composition
+also guards its QObject delivery lifetime and bounds queued GUI delivery. Overflow
+never replays an uncertain Mi sequence. Microphone intent coalesces to the latest
+explicit state while a previous native call finishes; it is not a second toggle.
+Startup profile discovery also runs on a worker. No firmware-state guess may unmute
+capture at startup. Driver-advertised hardware mute is separate from actual mute,
+API readback and physical recording acceptance.
+
+## Qualified firmware and device-state channels
+
+The machine host accepts only the charge-capability/read/80/100 and performance-
+capability/read/Balanced/Quiet/Turbo commands in `contracts/local_api/firmware_protocol.hpp`.
+It verifies the client's active console session and exact version/build before dispatch.
+The client authenticates the server PID against SCM. Identity comes from SMBIOS in
+the host; callers cannot provide raw firmware packets, BIOS overrides or algorithms.
+Commands execute serially; unknown native write outcomes latch subsequent writes off.
+
+The resident session publishes `application/overview/DeviceState` over a separate
+per-user local channel. Its only incoming request is a read resynchronization.
+Frames require schema/version/build compatibility and are bounded to 64 KiB;
+slow subscribers disconnect. Manager and tray subscribe independently. Audio endpoint
+callbacks, display events and completed operations request fresh observations.
+Local audio/display and machine firmware reads have independent worker lifetimes and
+deadlines so a slow firmware provider does not delay microphone feedback.

@@ -18,6 +18,8 @@ class ManagerModel final : public QObject {
     Q_PROPERTY(int themeIndex READ themeIndex NOTIFY changed)
     Q_PROPERTY(int osdPositionIndex READ osdPositionIndex NOTIFY changed)
     Q_PROPERTY(bool trayAutostart READ trayAutostart NOTIFY changed)
+    Q_PROPERTY(int fnSAction READ fnSAction NOTIFY changed)
+    Q_PROPERTY(int fnKAction READ fnKAction NOTIFY changed)
     Q_PROPERTY(QString osdScreen READ osdScreen NOTIFY changed)
     Q_PROPERTY(int designIndex READ designIndex NOTIFY changed)
     Q_PROPERTY(bool autoUpdates READ autoUpdates NOTIFY changed)
@@ -32,6 +34,8 @@ class ManagerModel final : public QObject {
     [[nodiscard]] int themeIndex() const;
     [[nodiscard]] int osdPositionIndex() const;
     [[nodiscard]] bool trayAutostart() const;
+    int fnSAction() const;
+    int fnKAction() const;
     QString osdScreen() const;
     int designIndex() const;
     bool designPending() const;
@@ -51,6 +55,8 @@ class ManagerModel final : public QObject {
     Q_INVOKABLE void setTheme(int index);
     Q_INVOKABLE void setOsdPosition(int index);
     Q_INVOKABLE void setTrayAutostart(bool enabled);
+    Q_INVOKABLE void setFnSAction(int action);
+    Q_INVOKABLE void setFnKAction(int action);
     Q_INVOKABLE void setOsdScreen(const QString &id);
     Q_INVOKABLE void setDesign(int index);
     Q_INVOKABLE void applyDesign();

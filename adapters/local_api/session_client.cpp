@@ -1,4 +1,5 @@
 #include "adapters/local_api/session_client.hpp"
+#include "adapters/platform/development_scope.hpp"
 #include "adapters/platform/runtime.hpp"
 #include <QCoreApplication>
 #include <QCryptographicHash>
@@ -12,12 +13,17 @@
 #include <QIcon>
 namespace manager::adapters {
 QString session_endpoint() {
-    const auto identity = QByteArray::fromStdString(session_identity());
+    const auto identity = QByteArray::fromStdString(session_identity() + development_scope());
     const auto digest = QCryptographicHash::hash(identity, QCryptographicHash::Sha256).toHex().left(24);
     return QStringLiteral("KobaProduction.Redmibook.Session.") + QString::fromLatin1(digest);
 }
-
 QString preferences_directory() {
+    const auto scope = development_scope();
+    if (!scope.empty()) {
+        const auto root = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
+        return QDir(root).filePath(QStringLiteral("Koba Production/Redmibook Manager Development/") +
+                                   QString::fromStdString(scope));
+    }
     return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
 }
 
@@ -31,6 +37,9 @@ void configure_gui_identity() {
 }
 
 bool launch_component(const QString &name, const QStringList &arguments) {
+    if (!development_scope().empty()) {
+        return false;
+    }
     QProcess process;
     process.setProgram(QDir(QCoreApplication::applicationDirPath()).filePath(name));
     process.setArguments(arguments);

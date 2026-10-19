@@ -2,6 +2,7 @@
 #include <QApplication>
 #include <QPainter>
 #include <QPointer>
+#include <utility>
 
 #include "presentation/common/appearance/widget_controls.hpp"
 namespace manager::presentation {
@@ -67,6 +68,8 @@ void TrayClient::connect_actions() {
     connect(&restart_, &QAction::triggered, this, &TrayClient::restartComponents);
     connect(&close_, &QAction::triggered, qApp, &QApplication::quit);
     connect(&dashboard_, &TrayDashboard::openManager, this, &TrayClient::openManager);
+    connect(&dashboard_, &TrayDashboard::profileRequested, this, &TrayClient::profileRequested);
+    connect(&dashboard_, &TrayDashboard::refreshRequested, this, &TrayClient::refreshRequested);
     connect(&icon_, &QSystemTrayIcon::activated, this, &TrayClient::activate);
 }
 
@@ -82,6 +85,12 @@ void TrayClient::activate(QSystemTrayIcon::ActivationReason reason) {
 
 void TrayClient::toggleDashboard() {
     dashboard_.toggle(icon_.geometry());
+    if (dashboard_.isVisible())
+        emit dashboardOpened();
+}
+
+void TrayClient::setDeviceState(TrayDeviceState state) {
+    dashboard_.setDeviceState(std::move(state));
 }
 bool TrayClient::saveDashboard(const QString &path) {
     return dashboard_.isVisible() && dashboard_.grab().save(path);

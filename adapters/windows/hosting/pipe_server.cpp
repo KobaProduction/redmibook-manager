@@ -1,6 +1,7 @@
 #include "adapters/windows/hosting/pipe_server.hpp"
 #include "adapters/windows/hosting/handle.hpp"
 #include <array>
+#include <optional>
 #include <sddl.h>
 #include <string>
 
@@ -10,7 +11,7 @@ struct PipeIo {
     HANDLE pipe;
     HANDLE event;
 };
-bool finish_io(HANDLE pipe, OVERLAPPED &operation, BOOL started) {
+bool finish_io(HANDLE pipe, OVERLAPPED &operation, BOOL started, DWORD *received = nullptr) {
     if (started) {
         return true;
     }
@@ -21,7 +22,11 @@ bool finish_io(HANDLE pipe, OVERLAPPED &operation, BOOL started) {
         CancelIoEx(pipe, &operation);
     }
     DWORD transferred = 0;
-    return GetOverlappedResult(pipe, &operation, &transferred, TRUE) != FALSE;
+    const bool complete = GetOverlappedResult(pipe, &operation, &transferred, TRUE) != FALSE;
+    if (received) {
+        *received = transferred;
+    }
+    return complete;
 }
 
 bool connect_client(const PipeIo &io, HANDLE stop, OVERLAPPED &operation) {
@@ -54,24 +59,37 @@ void await_client_close(const PipeIo &io) {
     finish_io(io.pipe, read, ReadFile(io.pipe, &extra, 1, &count, &read));
 }
 
-void answer(const PipeIo &io) {
-    std::array<char, 64> request{};
+std::optional<std::string> read_message(const PipeIo &io) {
+    std::array<char, 512> bytes{};
     OVERLAPPED read{};
     read.hEvent = io.event;
-    DWORD count = 0;
+    DWORD count{};
     ResetEvent(io.event);
-    const auto started =
-        ReadFile(io.pipe, request.data(), static_cast<DWORD>(request.size() - 1), &count, &read);
-    if (!finish_io(io.pipe, read, started) || std::string(request.data()) != "RMB/1 PING") {
-        return;
+    const auto started = ReadFile(io.pipe, bytes.data(), static_cast<DWORD>(bytes.size()), &count, &read);
+    if (!finish_io(io.pipe, read, started, &count) || count == 0) {
+        return {};
     }
-    const std::string reply = std::string("RMB/1 PONG ") + MANAGER_APP_VERSION + " " + MANAGER_BUILD_ID +
-                              " " + std::to_string(GetCurrentProcessId());
+    return std::string(bytes.data(), count);
+}
+void write_message(const PipeIo &io, const std::string &reply) {
     OVERLAPPED write{};
     write.hEvent = io.event;
+    DWORD count{};
     ResetEvent(io.event);
     finish_io(io.pipe, write,
               WriteFile(io.pipe, reply.data(), static_cast<DWORD>(reply.size()), &count, &write));
+}
+
+void answer(const PipeIo &io, const PipeHandler &handler) {
+    const auto request = read_message(io);
+    if (!request) {
+        return;
+    }
+    const auto reply = handler(io.pipe, *request);
+    if (reply.empty() || reply.size() > 512) {
+        return;
+    }
+    write_message(io, reply);
     await_client_close(io);
 }
 
@@ -85,13 +103,13 @@ HANDLE create_pipe(const wchar_t *name) {
     SECURITY_ATTRIBUTES security{sizeof(SECURITY_ATTRIBUTES), descriptor, FALSE};
     const auto pipe = CreateNamedPipeW(
         name, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED | FILE_FLAG_FIRST_PIPE_INSTANCE,
-        PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_REJECT_REMOTE_CLIENTS, 1, 256, 64, 1000, &security);
+        PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_REJECT_REMOTE_CLIENTS, 1, 512, 512, 1000, &security);
     LocalFree(descriptor);
     return pipe;
 }
 } // namespace
 
-int serve_diagnostics(HANDLE stop, const wchar_t *name) {
+int serve_requests(HANDLE stop, const wchar_t *name, const PipeHandler &handler) {
     const Handle pipe(create_pipe(name));
     const Handle event(CreateEventW(nullptr, TRUE, FALSE, nullptr));
     if (!pipe.valid() || !event.valid()) {
@@ -103,10 +121,23 @@ int serve_diagnostics(HANDLE stop, const wchar_t *name) {
         connection.hEvent = event.get();
         ResetEvent(event.get());
         if (connect_client(io, stop, connection)) {
-            answer(io);
+            answer(io, handler);
             DisconnectNamedPipe(pipe.get());
         }
     }
     return 0;
+}
+
+int serve_diagnostics(HANDLE stop, const wchar_t *name) {
+    return serve_requests(stop, name, [](HANDLE, std::string_view request) -> std::string {
+        if (!request.empty() && request.back() == '\0') {
+            request.remove_suffix(1);
+        }
+        if (request != "RMB/1 PING") {
+            return {};
+        }
+        return std::string("RMB/1 PONG ") + MANAGER_APP_VERSION + " " + MANAGER_BUILD_ID + " " +
+               std::to_string(GetCurrentProcessId());
+    });
 }
 } // namespace manager::adapters::windows

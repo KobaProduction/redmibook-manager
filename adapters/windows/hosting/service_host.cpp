@@ -1,4 +1,6 @@
 #include "adapters/platform/runtime.hpp"
+#include "adapters/windows/hosting/development_host.hpp"
+#include "adapters/windows/hosting/firmware_server.hpp"
 #include "adapters/windows/hosting/handle.hpp"
 #include "adapters/windows/hosting/pipe_server.hpp"
 #include "adapters/windows/hosting/service_admin.hpp"
@@ -6,6 +8,7 @@
 #include <iostream>
 #include <shellapi.h>
 #include <string>
+#include <thread>
 
 namespace manager::adapters {
 namespace {
@@ -50,8 +53,11 @@ void WINAPI service_main(DWORD, wchar_t **) {
         report(state, ServicePhase::Stopped, ERROR_NOT_ENOUGH_MEMORY);
         return;
     }
+    std::jthread firmware([&stop] { windows::serve_firmware(stop.get()); });
     report(state, ServicePhase::Running);
     const int result = windows::serve_diagnostics(stop.get(), windows::pipe_name);
+    SetEvent(stop.get());
+    firmware.join();
     report(state, ServicePhase::Stopped, result == 0 ? NO_ERROR : ERROR_SERVICE_SPECIFIC_ERROR);
 }
 
@@ -79,6 +85,12 @@ int run_machine_host(int argc, char *argv[]) {
         return 2;
     }
     const std::string command(argv[1]);
+    if (!development_scope().empty() && command != "--dev-console" && command != "--probe") {
+        return 2;
+    }
+    if (command == "--dev-console") {
+        return windows::run_development_host();
+    }
     if (command == "--service") {
         return run_service();
     }

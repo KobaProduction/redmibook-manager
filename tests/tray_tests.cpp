@@ -21,13 +21,17 @@ bool dashboard_contract() {
     SessionFake session;
     manager::presentation::RuntimeMonitor monitor(session);
     manager::presentation::TrayDashboard dashboard(monitor);
+    dashboard.setDeviceState({.profileIndex = 0, .profileAvailable = true, .status = {}});
+    int requested = -1;
+    QObject::connect(&dashboard, &manager::presentation::TrayDashboard::profileRequested,
+                     [&requested](int index) { requested = index; });
     dashboard.toggle(QRect(300, 300, 24, 24));
-    auto *selector = dashboard.findChild<QToolButton *>(QStringLiteral("mockMode2"));
-    if (!dashboard.isVisible() || selector == nullptr) {
+    auto *selector = dashboard.findChild<QToolButton *>(QStringLiteral("performanceMode2"));
+    if (!dashboard.isVisible() || selector == nullptr || !selector->isEnabled()) {
         return false;
     }
     selector->click();
-    return session.requests == 1;
+    return session.requests == 1 && requested == 2 && !selector->isChecked();
 }
 bool osd_contract() {
     QTemporaryDir directory;

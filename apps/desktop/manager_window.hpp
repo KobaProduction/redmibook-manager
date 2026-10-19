@@ -3,13 +3,17 @@
 #include <QLockFile>
 #include <QObject>
 #include <QQmlApplicationEngine>
+#include <cstdint>
 #include <memory>
 
 namespace manager::desktop {
+enum class ManagerActivation : std::uint8_t { KeepCurrent, Overview };
+
 class ManagerInstance final : public QObject {
     Q_OBJECT
   public:
-    bool acquire(QQmlApplicationEngine &engine);
+    bool acquire(QQmlApplicationEngine &engine,
+                 ManagerActivation activation = ManagerActivation::KeepCurrent);
 
   private:
     QLocalServer server_;

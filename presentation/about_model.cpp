@@ -1,6 +1,20 @@
 #include "presentation/about_model.hpp"
 #include <QFile>
 namespace manager::presentation {
+QString AboutModel::profileStatus() const {
+    if (demo()) {
+        return tr("Sample data, not detected hardware.");
+    }
+    switch (profile_.status) {
+    case application::ProfileReadStatus::Available:
+        return tr("Reported by SMBIOS. Hardware controls require separate compatibility verification.");
+    case application::ProfileReadStatus::NotImplemented:
+        return tr("Device identification is not implemented on this platform.");
+    case application::ProfileReadStatus::Failed:
+        return tr("Device identification failed. Hardware controls remain unavailable.");
+    }
+    return {};
+}
 QString AboutModel::mitTranslation() const {
     return tr(R"MIT(MIT License
 

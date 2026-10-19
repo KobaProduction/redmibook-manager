@@ -1,6 +1,7 @@
 #include "adapters/local_api/session_client.hpp"
 #include "adapters/platform/runtime.hpp"
 #include "adapters/storage/ui_preferences/store.hpp"
+#include "apps/tray/device_controls.hpp"
 #include "apps/tray/tray_operations.hpp"
 #include "presentation/common/preferences.hpp"
 #include "presentation/tray/tray_client.hpp"
@@ -77,6 +78,8 @@ int main(int argc, char *argv[]) {
     manager::adapters::ensure_session();
     manager::adapters::SessionClient client;
     manager::presentation::TrayClient tray(preferences, client);
+    manager::tray::DeviceControls controls(tray, preferences);
+    controls.start();
     QObject::connect(&tray, &manager::presentation::TrayClient::openManager, &app,
                      [] { manager::adapters::launch_component(QStringLiteral("redmibook-manager")); });
     QObject::connect(&tray, &manager::presentation::TrayClient::restartComponents, &app,

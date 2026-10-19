@@ -15,6 +15,9 @@ independent, and quality gates must not be disabled.
 
 ## Toolchain
 
+For an isolated build-tree Windows core/session/tray/Manager loop without
+installation or packaging, use [the development runtime](dev-runtime.md).
+
 Qt is pinned to 6.10.2 in CI; C++20, GCC 13 (MinGW 13.1 on Windows), LLVM 19,
 CMake 3.30+ and Ninja are the baseline. Python is used only as a standard-library
 runner for vendored checkdeps and its regression tests; this is not a Python product.
@@ -68,6 +71,13 @@ propagates its failure. Windows uses PowerShell 7 with `tools/dev.ps1`; Linux us
 CMake directly. The caller supplies `QT_ROOT`; no machine-specific configuration
 is committed. Local hooks can be bypassed outside this contract, so server CI is
 independent. Branch protection is a separate repository setting, not a YAML property.
+
+On Windows, `tools/dev.ps1 -Action verify` records a successful result in the Git
+metadata directory for the exact staged tree and toolchain locations. Stage the
+complete change before the final verification. Pre-push reuses that result only
+when the index and working files still match and no untracked source remains.
+Changed inputs invalidate the receipt; a failed run never records success. CI
+always runs its own checks independently.
 
 ## Packaging and acceptance
 

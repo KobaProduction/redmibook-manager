@@ -73,7 +73,7 @@ C++20 + Qt 6 / QML + CMake. Follow the dependency rule in `architecture.md`, Ser
 requirements in `AGENTS.md`, and executable checks in `development.md`.
 Do not add unused DDD patterns or implement unrelated firmware-research work implicitly.
 
-`VERSION.txt` is the single source for application/package base version: **0.1.0** (0.1).
+`VERSION.txt` is the single source for application/package base version: **1.1.1** (owner-authorized).
 Only an explicit owner instruction may change it. CI must never bump it automatically.
 Alpha/beta labels identify release maturity; build identifiers distinguish artifacts
 without changing the application base version. See `releasing.md`.
@@ -92,7 +92,7 @@ account or telemetry is required. No release/404 is distinct from network failur
 The current alpha channel accepts stable and `x.y.z-alpha.N` releases; the stable
 channel excludes prereleases. Compare numeric base version, maturity, then alpha
 sequence. CI embeds its workflow run number as MANAGER_RELEASE_SEQUENCE; a local
-build has sequence zero. Base product version stays 0.1.0. Search the most recent
+build has sequence zero. Base product version stays 1.1.1. Search the most recent
 100 release records and select the highest supported semantic version.
 
 Choose the exact OS/architecture installer asset (currently Windows x86_64 EXE or
@@ -109,10 +109,58 @@ opens complete application/dependency license texts locally. Application source 
 MIT; Qt retains its own license. The Russian MIT text is informational and explicitly
 subordinate to the original English text. Do not label all bundled software MIT.
 
-DeviceProfilePort is a framework-independent read port. The current shared Demo
-adapter supplies plainly marked sample laptop, BIOS vendor/version, firmware flash
-chip and embedded-controller data on both OS compile paths. It does not probe real
-hardware or grant any hardware capability. Future native readers and compatibility
-policies must distinguish Demo, Unknown and Verified identity. Model/firmware identity
-will inform supported feature assembly; a displayed string alone never authorizes a
-firmware algorithm or proves that charge control works.
+DeviceProfilePort is a framework-independent read port. Windows reads model,
+manufacturer, baseboard, BIOS vendor/version/date and the published EC revision from
+SMBIOS through GetSystemFirmwareTable. These values are Observed, never proof of
+algorithm compatibility. The flash-chip model remains unknown. Linux explicitly
+reports NotImplemented; Demo remains a test fixture. A displayed identity alone
+never authorizes a firmware algorithm or proves that charge control works.
+
+## Native adapter iteration
+
+The device-controls page reads and changes the current user's default communications
+microphone mute state through Windows Core Audio, checking the same endpoint afterward.
+It enumerates active displays and offers only refresh rates at the current resolution,
+orientation, pixel format and scan mode. Changes are tested, temporary and read back;
+they do not change firmware or write a display mode to the registry. Refresh is explicit.
+Linux implementations return NotImplemented. These controls belong to the user session,
+not to an elevated machine service.
+
+An opt-in session microphone shortcut uses RegisterHotKey with repeat suppression.
+It remains active with Manager and tray closed. No binding is captured by default;
+the first development binding is provided through --microphone-hotkey Ctrl+Alt+M.
+This opt-in binding is separate from the vendor key source.
+
+The subsequent TM2309/P0A0A event qualification adds a normal-user resident WMI
+subscription, independent of tray/Manager. Mi opens Manager (binding customization
+remains future work). Fn+K displays the firmware announcement without another SET.
+Fn+S cycles only a uniquely identified active built-in panel, using enumerated modes
+and readback. A cloned/ambiguous source is refused rather than changing an external
+display. F4 firmware intent is applied explicitly through Windows EndpointVolume,
+not toggled again or implemented by disabling a device/driver. The LED alone is not
+proof of actual mute. Startup leaves Windows capture unchanged until a real event;
+authoritative firmware-state recovery and multi-device target selection remain open.
+Hardware-mute capability is exposed separately from current mute/readback.
+
+Battery and vendor performance use separate application ports and policies, with a
+narrow Windows MIFS transport. TM2309 supports the documented fixed 80%/full policy;
+40–100% codes from other boards must not be sent to it. Firmware reads are separate
+from write qualification. Owner-operated SET/GET qualification on RMAMT6B0P0A0A
+confirmed 80%/full and Balanced/Quiet/Turbo, followed by restoration of both original
+settings. Only these discrete policies are enabled; FullSpeed remains blocked.
+Unknown BIOS writes are refused before transport. A matching policy readback confirms a setting,
+not physical charge cutoff. See hardware-investigation.md for evidence and open limits.
+
+The machine host owns qualified firmware operations through a separate authenticated
+pipe with a closed command allowlist, active-console authorization and exact version/build
+compatibility. Manager and tray remain unelevated clients. A native write with unknown
+outcome blocks further writes until reconciliation. The development CLI also provides
+`core-status` and explicit `core-charge`/`core-performance` commands for this same path.
+
+Manager and tray subscribe to the resident session's bounded read-only device-state
+stream. Microphone callbacks, screen events and completed commands trigger resynchronization;
+there is no periodic hardware polling. Slow firmware reads run separately from audio/display
+reads. Fn+S cycles the configured supported rates (60/165 by default, 60/120 fallback).
+Fn+S and Fn+K bindings persist; rebinding Fn+K cannot suppress the firmware's own profile change.
+Mi opens Overview, including an already-open Manager. The tray microphone icon is read-only
+until reverse synchronization with the keyboard LED is established.

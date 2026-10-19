@@ -13,6 +13,30 @@ function Invoke-Checked {
     if ($LASTEXITCODE -ne 0) { throw "$Command failed with exit code $LASTEXITCODE" }
 }
 
+function Get-VerificationKey {
+    $tree = & git write-tree
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot identify the staged source tree.' }
+    & git diff --quiet
+    if ($LASTEXITCODE -ne 0 -or (& git ls-files --others --exclude-standard)) { return $null }
+    return "$tree|$env:QT_ROOT|$QtTools"
+}
+
+function Invoke-Verification {
+    $key = Get-VerificationKey
+    $receipt = & git rev-parse --git-path manager-verification.txt
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot locate the verification receipt.' }
+    if ($key -and (Test-Path -LiteralPath $receipt) -and
+        (Get-Content -LiteralPath $receipt -Raw).Trim() -eq $key) {
+        Write-Host 'Reusing successful verify for this exact unchanged source tree and toolchain.'
+        return
+    }
+    Remove-Item -LiteralPath $receipt -Force -ErrorAction SilentlyContinue
+    Invoke-Checked cmake @('--workflow', '--preset', 'verify')
+    if ($key -and (Get-VerificationKey) -eq $key) {
+        Set-Content -LiteralPath $receipt -Value $key -Encoding utf8
+    }
+}
+
 if (-not $QtRoot) { throw 'Set QT_ROOT to the Qt 6.10.2 mingw_64 directory or pass -QtRoot.' }
 if (-not $QtTools) { $QtTools = Join-Path (Split-Path (Split-Path $QtRoot)) 'Tools' }
 $env:QT_ROOT = (Resolve-Path -LiteralPath $QtRoot).Path
@@ -27,7 +51,7 @@ $env:PATH = ($toolPaths -join [IO.Path]::PathSeparator) + [IO.Path]::PathSeparat
 Push-Location (Split-Path $PSScriptRoot)
 try {
     switch ($Action) {
-        'verify' { Invoke-Checked cmake @('--workflow', '--preset', 'verify') }
+        'verify' { Invoke-Verification }
         'configure' { Invoke-Checked cmake @('--preset', 'release') }
         'build' { Invoke-Checked cmake @('--build', '--preset', 'release', '--parallel', '4') }
         'test' { Invoke-Checked ctest @('--preset', 'release') }

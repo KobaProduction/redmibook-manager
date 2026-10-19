@@ -1,5 +1,7 @@
 #include "presentation/common/preferences.hpp"
 #include <QApplication>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QLocale>
 #include <QQmlEngine>
 #include <QStyleHints>
@@ -114,6 +116,42 @@ bool Preferences::apply_language(const QString &requested) {
 
 void Preferences::apply_theme() {
     appearance_.set_mode(theme());
+}
+
+std::vector<unsigned int> Preferences::refresh_cycle_rates() const {
+    return value_.refresh_cycle_rates;
+}
+bool Preferences::set_refresh_cycle_rates(const std::vector<unsigned int> &rates) {
+    if (!application::display::valid_refresh_selection(rates))
+        return false;
+    QJsonArray values;
+    for (const auto rate : rates)
+        values.append(static_cast<int>(rate));
+    if (!store_.update("refreshCycleRates",
+                       QJsonDocument(values).toJson(QJsonDocument::Compact).toStdString()))
+        return false;
+    refresh();
+    return true;
+}
+int Preferences::fn_s_action() const {
+    return static_cast<int>(value_.fn_s_action);
+}
+int Preferences::fn_k_action() const {
+    return static_cast<int>(value_.fn_k_action);
+}
+bool Preferences::set_fn_s_action(int action) {
+    if (!application::shortcuts::valid_binding_action(action) ||
+        !store_.update("fnSAction", std::to_string(action)))
+        return false;
+    refresh();
+    return true;
+}
+bool Preferences::set_fn_k_action(int action) {
+    if (!application::shortcuts::valid_binding_action(action) ||
+        !store_.update("fnKAction", std::to_string(action)))
+        return false;
+    refresh();
+    return true;
 }
 
 void Preferences::refresh() {

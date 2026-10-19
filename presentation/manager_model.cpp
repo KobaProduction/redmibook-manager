@@ -44,6 +44,14 @@ bool ManagerModel::trayAutostart() const {
     return preferences_.tray_autostart();
 }
 
+int ManagerModel::fnSAction() const {
+    return preferences_.fn_s_action();
+}
+
+int ManagerModel::fnKAction() const {
+    return preferences_.fn_k_action();
+}
+
 QString ManagerModel::osdScreen() const {
     return preferences_.osd_screen();
 }
@@ -107,6 +115,16 @@ void ManagerModel::setOsdPosition(int index) {
 }
 void ManagerModel::setTrayAutostart(bool enabled) {
     preference_error_ = !preferences_.set_tray_autostart(enabled);
+    emit changed();
+}
+
+void ManagerModel::setFnSAction(int action) {
+    preference_error_ = !preferences_.set_fn_s_action(action);
+    emit changed();
+}
+
+void ManagerModel::setFnKAction(int action) {
+    preference_error_ = !preferences_.set_fn_k_action(action);
     emit changed();
 }
 

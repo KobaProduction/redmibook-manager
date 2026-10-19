@@ -1,1 +1,1 @@
-include_rules = ['-Qt', '-application', '-adapters', '-presentation', '-apps']
+include_rules = ['-Qt', '-application', '-adapters', '-presentation', '-apps', '-contracts']

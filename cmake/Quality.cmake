@@ -10,6 +10,7 @@ foreach(tool IN ITEMS CLANG_FORMAT CLANG_TIDY)
 endforeach()
 
 file(GLOB_RECURSE MANAGER_CPP CONFIGURE_DEPENDS
+    "${PROJECT_SOURCE_DIR}/contracts/*.hpp" "${PROJECT_SOURCE_DIR}/contracts/*.cpp"
     "${PROJECT_SOURCE_DIR}/domain/*.hpp"
     "${PROJECT_SOURCE_DIR}/application/*.hpp" "${PROJECT_SOURCE_DIR}/application/*.cpp"
     "${PROJECT_SOURCE_DIR}/adapters/*.hpp" "${PROJECT_SOURCE_DIR}/adapters/*.cpp"
@@ -20,8 +21,11 @@ set(MANAGER_TIDY_SOURCES ${MANAGER_CPP})
 list(FILTER MANAGER_TIDY_SOURCES INCLUDE REGEX "\\.cpp$")
 if(WIN32)
     list(FILTER MANAGER_TIDY_SOURCES EXCLUDE REGEX "/adapters/linux/")
+    list(FILTER MANAGER_TIDY_SOURCES EXCLUDE REGEX "/apps/device/firmware_linux.cpp$")
 else()
     list(FILTER MANAGER_TIDY_SOURCES EXCLUDE REGEX "/adapters/windows/")
+    list(FILTER MANAGER_TIDY_SOURCES EXCLUDE REGEX "/apps/device/firmware_windows.cpp$")
+    list(FILTER MANAGER_TIDY_SOURCES EXCLUDE REGEX "/apps/device/qualification.cpp$")
     list(FILTER MANAGER_TIDY_SOURCES EXCLUDE REGEX "/tests/payload_tests.cpp$")
 endif()
 add_custom_target(format-check

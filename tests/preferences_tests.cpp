@@ -66,19 +66,26 @@ class UnavailableDiagnostic final : public manager::application::DiagnosticPort 
 };
 } // namespace
 
+bool contracts(manager::presentation::Preferences &preferences, const QString &directory) {
+    const bool translated = translation_contract(preferences);
+    const bool appearance = appearance_contract(preferences);
+    const bool storage = storage_contract(directory);
+    const bool sync = preferences_sync_contract();
+    if (!translated || !appearance || !storage || !sync)
+        qCritical("preferences: translation=%d appearance=%d storage=%d sync=%d", translated, appearance,
+                  storage, sync);
+    return translated && appearance && storage && sync;
+}
+
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setStyle(QStringLiteral("Fusion"));
-    if (app.arguments().size() == 3 && app.arguments().at(1) == QStringLiteral("--observe")) {
+    if (app.arguments().size() == 3 && app.arguments().at(1) == QStringLiteral("--observe"))
         return observe_preferences(app, app.arguments().at(2));
-    }
     QTemporaryDir directory;
     manager::adapters::UiPreferenceStore store(directory.path());
     manager::presentation::Preferences preferences(store);
     const UnavailableDiagnostic diagnostic;
     const manager::application::ReadRuntimeStatus read(diagnostic);
-    const bool passed = translation_contract(preferences) && appearance_contract(preferences) &&
-                        storage_contract(directory.path()) && !read.execute().connected &&
-                        preferences_sync_contract();
-    return passed ? 0 : 1;
+    return contracts(preferences, directory.path()) && !read.execute().connected ? 0 : 1;
 }

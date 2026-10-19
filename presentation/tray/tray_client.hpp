@@ -14,10 +14,14 @@ class TrayClient final : public QObject {
     TrayClient(Preferences &preferences, application::SessionPort &session);
     [[nodiscard]] bool show();
     void toggleDashboard();
+    void setDeviceState(TrayDeviceState state);
     [[nodiscard]] bool saveDashboard(const QString &path);
   signals:
     void openManager();
     void restartComponents();
+    void profileRequested(int index);
+    void refreshRequested();
+    void dashboardOpened();
 
   private:
     RuntimeMonitor runtime_;

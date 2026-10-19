@@ -9,7 +9,8 @@ class DemoDeviceProfile final : public application::DeviceProfilePort {
                 .bios_vendor = "DEMO UEFI",
                 .bios_version = "DEMO-0.0",
                 .controller = "DEMO-EC",
-                .firmware_chip = "DEMO-SPI"};
+                .firmware_chip = "DEMO-SPI",
+                .status = application::ProfileReadStatus::Available};
     }
 };
 } // namespace manager::adapters

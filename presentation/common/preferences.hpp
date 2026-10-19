@@ -30,6 +30,12 @@ class Preferences final : public QObject {
     bool set_auto_updates(bool enabled);
     bool rounded_corners() const;
     bool set_rounded_corners(bool enabled);
+    [[nodiscard]] std::vector<unsigned int> refresh_cycle_rates() const;
+    bool set_refresh_cycle_rates(const std::vector<unsigned int> &rates);
+    [[nodiscard]] int fn_s_action() const;
+    [[nodiscard]] int fn_k_action() const;
+    bool set_fn_s_action(int action);
+    bool set_fn_k_action(int action);
     QPalette palette() const;
     void refresh();
   signals:

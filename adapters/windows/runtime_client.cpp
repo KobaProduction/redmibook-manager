@@ -1,3 +1,4 @@
+#include "adapters/platform/development_scope.hpp"
 #include "adapters/platform/runtime.hpp"
 #include "adapters/windows/hosting/client_pipe.hpp"
 #include "adapters/windows/hosting/handle.hpp"
@@ -25,6 +26,9 @@ void register_application_restart() {
 }
 
 bool restart_machine_runtime() {
+    if (!development_scope().empty()) {
+        return false;
+    }
     std::array<wchar_t, 32768> path{};
     if (GetModuleFileNameW(nullptr, path.data(), static_cast<DWORD>(path.size())) == 0) {
         return false;

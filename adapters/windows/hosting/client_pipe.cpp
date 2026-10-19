@@ -1,4 +1,5 @@
 #include "adapters/windows/hosting/client_pipe.hpp"
+#include "adapters/windows/hosting/development_host.hpp"
 #include "adapters/windows/hosting/handle.hpp"
 #include <array>
 #include <sstream>
@@ -8,6 +9,9 @@ namespace {
 bool trusted_server(HANDLE pipe, DWORD &pid) {
     if (!GetNamedPipeServerProcessId(pipe, &pid)) {
         return false;
+    }
+    if (!development_scope().empty()) {
+        return development_server(pid);
     }
     const auto manager = OpenSCManagerW(nullptr, nullptr, SC_MANAGER_CONNECT);
     if (manager == nullptr) {
@@ -59,11 +63,16 @@ application::DiagnosticReply decode(std::string_view payload, DWORD pid) {
 }
 } // namespace
 
+bool trusted_machine_pipe(HANDLE pipe, DWORD &pid) {
+    return trusted_server(pipe, pid);
+}
+
 application::DiagnosticReply probe_daemon() {
-    if (!WaitNamedPipeW(pipe_name, 500)) {
+    const auto name = diagnostic_endpoint();
+    if (!WaitNamedPipeW(name.c_str(), 500)) {
         return {};
     }
-    const Handle pipe(CreateFileW(pipe_name, GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING,
+    const Handle pipe(CreateFileW(name.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING,
                                   FILE_FLAG_OVERLAPPED | SECURITY_SQOS_PRESENT | SECURITY_IDENTIFICATION,
                                   nullptr));
     DWORD pid = 0;

@@ -33,6 +33,11 @@ System/Light/Dark appearance, presentation-controller placement and native Qt AP
 | Release identity and update policy | `application/updates/` |
 | Public GitHub feed, daily history and architecture selection | `adapters/updates/` |
 | About update state / independent update notice | `presentation/updates/` |
+| Observed SMBIOS identity | `application/device_profile/`, `adapters/device_profile/`, `adapters/{windows,linux}/device_profile/` |
+| Charge / vendor performance policies and ports | `domain/{battery,performance}/`, `application/{battery,performance}/` |
+| Qualified Xiaomi MIFS commands | `adapters/windows/firmware/`, `adapters/windows/{battery,performance}/` |
+| Session microphone / display controls | `application/{microphone,display}/`, `adapters/platform/session_controls.hpp`, Windows/Linux adapters |
+| Opt-in session hotkeys | `application/shortcuts/`, `adapters/{windows,linux}/shortcuts/`, `apps/session/input_actions.*` |
 | Process composition | `apps/desktop/`, `apps/session/`, `apps/tray/`, `apps/machine/` |
 | Quality and packages | `cmake/`, `tools/`, `.github/workflows/` |
 
@@ -51,8 +56,10 @@ Windows installation paths, data ownership and privilege boundaries are specifie
 [the Windows installation contract](windows-installation.md).
 
 The design separates machine runtime, resident session runtime/OSD and optional
-tray/Manager clients. The Windows scaffold implements diagnostic routing and OSD;
-real key capture and hardware control remain unimplemented. Closing tray/Manager
+tray/Manager clients. The Windows machine host implements diagnostic routing and
+authenticated qualified firmware commands;
+qualified vendor input, audio/display controls and OSD run in the user session.
+Closing tray/Manager
 does not stop session diagnostics/OSD or the machine host. Logical roles do not fix
 executable counts or make Windows APIs part of shared application contracts.
 
@@ -64,9 +71,18 @@ programs. Session execution uses the user's own identity.
 ## Platform contract
 
 The UI is shared across Windows and Linux. OS integrations are separate adapters,
-not duplicated UI trees. Current adapters identify the compile-time host only;
-they do not probe battery or Mi-key support. Unsupported hardware must be visible,
-and an accepted firmware request is not proof of an effective charge limit.
+not duplicated UI trees. Windows observes SMBIOS identity, microphone state and
+display modes; Linux native control adapters explicitly return NotImplemented.
+Vendor charge/performance reads and writes have separate compatibility gates;
+firmware identity is not inferred from a translated display label. See
+[hardware investigation](hardware-investigation.md). Qualified vendor events are decoded
+behind the application input port and routed in resident session composition; Linux
+returns NotImplemented. An accepted firmware request is not proof of an effective charge limit.
+
+The development CLI is an explicit composition for native-adapter diagnostics, not a
+production privileged command endpoint. [Development runtime](dev-runtime.md) starts
+isolated diagnostic hosts without installing/registering anything. Hardware changes
+never occur merely because the diagnostic core or session starts.
 
 ## Workflow provenance
 

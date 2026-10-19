@@ -1,3 +1,4 @@
+#include "adapters/platform/development_scope.hpp"
 #include "adapters/platform/host_info.hpp"
 #include "application/overview/read_overview.hpp"
 #include "apps/desktop/appearance_setup.hpp"
@@ -19,6 +20,7 @@ void configure_parser(QCommandLineParser &parser) {
     parser.setApplicationDescription(QStringLiteral("Native laptop manager foundation"));
     parser.addHelpOption();
     parser.addOption({QStringLiteral("settings"), QStringLiteral("Open Settings")});
+    parser.addOption({QStringLiteral("overview"), QStringLiteral("Open Overview")});
     parser.addOption({QStringLiteral("restored"), QStringLiteral("Restored by installer lifecycle")});
     parser.addOption(
         {QStringLiteral("ui-contract"), QStringLiteral("Verify live language and theme changes")});
@@ -35,7 +37,10 @@ int run_window(QApplication &app, const QCommandLineParser &parser) {
     const bool smoke = parser.isSet(QStringLiteral("smoke-test")) || ui_contract;
     manager::desktop::ManagerHost host(smoke);
     host.setRestored(parser.isSet(QStringLiteral("restored")));
-    const int opened = host.open(smoke, parser.value(QStringLiteral("screenshot")), ui_contract);
+    const auto activation = parser.isSet(QStringLiteral("overview"))
+                                ? manager::desktop::ManagerActivation::Overview
+                                : manager::desktop::ManagerActivation::KeepCurrent;
+    const int opened = host.open(smoke, parser.value(QStringLiteral("screenshot")), ui_contract, activation);
     return opened >= 0 ? opened : app.exec();
 }
 } // namespace
@@ -49,6 +54,9 @@ int main(int argc, char *argv[]) {
     parser.process(app);
     const int result = run_window(app, parser);
     if (result == manager::desktop::restart_manager_exit) {
+        if (!manager::adapters::development_scope().empty()) {
+            return 0;
+        }
         if (QProcess::startDetached(QCoreApplication::applicationFilePath(),
                                     {QStringLiteral("--settings")})) {
             return 0;

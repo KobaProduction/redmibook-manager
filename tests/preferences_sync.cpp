@@ -21,7 +21,7 @@ class SessionFake final : public manager::application::SessionPort {
 QJsonObject snapshot(const manager::presentation::Preferences &preferences) {
     for (auto *widget : QApplication::topLevelWidgets()) {
         if (widget->objectName() == QStringLiteral("trayDashboard")) {
-            const auto *mode = widget->findChild<QToolButton *>(QStringLiteral("mockMode0"));
+            const auto *mode = widget->findChild<QToolButton *>(QStringLiteral("performanceMode1"));
             return {{QStringLiteral("language"), preferences.language()},
                     {QStringLiteral("position"), preferences.osd_position()},
                     {QStringLiteral("autostart"), preferences.tray_autostart()},

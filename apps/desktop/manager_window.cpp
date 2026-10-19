@@ -10,9 +10,11 @@
 
 namespace manager::desktop {
 namespace {
-void activate_window(QQmlApplicationEngine &engine, const QPoint &anchor) {
+void activate_window(QQmlApplicationEngine &engine, const QPoint &anchor, ManagerActivation activation) {
     for (auto *object : engine.rootObjects()) {
         if (auto *window = qobject_cast<QQuickWindow *>(object)) {
+            if (activation == ManagerActivation::Overview)
+                window->setProperty("page", 0);
             presentation::present_window(*window, anchor);
         }
     }
@@ -27,7 +29,7 @@ void allow_owner_activation(const QString &name) {
         adapters::permit_foreground_activation(pid);
     }
 }
-bool notify_existing(const QString &name) {
+bool notify_existing(const QString &name, ManagerActivation activation) {
     QLocalSocket existing;
     existing.connectToServer(name);
     if (!existing.waitForConnected(100)) {
@@ -35,7 +37,8 @@ bool notify_existing(const QString &name) {
     }
     allow_owner_activation(name);
     const auto point = QCursor::pos();
-    existing.write(QStringLiteral("activate %1 %2\n").arg(point.x()).arg(point.y()).toUtf8());
+    const auto target = activation == ManagerActivation::Overview ? QStringLiteral(" overview") : QString{};
+    existing.write(QStringLiteral("activate %1 %2%3\n").arg(point.x()).arg(point.y()).arg(target).toUtf8());
     existing.waitForBytesWritten(500);
     return true;
 }
@@ -48,8 +51,10 @@ void process_activation(QLocalSocket &socket, QQmlApplicationEngine &engine) {
     bool y_ok = false;
     const int x = parts.value(1).toInt(&x_ok);
     const int y = parts.value(2).toInt(&y_ok);
-    if (parts.size() == 3 && parts.first() == QStringLiteral("activate") && x_ok && y_ok) {
-        activate_window(engine, {x, y});
+    const bool overview = parts.size() == 4 && parts.at(3) == QStringLiteral("overview");
+    if ((parts.size() == 3 || overview) && parts.first() == QStringLiteral("activate") && x_ok && y_ok) {
+        activate_window(engine, {x, y},
+                        overview ? ManagerActivation::Overview : ManagerActivation::KeepCurrent);
     }
     socket.disconnectFromServer();
 }
@@ -64,9 +69,9 @@ void accept_activation(QLocalServer &server, QQmlApplicationEngine &engine) {
     }
 }
 } // namespace
-bool ManagerInstance::acquire(QQmlApplicationEngine &engine) {
+bool ManagerInstance::acquire(QQmlApplicationEngine &engine, ManagerActivation activation) {
     const auto name = adapters::session_endpoint() + QStringLiteral(".manager");
-    if (notify_existing(name)) {
+    if (notify_existing(name, activation)) {
         return false;
     }
     lock_ = std::make_unique<QLockFile>(

@@ -1,6 +1,7 @@
 #include "adapters/storage/ui_preferences/store.hpp"
 #include <QDir>
 #include <QFile>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLockFile>
@@ -25,6 +26,27 @@ std::optional<QJsonObject> read_object(const QString &path) {
     return document.object();
 }
 
+std::vector<unsigned int> read_refresh_rates(const QJsonObject &ui) {
+    if (!ui.contains(QStringLiteral("refreshCycleRates")))
+        return {60, 165};
+    std::vector<unsigned int> rates;
+    for (const auto rate : ui.value(QStringLiteral("refreshCycleRates")).toArray()) {
+        const int hz = rate.toInt(-1);
+        if (hz < 2 || hz > 1000)
+            return {};
+        rates.push_back(static_cast<unsigned int>(hz));
+    }
+    return rates;
+}
+
+application::shortcuts::BindingAction read_binding(const QJsonObject &ui, const QString &key) {
+    if (!ui.contains(key))
+        return application::shortcuts::BindingAction::Default;
+    const int action = ui.value(key).toInt(-1);
+    return static_cast<application::shortcuts::BindingAction>(
+        application::shortcuts::valid_binding_action(action) ? action : 255);
+}
+
 application::UiPreferences decode(const QJsonObject &object) {
     const auto ui = object.value(QStringLiteral("ui")).toObject();
     return {.language = ui.value(QStringLiteral("language")).toString(QStringLiteral("system")).toStdString(),
@@ -37,19 +59,38 @@ application::UiPreferences decode(const QJsonObject &object) {
                 ui.value(QStringLiteral("osdScreen")).toString(QStringLiteral("auto")).toStdString(),
             .design = ui.value(QStringLiteral("design")).toString(QStringLiteral("fluent")).toStdString(),
             .auto_updates = ui.value(QStringLiteral("autoUpdates")).toBool(true),
-            .rounded_corners = ui.value(QStringLiteral("roundedCorners")).toBool(true)};
+            .rounded_corners = ui.value(QStringLiteral("roundedCorners")).toBool(true),
+            .refresh_cycle_rates = read_refresh_rates(ui),
+            .fn_s_action = read_binding(ui, QStringLiteral("fnSAction")),
+            .fn_k_action = read_binding(ui, QStringLiteral("fnKAction"))};
+}
+
+std::optional<QJsonValue> encode_preference(std::string_view key, std::string_view value) {
+    const auto text = QString::fromUtf8(value.data(), static_cast<qsizetype>(value.size()));
+    if (key == "refreshCycleRates") {
+        const auto document = QJsonDocument::fromJson(text.toUtf8());
+        return document.isArray() ? std::optional<QJsonValue>(document.array()) : std::nullopt;
+    }
+    if (key == "fnSAction" || key == "fnKAction") {
+        bool valid = false;
+        const int action = text.toInt(&valid);
+        return valid && application::shortcuts::valid_binding_action(action)
+                   ? std::optional<QJsonValue>(action)
+                   : std::nullopt;
+    }
+    const bool boolean = key == "trayAutostart" || key == "autoUpdates" || key == "roundedCorners";
+    if (boolean)
+        return value == "true" || value == "false" ? std::optional<QJsonValue>(value == "true")
+                                                   : std::nullopt;
+    return QJsonValue(text);
 }
 
 bool write_preference(QJsonObject &object, std::string_view key, std::string_view value) {
-    const bool boolean = key == "trayAutostart" || key == "autoUpdates" || key == "roundedCorners";
-    if (boolean && value != "true" && value != "false") {
+    const auto encoded = encode_preference(key, value);
+    if (!encoded)
         return false;
-    }
     auto ui = object.value(QStringLiteral("ui")).toObject();
-    const QJsonValue encoded =
-        boolean ? QJsonValue(value == "true")
-                : QJsonValue(QString::fromUtf8(value.data(), static_cast<qsizetype>(value.size())));
-    ui.insert(QString::fromUtf8(key.data(), static_cast<qsizetype>(key.size())), encoded);
+    ui.insert(QString::fromUtf8(key.data(), static_cast<qsizetype>(key.size())), *encoded);
     object.insert(QStringLiteral("ui"), ui);
     return application::valid_preferences(decode(object));
 }

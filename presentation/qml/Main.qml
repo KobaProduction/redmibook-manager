@@ -10,6 +10,7 @@ ApplicationWindow {
     required property ManagerModel manager
     required property UpdateModel updates
     required property AboutModel about
+    required property DeviceControlsModel controls
     property int page: 0
     width: 980
     height: 720
@@ -31,7 +32,7 @@ ApplicationWindow {
                 anchors.fill: parent
                 spacing: 6
                 Repeater {
-                    model: [qsTr("Overview"), qsTr("Battery"), qsTr("Mi key"), qsTr("Settings"), qsTr("Diagnostics"), qsTr("About")]
+                    model: [qsTr("Overview"), qsTr("Battery"), qsTr("Mi key"), qsTr("Device controls"), qsTr("Settings"), qsTr("About")]
                     Button {
                         required property string modelData
                         required property int index
@@ -51,17 +52,11 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.margins: 24
-            OverviewPage { manager: root.manager }
-            UnsupportedPage {
-                heading: qsTr("Battery protection")
-                description: qsTr("Charge limits will appear here after hardware support is verified. No firmware settings are changed by this build.")
-            }
-            UnsupportedPage {
-                heading: qsTr("Mi key and shortcuts")
-                description: qsTr("Custom bindings are not implemented yet.")
-            }
+            OverviewPage { manager: root.manager; controls: root.controls; about: root.about }
+            BatteryPage { manager: root.manager; controls: root.controls }
+            MiKeyPage { manager: root.manager }
+            HardwarePage { manager: root.manager; controls: root.controls }
             SettingsPage { manager: root.manager }
-            OverviewPage { manager: root.manager; diagnostics: true }
             AboutPage { manager: root.manager; updates: root.updates; about: root.about }
         }
     }

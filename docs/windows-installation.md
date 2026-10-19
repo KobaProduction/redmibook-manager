@@ -41,10 +41,13 @@ default; any removal of settings must be an explicit user choice and restricted 
 owned product subdirectories. Do not recursively delete the shared Koba Production root.
 
 The Windows scaffold installs binaries, licenses, shortcuts, uninstall registration,
-a diagnostic-only LocalService host and an HKLM Run entry for the user's session host.
+a LocalService machine host and an HKLM Run entry for the user's session host.
 The native Manager and tray remain ordinary-user processes. Preferences use Qt's
 AppLocalDataLocation, QSaveFile and QLockFile; installed binaries are never writable data.
-No machine policy store or ProgramData ACL provisioning is needed by the diagnostic host.
+The machine host owns the qualified charge/performance command allowlist; the GUI
+never acquires administrator rights. TM2309 firmware read/write acceptance succeeded
+under LocalService, so no LocalSystem account is required. No machine policy store
+or ProgramData ACL provisioning is currently needed.
 The portable bundle does not register a service or sign-in entry.
 
 The registered sign-in command starts the resident session with `--with-tray`.
