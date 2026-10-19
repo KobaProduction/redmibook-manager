@@ -37,6 +37,26 @@ int request_status(QApplication &app, const QCommandLineParser &parser) {
     return app.exec();
 }
 
+int run_session(QApplication &app, manager::presentation::Preferences &preferences, const QString &directory,
+                bool with_tray) {
+    const manager::adapters::NativeDiagnostic diagnostic;
+    const manager::application::ReadRuntimeStatus read(diagnostic);
+    manager::presentation::DiagnosticOsd osd(preferences);
+    manager::session::UpdateScheduler updates(preferences, directory);
+    manager::adapters::SessionServer server(read, osd);
+    if (!server.listen()) {
+        return 1;
+    }
+    QObject::connect(&server, &manager::adapters::SessionServer::openTray, &app,
+                     [] { manager::adapters::launch_component(QStringLiteral("redmibook-tray")); });
+    QObject::connect(&server, &manager::adapters::SessionServer::restartRequested, &app,
+                     [] { manager::adapters::launch_component(QStringLiteral("redmibook-session")); });
+    if (with_tray && preferences.tray_autostart()) {
+        manager::adapters::launch_component(QStringLiteral("redmibook-tray"));
+    }
+    return app.exec();
+}
+
 void configure(QCommandLineParser &parser) {
     parser.addHelpOption();
     parser.addOption({QStringLiteral("restored"), QStringLiteral("Restored by installer lifecycle")});
@@ -66,20 +86,5 @@ int main(int argc, char *argv[]) {
     if (!lock.tryLock(2000)) {
         return 0;
     }
-    const manager::adapters::NativeDiagnostic diagnostic;
-    const manager::application::ReadRuntimeStatus read(diagnostic);
-    manager::presentation::DiagnosticOsd osd(preferences);
-    manager::session::UpdateScheduler updates(preferences, store.directory());
-    manager::adapters::SessionServer server(read, osd);
-    if (!server.listen()) {
-        return 1;
-    }
-    QObject::connect(&server, &manager::adapters::SessionServer::openTray, &app,
-                     [] { manager::adapters::launch_component(QStringLiteral("redmibook-tray")); });
-    QObject::connect(&server, &manager::adapters::SessionServer::restartRequested, &app,
-                     [] { manager::adapters::launch_component(QStringLiteral("redmibook-session")); });
-    if (parser.isSet(QStringLiteral("with-tray")) && preferences.tray_autostart()) {
-        manager::adapters::launch_component(QStringLiteral("redmibook-tray"));
-    }
-    return app.exec();
+    return run_session(app, preferences, store.directory(), parser.isSet(QStringLiteral("with-tray")));
 }

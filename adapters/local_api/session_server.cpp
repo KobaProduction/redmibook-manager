@@ -51,7 +51,7 @@ void SessionServer::probe(QLocalSocket *socket, bool feedback) {
         socket->disconnectFromServer();
         return;
     }
-    pending_.push_back(socket);
+    pending_.emplace_back(socket);
     show_feedback_ = show_feedback_ || feedback;
     if (probe_active_) {
         return;
