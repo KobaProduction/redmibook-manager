@@ -1,0 +1,132 @@
+name: Desktop CI
+on:
+  push:
+    branches: [main, release, 'codex/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: Framework-independent core / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-2022, ubuntu-24.04]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Configure without Qt
+        run: cmake -S . -B build/core -DMANAGER_BUILD_DESKTOP=OFF -DBUILD_TESTING=ON
+      - name: Build
+        run: cmake --build build/core --config Release --parallel 4
+      - name: Test
+        run: ctest --test-dir build/core -C Release --output-on-failure --no-tests=error
+  desktop:
+    name: ${{ matrix.os }} / ${{ matrix.configuration }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, ubuntu-24.04]
+        configuration: [Debug, Release]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build clang-format-19 clang-tidy-19 libgl1-mesa-dev libxkbcommon-dev libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 libxcb-xinerama0 libegl1 dpkg-dev
+      - name: Windows LLVM 19
+        if: runner.os == 'Windows'
+        run: python -m pip install -r tools/requirements-quality.txt
+      - name: Windows installer tool
+        if: runner.os == 'Windows'
+        run: choco upgrade nsis --version=3.11 --allow-downgrade --yes --no-progress
+      - uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125
+        with:
+          version: '6.10.2'
+          arch: ${{ runner.os == 'Windows' && 'win64_mingw' || 'linux_gcc_64' }}
+          tools: ${{ runner.os == 'Windows' && 'tools_mingw1310,qt.tools.win64_mingw1310' || '' }}
+          aqtversion: '==3.3.0'
+      - name: Windows tool paths
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $qtTools = Join-Path (Split-Path (Split-Path $env:QT_ROOT_DIR)) 'Tools'
+          (Join-Path $qtTools 'mingw1310_64/bin') >> $env:GITHUB_PATH
+      - name: Configure
+        shell: bash
+        run: cmake -S . -B build/ci -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_TESTING=ON -DMANAGER_BUILD_ID="${{ github.sha }}" -DMANAGER_RELEASE_SEQUENCE=${{ github.run_number }}
+      - name: Build
+        run: cmake --build build/ci --parallel 4
+      - name: Quality
+        run: cmake --build build/ci --target quality --parallel 2
+      - name: Tests
+        run: ctest --test-dir build/ci --output-on-failure --no-tests=error
+      - name: Deploy
+        if: matrix.configuration == 'Release'
+        run: cmake --install build/ci --prefix "${{ github.workspace }}/build/stage"
+      - name: Package
+        if: matrix.configuration == 'Release'
+        run: cpack --config build/ci/CPackConfig.cmake
+      - name: Verify deployed Windows application
+        if: matrix.configuration == 'Release' && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          ./tools/verify-windows-package.ps1 -PackageDirectory (Join-Path $pwd 'dist')
+      - name: Verify deployed Linux application
+        if: matrix.configuration == 'Release' && runner.os == 'Linux'
+        shell: bash
+        run: |
+          app="$PWD/build/stage/bin/redmibook-manager"
+          cd /tmp
+          env -u QT_PLUGIN_PATH -u QML_IMPORT_PATH -u QML2_IMPORT_PATH -u LD_LIBRARY_PATH PATH=/usr/bin:/bin QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software timeout 20 "$app" --smoke-test
+      - name: Upload packages
+        if: matrix.configuration == 'Release'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: packages-${{ runner.os }}
+          path: |
+            dist/*.zip
+            dist/*.exe
+            dist/*.tar.gz
+            dist/*.deb
+          if-no-files-found: error
+
+  release:
+    needs: [core, desktop]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/release'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: packages-*
+          merge-multiple: true
+          path: packages
+      - name: Publish development packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(cat VERSION.txt)"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          tag="v${version}-alpha.${BUILD_NUMBER}"
+          (cd packages && sha256sum ./* > ../SHA256SUMS.txt)
+          mv SHA256SUMS.txt packages/
+          printf 'Unsigned alpha build. Application base version: %s.\n\nSource commit: %s\n' "$version" "$GITHUB_SHA" > release-notes.txt
+          gh release create "$tag" packages/* --target "$GITHUB_SHA" --prerelease --title "${version} alpha ${BUILD_NUMBER}" --notes-file release-notes.txt

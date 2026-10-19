@@ -1,0 +1,48 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 30, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base", "hidden": true, "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+        "CMAKE_PREFIX_PATH": "$env{QT_ROOT}",
+        "BUILD_TESTING": true
+      }
+    },
+    {
+      "name": "release", "inherits": "base", "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "debug", "inherits": "base", "binaryDir": "${sourceDir}/build/debug",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "core", "inherits": "base", "binaryDir": "${sourceDir}/build/core",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "MANAGER_BUILD_DESKTOP": false }
+    }
+  ],
+  "buildPresets": [
+    { "name": "release", "configurePreset": "release", "jobs": 4 },
+    { "name": "debug", "configurePreset": "debug", "jobs": 4 },
+    { "name": "core", "configurePreset": "core", "jobs": 4 },
+    { "name": "quality", "configurePreset": "release", "targets": ["quality"], "jobs": 2 }
+  ],
+  "testPresets": [
+    { "name": "release", "configurePreset": "release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
+    { "name": "debug", "configurePreset": "debug", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
+    { "name": "core", "configurePreset": "core", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } }
+  ],
+  "workflowPresets": [
+    {
+      "name": "verify",
+      "steps": [
+        { "type": "configure", "name": "release" },
+        { "type": "build", "name": "release" },
+        { "type": "build", "name": "quality" },
+        { "type": "test", "name": "release" }
+      ]
+    }
+  ]
+}

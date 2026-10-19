@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Redmibook Manager
+Comment=Native laptop manager
+Exec=redmibook-manager
+Icon=redmibook-manager
+Categories=System;Settings;
+Terminal=false

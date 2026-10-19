@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*)
+        exec pwsh -NoProfile -File tools/dev.ps1 -Action verify
+        ;;
+    *) exec cmake --workflow --preset verify ;;
+esac

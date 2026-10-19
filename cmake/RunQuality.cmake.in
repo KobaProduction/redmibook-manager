@@ -1,0 +1,15 @@
+set(sources "@MANAGER_CPP@")
+set(tidy_sources "@MANAGER_TIDY_SOURCES@")
+if(MODE STREQUAL "format-check")
+    execute_process(COMMAND "@CLANG_FORMAT@" --dry-run --Werror ${sources}
+        COMMAND_ERROR_IS_FATAL ANY)
+elseif(MODE STREQUAL "format")
+    execute_process(COMMAND "@CLANG_FORMAT@" -i ${sources} COMMAND_ERROR_IS_FATAL ANY)
+elseif(MODE STREQUAL "lint")
+    foreach(source IN LISTS tidy_sources)
+        execute_process(COMMAND "@CLANG_TIDY@" -p "@CMAKE_BINARY_DIR@" "${source}"
+            WORKING_DIRECTORY "@PROJECT_SOURCE_DIR@" COMMAND_ERROR_IS_FATAL ANY)
+    endforeach()
+else()
+    message(FATAL_ERROR "Unknown quality operation: ${MODE}")
+endif()

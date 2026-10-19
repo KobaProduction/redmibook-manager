@@ -1,0 +1,8 @@
+Checks: '-*,clang-analyzer-*,bugprone-*,performance-*,modernize-use-nullptr,modernize-use-override,readability-function-size,readability-function-cognitive-complexity'
+WarningsAsErrors: '*'
+HeaderFilterRegex: '(domain|application|adapters|presentation|apps)/.*'
+CheckOptions:
+  readability-function-size.StatementThreshold: '20'
+  readability-function-size.IgnoreMacros: 'false'
+  readability-function-cognitive-complexity.Threshold: '15'
+  readability-function-cognitive-complexity.IgnoreMacros: 'false'

@@ -1,0 +1,1 @@
+include_rules = ['-Qt', '-adapters', '-presentation', '-apps']

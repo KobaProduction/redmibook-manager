@@ -1,0 +1,12 @@
+/build/
+/dist/
+/.tools/
+/.venv/
+/.serena/*
+!/.serena/project.yml
+/CMakeUserPresets.json
+/compile_commands.json
+__pycache__/
+*.user
+*.log
+.env
