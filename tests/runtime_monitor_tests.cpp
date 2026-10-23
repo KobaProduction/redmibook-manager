@@ -88,6 +88,15 @@ int main(int argc, char *argv[]) {
     if (!identity_contract()) {
         return 1;
     }
+    {
+        SessionFake source;
+        manager::presentation::RuntimeMonitor monitor(source);
+        monitor.set_foreground(false);
+        source.value.connected = false;
+        monitor.set_foreground(true);
+        if (health(monitor.reply()) != ConnectionHealth::SessionUnavailable)
+            return 1;
+    }
     HeartbeatContract contract;
     QObject::connect(&contract.monitor, &manager::presentation::RuntimeMonitor::changed, &app,
                      [&contract] { contract.changed(); });

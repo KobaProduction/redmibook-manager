@@ -23,11 +23,13 @@ struct Display {
     // Positively identified internal panel with no cloned targets sharing its source.
     // False includes unknown topology; callers must not fall back to the primary display.
     bool internal_panel{false};
+    bool operator==(const Display &) const = default;
 };
 struct Snapshot {
     Status status{Status::Unavailable};
     std::vector<Display> displays;
     std::string detail;
+    bool operator==(const Snapshot &) const = default;
 };
 struct Change {
     Status status{Status::Unavailable};

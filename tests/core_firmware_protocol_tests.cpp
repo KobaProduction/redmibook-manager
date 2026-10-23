@@ -9,9 +9,18 @@ bool request_contract() {
            decoded->build == request.build && wire::mutation(request.command) &&
            !wire::mutation(wire::Command::ReadCharge) && !wire::mutation(wire::Command::ReadPerformance);
 }
+bool microphone_request_contract() {
+    const wire::Request request{wire::Command::ReadMicrophone, "1.1.5", "fixture-A"};
+    const auto decoded = wire::decode_request(wire::encode(request));
+    const wire::Request write{wire::Command::UnmuteMicrophone, "1.1.5", "fixture-A"};
+    const auto written = wire::decode_request(wire::encode(write));
+    return written && written->command == write.command && decoded && decoded->command == request.command &&
+           !wire::mutation(decoded->command) && wire::mutation(wire::Command::MuteMicrophone) &&
+           wire::mutation(wire::Command::UnmuteMicrophone);
+}
 bool reject_unsafe_requests() {
     using namespace std::string_view_literals;
-    return !wire::decode_request("RMB/2 FW 9 1.1.1 fixture-A") &&
+    return !wire::decode_request("RMB/2 FW 12 1.1.1 fixture-A") &&
            !wire::decode_request("RMB/2 FW -1 1.1.1 fixture-A") &&
            !wire::decode_request("RMB/2 FW 2 1.1.1 fixture-A extra") &&
            !wire::decode_request("RMB/2 FW 2 1.1.1 fixture-A\0extra"sv) &&
@@ -31,5 +40,7 @@ bool reply_contract() {
 }
 } // namespace
 int main() {
-    return request_contract() && reject_unsafe_requests() && reply_contract() ? 0 : 1;
+    return request_contract() && microphone_request_contract() && reject_unsafe_requests() && reply_contract()
+               ? 0
+               : 1;
 }

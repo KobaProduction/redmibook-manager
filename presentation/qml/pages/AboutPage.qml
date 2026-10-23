@@ -7,6 +7,7 @@ Pane {
     id: root
     required property ManagerModel manager
     required property UpdateModel updates
+    property bool preferencesAvailable: true
     required property AboutModel about
     padding: 0
     ScrollView {
@@ -19,24 +20,14 @@ Pane {
         ColumnLayout {
             width: scroll.availableWidth
             spacing: 16
-            Label { text: qsTr("About"); font.pixelSize: 26; font.bold: true }
             RowLayout {
+                Label { text: qsTr("About"); font.pixelSize: 26; font.bold: true }
                 Label { text: "RedmiBook Manager"; font.pixelSize: 22; font.bold: true }
                 Label { text: root.updates.version; color: palette.placeholderText }
-                Label {
-                    text: "· " + root.updates.build
-                    color: palette.placeholderText
-                    Layout.fillWidth: true
-                    elide: Text.ElideRight
-                    HoverHandler { id: buildHover }
-                    ToolTip.visible: buildHover.hovered
-                    ToolTip.text: root.updates.build
-                }
             }
-            Label { text: qsTr("A laptop manager for Windows and Linux."); Layout.fillWidth: true; wrapMode: Text.WordWrap }
             RowLayout {
                 Layout.fillWidth: true
-                Label { text: qsTr("Developer: %1").arg("Koba Production"); font.pixelSize: 16; Layout.fillWidth: true }
+                Label { text: qsTr("Developer: %1").arg("Koba Production"); Layout.fillWidth: true }
                 Button { text: qsTr("GitHub repository"); onClicked: Qt.openUrlExternally("https://github.com/KobaProduction/redmibook-manager") }
             }
             Surface {
@@ -98,13 +89,17 @@ Pane {
                 ColumnLayout {
                     width: parent.width
                     spacing: 12
-                    Label { text: qsTr("Updates"); font.pixelSize: 18; font.bold: true }
-                    Label { objectName: "updateStatus"; text: root.updates.status; Layout.fillWidth: true; wrapMode: Text.WordWrap }
                     RowLayout {
+                        Layout.fillWidth: true
+                        Label { objectName: "updateStatus"; text: qsTr("Updates: %1").arg(root.updates.status); font.pixelSize: 18; font.bold: true; Layout.fillWidth: true; wrapMode: Text.WordWrap }
                         Button { objectName: "checkUpdatesButton"; text: qsTr("Check for updates"); enabled: !root.updates.busy; onClicked: root.updates.check() }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        CheckBox { enabled: root.preferencesAvailable; text: qsTr("Check daily"); font.pixelSize: 13; checked: root.manager.autoUpdates; onClicked: root.manager.setAutoUpdates(checked) }
+                        Label { text: qsTr("Last checked: %1").arg(Qt.formatDateTime(root.updates.checkedAt, Qt.locale(), Locale.ShortFormat)); visible: !isNaN(root.updates.checkedAt.getTime()); font.pixelSize: 13; color: palette.placeholderText; Layout.fillWidth: true; wrapMode: Text.WordWrap }
                         Button { text: root.updates.directDownload ? qsTr("Download for %1").arg(root.updates.target) : qsTr("View release"); visible: root.updates.available; onClicked: Qt.openUrlExternally(root.updates.downloadUrl) }
                     }
-                    CheckBox { text: qsTr("Check for updates daily"); checked: root.manager.autoUpdates; onClicked: root.manager.setAutoUpdates(checked) }
                 }
             }
         }

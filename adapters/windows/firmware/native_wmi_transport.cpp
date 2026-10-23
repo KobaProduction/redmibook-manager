@@ -1,4 +1,5 @@
 #include "adapters/windows/firmware/mifs_transport.hpp"
+#include "adapters/windows/firmware/native_result.hpp"
 
 #include <windows.h>
 
@@ -189,13 +190,14 @@ Com<IWbemClassObject> await_output(IWbemCallResult &call) {
 }
 
 Com<IWbemClassObject> invoke(IWbemServices &services, IWbemClassObject &object,
-                             const Com<IWbemClassObject> &input) {
+                             const Com<IWbemClassObject> &input, bool &submitted) {
     Variant path;
     require(object.Get(L"__PATH", 0, &path.value, nullptr, nullptr), "Read MIFS instance path");
     if (path.value.vt != VT_BSTR)
         throw Failure{static_cast<HRESULT>(WBEM_E_TYPE_MISMATCH), "Invalid MIFS instance path"};
     IWbemCallResult *raw_call = nullptr;
     const Text method(L"MiInterface");
+    submitted = true;
     const auto invoked = services.ExecMethod(path.value.bstrVal, method.get(), WBEM_FLAG_RETURN_IMMEDIATELY,
                                              nullptr, input.get(), nullptr, &raw_call);
     const Com<IWbemCallResult> call(raw_call);
@@ -231,7 +233,7 @@ void copy_tail(IWbemClassObject &output, MifsReply &reply) {
     reply.bytes[31] = static_cast<std::uint8_t>(converted.value.uiVal >> 8);
 }
 
-MifsReply perform(MifsCommand command) {
+MifsReply perform(MifsCommand command, bool &submitted) {
     const Apartment apartment;
     const auto services = connect();
     const auto active = instance(*services);
@@ -239,34 +241,27 @@ MifsReply perform(MifsCommand command) {
         return {TransportStatus::Unavailable, {}, "No active MIFS instance"};
     const auto input = parameters(*services);
     set_packet(*input, command);
-    const auto output = invoke(*services, *active, input);
+    const auto output = invoke(*services, *active, input, submitted);
     MifsReply reply{TransportStatus::Success, {}, {}};
     copy_output(*output, reply);
     copy_tail(*output, reply);
     return reply;
 }
 
-TransportStatus failure_status(HRESULT result) {
-    if (result == static_cast<HRESULT>(WBEM_S_TIMEDOUT))
-        return TransportStatus::OutcomeUnknown;
-    if (result == E_ACCESSDENIED || result == static_cast<HRESULT>(WBEM_E_ACCESS_DENIED))
-        return TransportStatus::PermissionDenied;
-    if (result == static_cast<HRESULT>(WBEM_E_INVALID_CLASS) ||
-        result == static_cast<HRESULT>(WBEM_E_NOT_FOUND) ||
-        result == static_cast<HRESULT>(WBEM_E_INVALID_NAMESPACE))
-        return TransportStatus::Unavailable;
-    return TransportStatus::Failed;
-}
-
 } // namespace
 
 MifsReply NativeWmiTransport::exchange(MifsCommand command) {
+    bool submitted = false;
+    const bool mutation = command != MifsCommand::ReadCharge && command != MifsCommand::ReadPerformance &&
+                          command != MifsCommand::ReadMicrophone;
     try {
-        return perform(command);
+        return perform(command, submitted);
     } catch (const Failure &failure) {
-        return {failure_status(failure.result),
+        return {native_failure_status(failure.result, submitted && mutation),
                 {},
                 std::string(failure.stage) + " (HRESULT " + std::to_string(failure.result) + ")"};
+    } catch (const std::exception &error) {
+        return {native_failure_status(E_FAIL, submitted && mutation), {}, error.what()};
     }
 }
 

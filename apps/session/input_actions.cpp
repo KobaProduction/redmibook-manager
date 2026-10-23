@@ -1,18 +1,23 @@
 #include "apps/session/input_actions.hpp"
+#include "adapters/platform/firmware_controls.hpp"
 #include <QStringList>
 #include <QtConcurrent/QtConcurrentRun>
 
 namespace manager::session {
-InputActions::InputActions(presentation::Preferences &preferences)
-    : microphone_(std::make_shared<adapters::NativeMicrophone>()), osd_(preferences),
+InputActions::InputActions(presentation::OsdPresenter &osd, WorkQueues &work)
+    : work_(work), microphone_(adapters::make_core_microphone_state()), osd_(osd),
       input_(adapters::make_native_input()) {
     deadline_.setSingleShot(true);
     QObject::connect(&deadline_, &QTimer::timeout, &osd_, [this] {
         expired_ = true;
         osd_.present({application::microphone::Status::Failed, {}, "microphone-timeout"});
     });
-    QObject::connect(&pending_, &QFutureWatcher<application::microphone::Observation>::finished, &osd_,
+    QObject::connect(&pending_, &QFutureWatcher<application::microphone::FirmwareState>::finished, &osd_,
                      [this] { complete(); });
+}
+InputActions::~InputActions() {
+    QObject::disconnect(&deadline_, nullptr, &osd_, nullptr);
+    QObject::disconnect(&pending_, nullptr, &osd_, nullptr);
 }
 void InputActions::complete() {
     busy_ = false;
@@ -25,14 +30,17 @@ void InputActions::complete() {
         return;
     }
     try {
-        osd_.present(pending_.result());
+        const auto result = pending_.result();
+        if (result.status != application::microphone::FirmwareStateStatus::Ready)
+            osd_.present({application::microphone::Status::Failed, {}, result.detail});
+        // Successful SET emits 0x21; VendorActions alone owns endpoint sync and OSD.
     } catch (...) {
         osd_.present({application::microphone::Status::Failed, {}, "microphone-operation-failed"});
     }
 }
 
 void InputActions::toggle_async() {
-    if (busy_) {
+    if (busy_ || !microphone_) {
         return;
     }
     expired_ = false;
@@ -40,7 +48,12 @@ void InputActions::toggle_async() {
     elapsed_.start();
     deadline_.start(10000);
     const auto control = microphone_;
-    pending_.setFuture(QtConcurrent::run([control] { return application::microphone::toggle(*control); }));
+    pending_.setFuture(QtConcurrent::run(&work_.commands, [control] {
+        auto state = control->read();
+        if (state.status != application::microphone::FirmwareStateStatus::Ready || !state.desired_muted)
+            return state;
+        return control->request(!*state.desired_muted);
+    }));
 }
 
 application::shortcuts::BindingResult InputActions::bind_microphone(const QString &chord) {

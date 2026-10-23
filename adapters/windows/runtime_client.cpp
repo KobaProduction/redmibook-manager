@@ -25,6 +25,14 @@ void register_application_restart() {
     RegisterApplicationRestart(L"--restored", RESTART_NO_CRASH | RESTART_NO_HANG | RESTART_NO_REBOOT);
 }
 
+namespace {
+bool wait_for_restart(HANDLE process_handle) {
+    const windows::Handle process(process_handle);
+    DWORD code = 1;
+    return WaitForSingleObject(process.get(), 20000) == WAIT_OBJECT_0 &&
+           GetExitCodeProcess(process.get(), &code) && code == 0;
+}
+} // namespace
 bool restart_machine_runtime() {
     if (!development_scope().empty()) {
         return false;
@@ -45,10 +53,7 @@ bool restart_machine_runtime() {
     if (!ShellExecuteExW(&info)) {
         return false;
     }
-    const windows::Handle process(info.hProcess);
-    DWORD code = 1;
-    return WaitForSingleObject(process.get(), 20000) == WAIT_OBJECT_0 &&
-           GetExitCodeProcess(process.get(), &code) && code == 0;
+    return wait_for_restart(info.hProcess);
 }
 
 void permit_foreground_activation(std::int64_t process_id) {

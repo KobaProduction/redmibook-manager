@@ -17,7 +17,7 @@ inline const Display *unique_internal_panel(const Snapshot &snapshot) {
 }
 // A laptop key targets its built-in panel, never whichever monitor is primary.
 inline Change cycle_internal_refresh(const RefreshPort &control,
-                                     const std::vector<unsigned int> &configured = {60, 165}) {
+                                     const std::vector<unsigned int> &configured = {}) {
     const auto snapshot = control.read();
     if (snapshot.status != Status::Ready)
         return {snapshot.status, 0, snapshot.detail};

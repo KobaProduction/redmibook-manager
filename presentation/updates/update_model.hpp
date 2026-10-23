@@ -1,5 +1,6 @@
 #pragma once
 #include "application/updates/update_port.hpp"
+#include <QDateTime>
 #include <QObject>
 #include <QtQml/qqmlregistration.h>
 
@@ -9,6 +10,7 @@ class UpdateModel final : public QObject {
     QML_ELEMENT
     QML_UNCREATABLE("Created by application composition")
     Q_PROPERTY(QString status READ status NOTIFY changed)
+    Q_PROPERTY(QDateTime checkedAt READ checkedAt NOTIFY changed)
     Q_PROPERTY(bool busy READ busy NOTIFY changed)
     Q_PROPERTY(bool available READ available NOTIFY changed)
     Q_PROPERTY(QString downloadUrl READ downloadUrl NOTIFY changed)
@@ -19,6 +21,9 @@ class UpdateModel final : public QObject {
   public:
     UpdateModel(application::UpdatePort &source, QString target);
     QString status() const;
+    QDateTime checkedAt() const {
+        return checked_at_;
+    }
     bool busy() const {
         return busy_;
     }
@@ -48,5 +53,6 @@ class UpdateModel final : public QObject {
     application::UpdateResult result_;
     bool checked_{false};
     bool busy_{false};
+    QDateTime checked_at_;
 };
 } // namespace manager::presentation

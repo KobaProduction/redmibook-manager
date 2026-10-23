@@ -8,6 +8,12 @@ RuntimeMonitor::RuntimeMonitor(application::SessionPort &port) : port_(port) {
     heartbeat_.start();
     QTimer::singleShot(0, this, &RuntimeMonitor::refresh);
 }
+
+void RuntimeMonitor::set_foreground(bool foreground) {
+    heartbeat_.setInterval(foreground ? 2000 : 10000);
+    if (foreground)
+        refresh();
+}
 void RuntimeMonitor::refresh() {
     if (pending_) {
         return;

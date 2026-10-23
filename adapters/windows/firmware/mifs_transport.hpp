@@ -23,7 +23,10 @@ enum class MifsCommand : std::uint8_t {
     Balanced,
     Quiet,
     Turbo,
-    FullSpeed
+    FullSpeed,
+    ReadMicrophone,
+    MuteMicrophone,
+    UnmuteMicrophone
 };
 enum class TransportStatus : std::uint8_t {
     Success,
@@ -49,6 +52,7 @@ class MifsTransport {
 
 [[nodiscard]] std::array<std::uint8_t, 32> encode(MifsCommand command);
 [[nodiscard]] MifsReply validate_reply(MifsCommand command, MifsReply reply);
+[[nodiscard]] MifsReply observe_reply(MifsCommand command, MifsReply reply, bool &unknown_write);
 [[nodiscard]] std::uint16_t word(const MifsReply &reply, std::size_t offset);
 [[nodiscard]] std::uint32_t dword(const MifsReply &reply, std::size_t offset);
 

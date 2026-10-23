@@ -58,6 +58,9 @@ Copyright (c) 2026 ArthurKoba
     </context>
     <context>
         <name>AboutPage</name>
+    <message><source>Updates: %1</source><translation>Обновления: %1</translation></message>
+    <message><source>Check daily</source><translation>Проверять ежедневно</translation></message>
+    <message><source>Last checked: %1</source><translation>Последняя проверка: %1</translation></message>
         <message>
             <source>About</source>
             <translation>О приложении</translation>
@@ -149,6 +152,8 @@ Copyright (c) 2026 ArthurKoba
     </context>
     <context>
         <name>BatteryPage</name>
+    <message><source>Battery state: %1</source><translation>Состояние батареи: %1</translation></message>
+    <message><source>Energy saver</source><translation>Энергосбережение</translation></message>
         <message>
             <source>Battery</source>
             <translation>Батарея</translation>
@@ -165,7 +170,91 @@ Copyright (c) 2026 ArthurKoba
             <source>Battery: %1%</source>
             <translation>Заряд: %1%</translation>
         </message>
-    </context>
+        <message>
+        <source>Battery telemetry</source>
+        <translation>Состояние батареи</translation>
+    </message>
+    <message>
+        <source>Unavailable</source>
+        <translation>Недоступно</translation>
+    </message>
+    <message>
+        <source>Remaining capacity</source>
+        <translation>Оставшаяся ёмкость</translation>
+    </message>
+    <message>
+        <source>Full charge capacity</source>
+        <translation>Ёмкость полного заряда</translation>
+    </message>
+    <message>
+        <source>Design capacity</source>
+        <translation>Проектная ёмкость</translation>
+    </message>
+    <message>
+        <source>Estimated wear</source>
+        <translation>Оценка износа</translation>
+    </message>
+    <message>
+        <source>Voltage</source>
+        <translation>Напряжение</translation>
+    </message>
+    <message>
+        <source>Charge</source>
+        <translation>Заряд</translation>
+    </message>
+    <message>
+        <source>Discharge</source>
+        <translation>Разряд</translation>
+    </message>
+    <message>
+        <source>Charge / discharge</source>
+        <translation>Заряд / разряд</translation>
+    </message>
+    <message>
+        <source>Wh</source>
+        <translation>Вт·ч</translation>
+    </message>
+    <message>
+        <source>V</source>
+        <translation>В</translation>
+    </message>
+    <message>
+        <source>W</source>
+        <translation>Вт</translation>
+    </message>
+    <message>
+        <source>Auto-refresh</source>
+        <translation>Автообновление</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation>Выключено</translation>
+    </message>
+    <message>
+        <source>1 second</source>
+        <translation>1 секунда</translation>
+    </message>
+    <message>
+        <source>5 seconds</source>
+        <translation>5 секунд</translation>
+    </message>
+    <message>
+        <source>10 seconds</source>
+        <translation>10 секунд</translation>
+    </message>
+    <message>
+        <source>Auto-refresh interval</source>
+        <translation>Интервал автообновления</translation>
+    </message>
+    <message>
+        <source>100 milliseconds</source>
+        <translation>100 миллисекунд</translation>
+    </message>
+    <message>
+        <source>5 milliseconds</source>
+        <translation>5 миллисекунд</translation>
+    </message>
+</context>
     <context>
         <name>manager::tray::DeviceControls</name>
         <message>
@@ -184,7 +273,10 @@ Copyright (c) 2026 ArthurKoba
             <source>Background device state unavailable.</source>
             <translation>Состояние устройств недоступно.</translation>
         </message>
-    </context>
+        <message><source>Preset stopped. Some earlier actions may already be applied.</source><translation>Пресет остановлен. Некоторые предыдущие действия могли уже примениться.</translation></message>
+<message><source>A preset action is unavailable. No changes were made.</source><translation>Действие пресета недоступно. Изменения не применялись.</translation></message>
+<message><source>Preset stopped. Confirmed actions: %1.</source><translation>Пресет остановлен. Подтверждено действий: %1.</translation></message>
+</context>
     <context>
         <name>manager::presentation::DeviceControlsModel</name>
         <message>
@@ -212,8 +304,8 @@ Copyright (c) 2026 ArthurKoba
             <translation>Тихий</translation>
         </message>
         <message>
-            <source>Turbo</source>
-            <translation>Турбо</translation>
+            <source>Performance</source>
+            <translation>Производительный</translation>
         </message>
         <message>
             <source>Performance profile is unknown</source>
@@ -295,22 +387,51 @@ Copyright (c) 2026 ArthurKoba
             <source>The firmware setting could not be confirmed</source>
             <translation>Настройка прошивки не подтверждена</translation>
         </message>
-    </context>
-    <context>
-        <name>manager::presentation::DiagnosticOsd</name>
         <message>
-            <source>Diagnostic signal received</source>
-            <translation>Диагностический сигнал получен</translation>
+            <source>Could not refresh device state.</source>
+            <translation>Не удалось обновить состояние устройства.</translation>
         </message>
         <message>
-            <source>Daemon responded. Test only — no hardware changes.</source>
-            <translation>Демон ответил. Это проверка — оборудование не изменено.</translation>
+            <source>Device state refresh timed out. Native calls may still finish.</source>
+            <translation>Время ожидания обновления истекло. Системные вызовы ещё могут завершиться.</translation>
         </message>
         <message>
-            <source>Daemon unavailable. No hardware changes.</source>
-            <translation>Демон недоступен. Оборудование не изменено.</translation>
+            <source>Session runtime unavailable</source>
+            <translation>Фоновый компонент сеанса недоступен</translation>
         </message>
-    </context>
+        <message>
+            <source>Could not save preferences.</source>
+            <translation>Не удалось сохранить настройки.</translation>
+        </message>
+        <message>
+            <source>Select at least one supported refresh rate.</source>
+            <translation>Оставьте хотя бы одну поддерживаемую частоту обновления.</translation>
+        </message>
+        <message>
+        <source>Battery state unknown</source>
+        <translation>Состояние батареи неизвестно</translation>
+    </message>
+    <message>
+        <source>Charging</source>
+        <translation>Заряжается</translation>
+    </message>
+    <message>
+        <source>Discharging</source>
+        <translation>Разряжается</translation>
+    </message>
+    <message>
+        <source>Plugged in, not charging</source>
+        <translation>Питание подключено, не заряжается</translation>
+    </message>
+    <message>
+        <source>Charge</source>
+        <translation>Заряд</translation>
+    </message>
+    <message>
+        <source>Discharge</source>
+        <translation>Разряд</translation>
+    </message>
+</context>
     <context>
         <name>HardwarePage</name>
         <message>
@@ -348,6 +469,38 @@ Copyright (c) 2026 ArthurKoba
         <message>
             <source>%1 Hz</source>
             <translation>%1 Гц</translation>
+        </message>
+        <message>
+            <source>Brightness</source>
+            <translation>Яркость</translation>
+        </message>
+        <message>
+            <source>Built-in display brightness</source>
+            <translation>Яркость встроенного экрана</translation>
+        </message>
+        <message>
+            <source>Energy saver</source>
+            <translation>Энергосбережение</translation>
+        </message>
+        <message>
+            <source>Unavailable on this platform</source>
+            <translation>Недоступно на этой платформе</translation>
+        </message>
+        <message>
+            <source>Energy saver is on</source>
+            <translation>Энергосбережение включено</translation>
+        </message>
+        <message>
+            <source>Energy saver is off</source>
+            <translation>Энергосбережение выключено</translation>
+        </message>
+        <message>
+            <source>Open system power settings</source>
+            <translation>Открыть настройки питания системы</translation>
+        </message>
+        <message>
+            <source>Use system settings to change this mode.</source>
+            <translation>Этот режим переключается в системных настройках.</translation>
         </message>
     </context>
     <context>
@@ -396,10 +549,6 @@ Copyright (c) 2026 ArthurKoba
             <translation>Батарея</translation>
         </message>
         <message>
-            <source>Mi key</source>
-            <translation>Клавиша Mi</translation>
-        </message>
-        <message>
             <source>Settings</source>
             <translation>Настройки</translation>
         </message>
@@ -407,9 +556,24 @@ Copyright (c) 2026 ArthurKoba
             <source>About</source>
             <translation>О приложении</translation>
         </message>
-    </context>
+        <message>
+            <source>Error</source>
+            <translation>Ошибка</translation>
+        </message>
+        <message>
+            <source>Could not save preferences.</source>
+            <translation>Не удалось сохранить настройки.</translation>
+        </message>
+    <message><source>Tray</source><translation>Трей</translation></message><message><source>Hotkeys</source><translation>Хоткеи</translation></message>
+        <message>
+            <source>Device</source>
+            <translation>Устройство</translation>
+        </message>
+        <message><source>Retry connection</source><translation>Повторить подключение</translation></message>
+</context>
     <context>
         <name>manager::presentation::ManagerModel</name>
+        <message><source>Could not reset preferences.</source><translation>Не удалось сбросить настройки.</translation></message>
         <message>
             <source>Could not save preferences.</source>
             <translation>Не удалось сохранить настройки.</translation>
@@ -430,53 +594,36 @@ Copyright (c) 2026 ArthurKoba
             <source>Session PID: %1 · Daemon PID: %2 · Version: %3 · Build: %4</source>
             <translation>PID сеанса: %1 · PID демона: %2 · Версия: %3 · Сборка: %4</translation>
         </message>
-    </context>
-    <context>
-        <name>MiKeyPage</name>
         <message>
-            <source>Mi key and shortcuts</source>
-            <translation>Клавиша Mi и сочетания клавиш</translation>
+            <source>Session runtime unavailable</source>
+            <translation>Фоновый компонент сеанса недоступен</translation>
         </message>
         <message>
-            <source>Open Manager · Overview</source>
-            <translation>Открыть менеджер · Обзор</translation>
-        </message>
-        <message>
-            <source>Function shortcuts</source>
-            <translation>Сочетания клавиш</translation>
-        </message>
-        <message>
-            <source>Switch display refresh rate</source>
-            <translation>Переключить частоту экрана</translation>
-        </message>
-        <message>
-            <source>Open Manager</source>
-            <translation>Открыть Manager</translation>
-        </message>
-        <message>
-            <source>Do nothing</source>
-            <translation>Ничего не делать</translation>
-        </message>
-        <message>
-            <source>Switch performance mode</source>
-            <translation>Переключить режим производительности</translation>
-        </message>
-    </context>
-    <context>
-        <name>manager::presentation::MicrophoneOsd</name>
-        <message>
-            <source>Microphone muted</source>
-            <translation>Микрофон отключён</translation>
-        </message>
-        <message>
-            <source>Microphone active</source>
-            <translation>Микрофон включён</translation>
-        </message>
-        <message>
-            <source>Microphone change could not be confirmed</source>
-            <translation>Изменение микрофона не подтверждено</translation>
-        </message>
-    </context>
+        <source>Performance mode</source>
+        <translation>Режим производительности</translation>
+    </message>
+    <message>
+        <source>Refresh rate</source>
+        <translation>Частота обновления</translation>
+    </message>
+    <message>
+        <source>Charge limit</source>
+        <translation>Ограничение заряда</translation>
+    </message>
+    <message>
+        <source>Battery power</source>
+        <translation>Заряд / разряд батареи</translation>
+    </message>
+    <message>
+        <source>Microphone</source>
+        <translation>Микрофон</translation>
+    </message>
+    <message>
+        <source>Connection status</source>
+        <translation>Состояние связи</translation>
+    </message>
+    <message><source>Screen refresh rate</source><translation>Частота обновления экрана</translation></message>
+</context>
     <context>
         <name>MonitorPicker</name>
         <message>
@@ -515,6 +662,10 @@ Copyright (c) 2026 ArthurKoba
             <source>Bottom right</source>
             <translation>Снизу справа</translation>
         </message>
+        <message>
+            <source>Device</source>
+            <translation>Устройство</translation>
+        </message>
     </context>
     <context>
         <name>OverviewPage</name>
@@ -539,8 +690,8 @@ Copyright (c) 2026 ArthurKoba
             <translation>Тихий</translation>
         </message>
         <message>
-            <source>Turbo</source>
-            <translation>Турбо</translation>
+            <source>Performance</source>
+            <translation>Производительный</translation>
         </message>
         <message>
             <source>Battery</source>
@@ -582,6 +733,30 @@ Copyright (c) 2026 ArthurKoba
             <source>On</source>
             <translation>Включён</translation>
         </message>
+        <message>
+            <source>%1: %2 W</source>
+            <translation>%1: %2 Вт</translation>
+        </message>
+        <message>
+            <source>Charge</source>
+            <translation>Заряд</translation>
+        </message>
+        <message>
+            <source>Estimated wear: %1%</source>
+            <translation>Оценка износа: %1%</translation>
+        </message>
+        <message>
+            <source>Charge limit</source>
+            <translation>Ограничение заряда</translation>
+        </message>
+        <message>
+            <source>Charge: %1%</source>
+            <translation>Заряд: %1%</translation>
+        </message>
+        <message>
+            <source>Wear: %1%</source>
+            <translation>Износ: %1%</translation>
+        </message>
     </context>
     <context>
         <name>QObject</name>
@@ -615,6 +790,13 @@ Copyright (c) 2026 ArthurKoba
     </context>
     <context>
         <name>SettingsPage</name>
+    <message><source>Tray settings</source><translation>Настройки трея</translation></message>
+        <message><source>Reset settings?</source><translation>Сбросить настройки?</translation></message>
+        <message><source>Reset language, appearance, shortcuts and tray settings? Custom presets will be removed. Screen refresh rate and its configured choices will stay unchanged. On supported hardware, the charge limit will be restored to 100% first. If that cannot be confirmed, settings will not be reset.</source><translation>Сбросить язык, оформление, горячие клавиши и настройки трея? Пользовательские пресеты будут удалены. Частота экрана и выбранные варианты частот сохранятся. На поддерживаемом оборудовании сначала будет восстановлен лимит заряда 100%. Если это не удастся подтвердить, настройки не будут сброшены.</translation></message>
+        <message><source>Reset</source><translation>Сбросить</translation></message>
+        <message><source>Cancel</source><translation>Отмена</translation></message>
+        <message><source>Default settings</source><translation>Значения по умолчанию</translation></message>
+        <message><source>Reset settings</source><translation>Сбросить настройки</translation></message>
         <message>
             <source>Appearance</source>
             <translation>Оформление</translation>
@@ -683,7 +865,26 @@ Copyright (c) 2026 ArthurKoba
             <source>On-screen indicator</source>
             <translation>Всплывающий индикатор</translation>
         </message>
-    </context>
+        <message>
+            <source>Play a sound when switching device modes</source>
+            <translation>Звук при переключении режимов устройств</translation>
+        </message>
+        <message>
+        <source>Tray dashboard</source>
+        <translation>Панель трея</translation>
+    </message>
+
+<message><source>Hotkeys</source><translation>Хоткеи</translation></message>
+<message><source>Configure</source><translation>Настроить</translation></message>
+        <message>
+            <source>Show on-screen indicator</source>
+            <translation>Показывать всплывающий индикатор</translation>
+        </message>
+        <message>
+            <source>Sound</source>
+            <translation>Звук</translation>
+        </message>
+</context>
     <context>
         <name>manager::presentation::TrayClient</name>
         <message>
@@ -722,6 +923,14 @@ Copyright (c) 2026 ArthurKoba
             <source>RedmiBook Manager %1 — background controls</source>
             <translation>RedmiBook Manager %1 — фоновые компоненты</translation>
         </message>
+        <message>
+            <source>Error</source>
+            <translation>Ошибка</translation>
+        </message>
+        <message>
+            <source>Tray</source>
+            <translation>Трей</translation>
+        </message>
     </context>
     <context>
         <name>manager::presentation::TrayDashboard</name>
@@ -748,8 +957,8 @@ Tray: %3 (%4)</source>
             <translation>Тихий</translation>
         </message>
         <message>
-            <source>Turbo</source>
-            <translation>Турбо</translation>
+            <source>Performance</source>
+            <translation>Производительный</translation>
         </message>
         <message>
             <source>Open Manager</source>
@@ -779,7 +988,33 @@ Tray: %3 (%4)</source>
             <source>Microphone: on</source>
             <translation>Микрофон: включён</translation>
         </message>
-    </context>
+        <message>
+        <source>Refresh rate</source>
+        <translation>Частота обновления</translation>
+    </message>
+    <message>
+        <source>Charge limit: %1%</source>
+        <translation>Ограничение заряда: %1%</translation>
+    </message>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
+    </message>
+    <message>
+        <source>%1 W</source>
+        <translation>%1 Вт</translation>
+    </message>
+    <message>
+        <source>Charge</source>
+        <translation>Заряд</translation>
+    </message>
+    <message>
+        <source>Discharge</source>
+        <translation>Разряд</translation>
+    </message>
+<message><source>Charge · %1 W</source><translation>Заряд · %1 Вт</translation></message><message><source>Discharge · %1 W</source><translation>Разряд · %1 Вт</translation></message>    <message><source>Screen refresh rate</source><translation>Частота обновления экрана</translation></message>
+    <message><source>Retry connection</source><translation>Повторить подключение</translation></message>
+</context>
     <context>
         <name>manager::presentation::UpdateModel</name>
         <message>
@@ -787,8 +1022,8 @@ Tray: %3 (%4)</source>
             <translation>Проверяем обновления…</translation>
         </message>
         <message>
-            <source>Updates have not been checked yet.</source>
-            <translation>Обновления ещё не проверялись.</translation>
+            <source>Not checked yet.</source>
+            <translation>Ещё не проверялись.</translation>
         </message>
         <message>
             <source>Version %1 is available.</source>
@@ -823,7 +1058,38 @@ Tray: %3 (%4)</source>
         </message>
     </context>
     <context>
-        <name>manager::presentation::VendorOsd</name>
+        <name>RefreshRateButtons</name>
+        <message>
+            <source>%1 Hz</source>
+            <translation>%1 Гц</translation>
+        </message>
+    </context>
+    <context>
+        <name>manager::presentation::OsdPresenter</name>
+        <message>
+            <source>Diagnostic signal received</source>
+            <translation>Диагностический сигнал получен</translation>
+        </message>
+        <message>
+            <source>Daemon responded. Test only — no hardware changes.</source>
+            <translation>Демон ответил. Это проверка — оборудование не изменено.</translation>
+        </message>
+        <message>
+            <source>Daemon unavailable. No hardware changes.</source>
+            <translation>Демон недоступен. Оборудование не изменено.</translation>
+        </message>
+        <message>
+            <source>Microphone muted</source>
+            <translation>Микрофон отключён</translation>
+        </message>
+        <message>
+            <source>Microphone active</source>
+            <translation>Микрофон включён</translation>
+        </message>
+        <message>
+            <source>Microphone change could not be confirmed</source>
+            <translation>Изменение микрофона не подтверждено</translation>
+        </message>
         <message>
             <source>Mi button detected</source>
             <translation>Нажата клавиша Mi</translation>
@@ -837,8 +1103,8 @@ Tray: %3 (%4)</source>
             <translation>Тихий</translation>
         </message>
         <message>
-            <source>Turbo</source>
-            <translation>Турбо</translation>
+            <source>Performance</source>
+            <translation>Производительный</translation>
         </message>
         <message>
             <source>Unknown</source>
@@ -855,6 +1121,356 @@ Tray: %3 (%4)</source>
         <message>
             <source>Display refresh change could not be confirmed</source>
             <translation>Изменение частоты экрана не подтверждено</translation>
+        </message>
+    </context>
+<context><name>TrayPage</name><message><source>Tray</source><translation>Трей</translation></message><message><source>Tray dashboard</source><translation>Панель трея</translation></message>    <message><source>Create preset</source><translation>Создать пресет</translation></message>
+    <message><source>Custom presets</source><translation>Пользовательские пресеты</translation></message>
+    <message><source>No presets yet. Create one to combine several actions.</source><translation>Пресетов пока нет. Создайте пресет, чтобы объединить несколько действий.</translation></message>
+</context>
+    <context>
+        <name>manager::presentation::PresetsModel</name>
+        <message><source>On</source><translation>Включить</translation></message>
+        <message><source>Off</source><translation>Выключить</translation></message>
+    <message><source>Available actions could not be loaded in time.</source><translation>Время загрузки доступных действий истекло.</translation></message>
+    <message><source>Balanced</source><translation>Сбалансированный</translation></message>
+    <message><source>Button %1</source><translation>Кнопка %1</translation></message>
+    <message><source>Could not load available actions.</source><translation>Не удалось загрузить доступные действия.</translation></message>
+    <message><source>Could not save presets. Check names and action limits.</source><translation>Не удалось сохранить пресеты. Проверьте названия и количество действий.</translation></message>
+    <message><source>First</source><translation>Первая</translation></message>
+    <message><source>Performance mode: %1</source><translation>Производительность: %1</translation></message>
+    <message><source>Preset %1</source><translation>Пресет %1</translation></message>
+    <message><source>Quiet</source><translation>Тихий</translation></message>
+    <message><source>Screen refresh rate: %1 Hz</source><translation>Частота экрана: %1 Гц</translation></message>
+    <message><source>Second</source><translation>Вторая</translation></message>
+    <message><source>Performance</source><translation>Производительный</translation></message>
+    <message><source>Windows power scheme: %1</source><translation>Схема питания Windows: %1</translation></message>
+        <message><source>%1 Hz</source><translation>%1 Гц</translation></message>
+        <message>
+            <source>No supported actions are available for the example.</source>
+            <translation>Нет доступных действий для стартового примера.</translation>
+        </message>
+</context>
+    <context>
+        <name>PresetCard</name>
+    <message><source>Actions: %1</source><translation>Действий: %1</translation></message>
+    <message><source>Add button</source><translation>Добавить кнопку</translation></message>
+    <message><source>Delete preset</source><translation>Удалить пресет</translation></message>
+    <message><source>Move button down</source><translation>Переместить кнопку ниже</translation></message>
+    <message><source>Move button up</source><translation>Переместить кнопку выше</translation></message>
+    <message><source>Move preset down</source><translation>Переместить пресет ниже</translation></message>
+    <message><source>Move preset up</source><translation>Переместить пресет выше</translation></message>
+    <message><source>Remove button</source><translation>Удалить кнопку</translation></message>
+    <message><source>Show in tray</source><translation>Показывать в трее</translation></message>
+    <message><source>Preset options</source><translation>Действия с пресетом</translation></message>
+<message><source>Button options</source><translation>Действия с кнопкой</translation></message>
+<message><source>Edit actions</source><translation>Настроить действия</translation></message>
+<message><source>Rename</source><translation>Переименовать</translation></message>
+<message><source>Rename preset</source><translation>Название пресета</translation></message>
+</context>
+    <context>
+        <name>ActionEditor</name>
+        <message><source>Energy saver</source><translation>Энергосбережение</translation></message>
+        <message><source>Screen brightness</source><translation>Яркость экрана</translation></message>
+    <message><source>Move action down</source><translation>Переместить действие ниже</translation></message>
+    <message><source>Move action up</source><translation>Переместить действие выше</translation></message>
+    <message><source>Performance mode</source><translation>Режим производительности</translation></message>
+    <message><source>Remove action</source><translation>Удалить действие</translation></message>
+    <message><source>Screen refresh rate</source><translation>Частота обновления экрана</translation></message>
+    <message><source>Unavailable: %1</source><translation>Недоступно: %1</translation></message>
+    <message><source>Windows power scheme</source><translation>Схема электропитания Windows</translation></message>
+    <message><source>Action options</source><translation>Действия со строкой</translation></message>
+</context>
+    <context>
+        <name>PresetButtonEditor</name>
+    <message><source>Actions run from top to bottom</source><translation>Действия выполняются сверху вниз</translation></message>
+    <message><source>Add action</source><translation>Добавить действие</translation></message>
+    <message><source>Balanced</source><translation>Сбалансированный</translation></message>
+    <message><source>Battery</source><translation>Батарея</translation></message>
+    <message><source>Button actions</source><translation>Действия кнопки</translation></message>
+    <message><source>Button text</source><translation>Текст кнопки</translation></message>
+    <message><source>Cancel</source><translation>Отмена</translation></message>
+    <message><source>Display</source><translation>Экран</translation></message>
+    <message><source>Icon</source><translation>Значок</translation></message>
+    <message><source>Loading available actions…</source><translation>Загрузка доступных действий…</translation></message>
+    <message><source>Manager</source><translation>Менеджер</translation></message>
+    <message><source>No actions. This button will do nothing.</source><translation>Действий нет. Кнопка пока ничего не выполняет.</translation></message>
+    <message><source>No supported actions are currently available. Existing actions are kept.</source><translation>Сейчас нет доступных действий. Сохранённые действия остаются в пресете.</translation></message>
+    <message><source>Performance</source><translation>Производительность</translation></message>
+    <message><source>Quiet</source><translation>Тихий</translation></message>
+    <message><source>Save</source><translation>Сохранить</translation></message>
+        <message>
+            <source>Choose icon</source>
+            <translation>Выбрать значок</translation>
+        </message>
+        <message>
+            <source>Energy saver</source>
+            <translation>Энергосбережение</translation>
+        </message>
+        <message>
+            <source>Screen brightness</source>
+            <translation>Яркость экрана</translation>
+        </message>
+        <message>
+            <source>%1%</source>
+            <translation>%1%</translation>
+        </message>
+        <message>
+            <source>On</source>
+            <translation>Включить</translation>
+        </message>
+        <message>
+            <source>Off</source>
+            <translation>Выключить</translation>
+        </message>
+    </context>
+<context><name>QObject</name><message><source>Tray preview — hardware is not changed</source><translation>Предпросмотр трея — оборудование не изменяется</translation></message></context>
+
+<context><name>HotkeysPage</name>
+<message><source>Back to settings</source><translation>Вернуться к настройкам</translation></message>
+<message><source>Hotkeys</source><translation>Хоткеи</translation></message>
+<message><source>Laptop key</source><translation>Фирменная клавиша</translation></message>
+<message><source>Laptop key action</source><translation>Действие фирменной клавиши</translation></message>
+<message><source>Function shortcuts</source><translation>Сочетания клавиш</translation></message>
+<message><source>Open Manager · Overview</source><translation>Открыть Manager · Обзор</translation></message>
+<message><source>Open tray dashboard</source><translation>Открыть мини-панель трея</translation></message>
+<message><source>Do nothing</source><translation>Ничего не делать</translation></message>
+<message><source>Switch display refresh rate</source><translation>Переключить частоту обновления экрана</translation></message>
+<message><source>Switch performance mode</source><translation>Переключить режим производительности</translation></message>
+<message><source>Fn+S action</source><translation>Действие Fn+S</translation></message>
+<message><source>Fn+K action</source><translation>Действие Fn+K</translation></message>
+<message><source>Controlled by BIOS/firmware. Reassignment in Manager is unavailable.</source><translation>Управляется прошивкой (BIOS). Переназначение в Manager недоступно.</translation></message>
+<message><source>Fixed</source><translation>Фиксировано</translation></message>
+</context>
+    <context>
+        <name>DevicePage</name>
+        <message>
+            <source>Device</source>
+            <translation>Устройство</translation>
+        </message>
+        <message>
+            <source>Battery</source>
+            <translation>Батарея</translation>
+        </message>
+        <message>
+            <source>Display and audio</source>
+            <translation>Экран и звук</translation>
+        </message>
+        <message>
+            <source>Controls</source>
+            <translation>Управление</translation>
+        </message>
+    </context>
+    <context>
+        <name>TrayPage</name>
+        <message>
+            <source>Back to settings</source>
+            <translation>Назад к настройкам</translation>
+        </message>
+    </context>
+    <context>
+        <name>PresetIcons</name>
+        <message>
+            <source>Balanced</source>
+            <translation>Сбалансированный</translation>
+        </message>
+        <message>
+            <source>Quiet</source>
+            <translation>Тихий</translation>
+        </message>
+        <message>
+            <source>Performance</source>
+            <translation>Производительный</translation>
+        </message>
+        <message>
+            <source>Display</source>
+            <translation>Экран</translation>
+        </message>
+        <message>
+            <source>Charge limit</source>
+            <translation>Ограничение заряда</translation>
+        </message>
+        <message>
+            <source>Manager</source>
+            <translation>Менеджер</translation>
+        </message>
+        <message>
+            <source>Microphone</source>
+            <translation>Микрофон</translation>
+        </message>
+        <message>
+            <source>Mute microphone</source>
+            <translation>Отключение микрофона</translation>
+        </message>
+        <message>
+            <source>Battery</source>
+            <translation>Батарея</translation>
+        </message>
+        <message>
+            <source>Charger</source>
+            <translation>Зарядка</translation>
+        </message>
+        <message>
+            <source>Power</source>
+            <translation>Питание</translation>
+        </message>
+        <message>
+            <source>Night</source>
+            <translation>Ночной режим</translation>
+        </message>
+        <message>
+            <source>Brightness</source>
+            <translation>Яркость</translation>
+        </message>
+        <message>
+            <source>Cooling</source>
+            <translation>Охлаждение</translation>
+        </message>
+        <message>
+            <source>Sound</source>
+            <translation>Звук</translation>
+        </message>
+        <message>
+            <source>Headphones</source>
+            <translation>Наушники</translation>
+        </message>
+        <message>
+            <source>Keyboard</source>
+            <translation>Клавиатура</translation>
+        </message>
+        <message>
+            <source>Wi-Fi</source>
+            <translation>Wi-Fi</translation>
+        </message>
+        <message>
+            <source>Bluetooth</source>
+            <translation>Bluetooth</translation>
+        </message>
+        <message>
+            <source>Lock</source>
+            <translation>Блокировка</translation>
+        </message>
+        <message>
+            <source>Gaming</source>
+            <translation>Игры</translation>
+        </message>
+        <message>
+            <source>Video</source>
+            <translation>Видео</translation>
+        </message>
+        <message>
+            <source>Development</source>
+            <translation>Разработка</translation>
+        </message>
+        <message>
+            <source>Work</source>
+            <translation>Работа</translation>
+        </message>
+        <message>
+            <source>Break</source>
+            <translation>Перерыв</translation>
+        </message>
+    </context>
+    <context>
+        <name>manager::presentation::PowerControlsModel</name>
+        <message>
+            <source>Windows did not confirm the energy saver change. Refresh before retrying.</source>
+            <translation>Windows не подтвердила переключение энергосбережения. Обновите данные перед повторной попыткой.</translation>
+        </message>
+        <message>
+            <source>The power-control request timed out. Its result is unconfirmed.</source>
+            <translation>Истекло время ожидания управления питанием. Результат не подтверждён.</translation>
+        </message>
+        <message>
+            <source>The brightness change could not be confirmed. Refresh before retrying.</source>
+            <translation>Изменение яркости не подтверждено. Обновите данные перед повторной попыткой.</translation>
+        </message>
+    </context>
+<context>
+    <name>TraySettings</name>
+<message><source>Custom presets</source><translation>Пользовательские пресеты</translation></message>
+<message><source>Create preset</source><translation>Создать пресет</translation></message>
+<message><source>No presets yet. Create one to combine several actions.</source><translation>Пока нет пресетов. Создайте пресет, чтобы объединить несколько действий.</translation></message>
+        <message>
+            <source>Add Min/Max example</source>
+            <translation>Добавить пример Min/Max</translation>
+        </message>
+</context>
+<context><name>manager::presentation::Preferences</name><message><source>The background runtime could not save preferences. Changes may not survive a restart.</source><translation>Фоновому компоненту не удалось сохранить настройки. Изменения могут потеряться после перезапуска.</translation></message>    <message><source>Connecting to the background runtime…</source><translation>Подключение к фоновому компоненту…</translation></message>
+    <message><source>Background runtime version is incompatible. Restart the components.</source><translation>Версия фонового компонента несовместима. Перезапустите компоненты.</translation></message>
+    <message><source>Background runtime is unavailable. Controls are disabled until reconnection.</source><translation>Фоновый компонент недоступен. Управление заблокировано до восстановления соединения.</translation></message>
+</context>
+<context><name>QObject</name><message><source>Preferences unavailable</source><translation>Настройки недоступны</translation></message><message><source>The background runtime is unavailable or incompatible. Manager cannot load its settings.</source><translation>Фоновый компонент недоступен или несовместим. Менеджер не может загрузить настройки.</translation></message></context>
+<context><name>manager::presentation::TrayClient</name><message><source>Preferences</source><translation>Настройки</translation></message></context>
+<context>
+    <name>ConnectionWindow</name>
+    <message><source>Background runtime version is incompatible. Restart the components.</source><translation>Версия фонового компонента несовместима. Перезапустите компоненты.</translation></message>
+    <message><source>Background runtime is unavailable. Retry the connection or close Manager.</source><translation>Фоновый компонент недоступен. Повторите подключение или закройте Manager.</translation></message>
+    <message><source>RedmiBook Manager</source><translation>RedmiBook Manager</translation></message>
+    <message><source>Retry connection</source><translation>Повторить подключение</translation></message>
+    <message><source>Close</source><translation>Закрыть</translation></message>
+    <message><source>Connecting to the background runtime…</source><translation>Подключение к фоновому компоненту…</translation></message>
+    <message><source>The background runtime is unavailable or incompatible. Retry the connection or close Manager.</source><translation>Фоновый компонент недоступен или несовместим. Повторите подключение или закройте Manager.</translation></message>
+</context>
+<context>
+        <name>ManagerContent</name>
+        <message>
+            <source>Device controls</source>
+            <translation>Устройства</translation>
+        </message>
+        <message>
+            <source>RedmiBook Manager</source>
+            <translation>RedmiBook Manager</translation>
+        </message>
+        <message>
+            <source>Overview</source>
+            <translation>Обзор</translation>
+        </message>
+        <message>
+            <source>Battery</source>
+            <translation>Батарея</translation>
+        </message>
+        <message>
+            <source>Settings</source>
+            <translation>Настройки</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>О приложении</translation>
+        </message>
+        <message>
+            <source>Error</source>
+            <translation>Ошибка</translation>
+        </message>
+        <message>
+            <source>Could not save preferences.</source>
+            <translation>Не удалось сохранить настройки.</translation>
+        </message>
+    <message><source>Tray</source><translation>Трей</translation></message><message><source>Hotkeys</source><translation>Хоткеи</translation></message>
+        <message>
+            <source>Device</source>
+            <translation>Устройство</translation>
+        </message>
+        <message><source>Retry connection</source><translation>Повторить подключение</translation></message>
+</context>
+<context>
+<name>LoadingSkeleton</name>
+<message><source>Could not load the interface</source><translation>Не удалось загрузить интерфейс</translation></message>
+<message><source>Loading settings…</source><translation>Загрузка настроек…</translation></message>
+<message><source>Retry connection</source><translation>Повторить подключение</translation></message>
+</context>
+    <context>
+        <name>PresetDefaults</name>
+        <message>
+            <source>Power</source>
+            <translation>Питание</translation>
+        </message>
+        <message>
+            <source>Economy</source>
+            <translation>Экономия</translation>
+        </message>
+        <message>
+            <source>Performance</source>
+            <translation>Производительность</translation>
         </message>
     </context>
 </TS>

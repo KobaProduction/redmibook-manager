@@ -27,6 +27,13 @@ QString preferences_directory() {
     return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
 }
 
+QString preferences_endpoint() {
+    const auto directory = QDir(preferences_directory()).absolutePath();
+    return QStringLiteral("KobaProduction.Redmibook.Preferences.") +
+           QString::fromLatin1(
+               QCryptographicHash::hash(directory.toUtf8(), QCryptographicHash::Sha256).toHex().left(24));
+}
+
 void configure_gui_identity() {
     QCoreApplication::setOrganizationName(QStringLiteral("Koba Production"));
     QCoreApplication::setApplicationName(QStringLiteral("Redmibook Manager"));
@@ -44,7 +51,11 @@ bool launch_component(const QString &name, const QStringList &arguments) {
     process.setProgram(QDir(QCoreApplication::applicationDirPath()).filePath(name));
     process.setArguments(arguments);
     process.setWorkingDirectory(QStandardPaths::writableLocation(QStandardPaths::TempLocation));
-    return process.startDetached();
+    qint64 process_id = 0;
+    if (!process.startDetached(&process_id))
+        return false;
+    permit_foreground_activation(process_id);
+    return true;
 }
 
 bool ensure_session() {

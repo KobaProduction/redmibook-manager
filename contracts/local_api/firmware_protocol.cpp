@@ -15,7 +15,8 @@ bool identity(const std::string &value) {
 } // namespace
 bool mutation(Command command) {
     return command == Command::Charge80 || command == Command::Charge100 || command == Command::Balanced ||
-           command == Command::Quiet || command == Command::Turbo;
+           command == Command::Quiet || command == Command::Turbo || command == Command::MuteMicrophone ||
+           command == Command::UnmuteMicrophone;
 }
 std::string encode(const Request &request) {
     return "RMB/2 FW " + std::to_string(static_cast<unsigned>(request.command)) + " " + request.version +
@@ -37,7 +38,7 @@ std::optional<Request> decode_request(std::string_view message) {
     unsigned command{};
     Request result{};
     if (!(input >> protocol >> kind >> command >> result.version >> result.build) || !finished(input) ||
-        protocol != "RMB/2" || kind != "FW" || command > static_cast<unsigned>(Command::Turbo) ||
+        protocol != "RMB/2" || kind != "FW" || command > static_cast<unsigned>(Command::UnmuteMicrophone) ||
         !identity(result.version) || !identity(result.build)) {
         return {};
     }
@@ -55,7 +56,7 @@ std::optional<Reply> decode_reply(std::string_view message) {
     if (!(input >> protocol >> kind >> command >> result.version >> result.build >> status >> result.value >>
           result.allowed >> result.process >> std::quoted(result.detail)) ||
         !finished(input) || protocol != "RMB/2" || kind != "FW" ||
-        command > static_cast<unsigned>(Command::Turbo) ||
+        command > static_cast<unsigned>(Command::UnmuteMicrophone) ||
         status > static_cast<unsigned>(Status::Incompatible) || !identity(result.version) ||
         !identity(result.build) || result.allowed > 7 || result.process == 0) {
         return {};

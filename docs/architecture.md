@@ -12,7 +12,7 @@ Platform selection happens in CMake, not in QML or domain conditionals.
 
 [Module layout and dependency contracts](module-layout.md) owns the planned directory
 tree, domain boundaries, data ownership, cross-module interaction, build targets and
-composition scopes. It is a blueprint: the table below describes today's bootstrap.
+composition scopes. It is a blueprint: the table below maps the current implementation.
 Do not create empty module scaffolding or move files before the relevant implementation.
 
 [Qt UI conventions](qt-ui-conventions.md) governs English/Russian localization,
@@ -37,18 +37,21 @@ System/Light/Dark appearance, presentation-controller placement and native Qt AP
 | Charge / vendor performance policies and ports | `domain/{battery,performance}/`, `application/{battery,performance}/` |
 | Qualified Xiaomi MIFS commands | `adapters/windows/firmware/`, `adapters/windows/{battery,performance}/` |
 | Session microphone / display controls | `application/{microphone,display}/`, `adapters/platform/session_controls.hpp`, Windows/Linux adapters |
-| Opt-in session hotkeys | `application/shortcuts/`, `adapters/{windows,linux}/shortcuts/`, `apps/session/input_actions.*` |
+| Session hotkeys | `application/shortcuts/`, `adapters/{windows,linux}/shortcuts/`, `apps/session/input_actions.*` |
 | Process composition | `apps/desktop/`, `apps/session/`, `apps/tray/`, `apps/machine/` |
 | Quality and packages | `cmake/`, `tools/`, `.github/workflows/` |
 
-The scaffold has Manager, tray, session and machine executables. The Windows machine
-host implements diagnostic IPC only; Linux machine integration reports unavailable.
+The application has Manager, tray, session and machine executables. The Windows machine
+host implements diagnostic IPC, qualified charge/performance commands and
+qualified firmware microphone flag queries and SET/GET control; Linux machine integration reports unavailable.
 DDD vocabulary is used
 where there is domain meaning; there are no placeholder aggregates, repositories,
-event buses or databases. Battery and hotkey contexts will own their actual invariants
-when implemented. A separate folder alone is not a bounded context.
+event buses or databases. Battery, shortcuts and presets own their actual invariants;
+a separate folder alone is not a bounded context.
 The `core` CMake preset builds the inner layers and native platform contract tests
 without finding or linking Qt. This is an executable check of framework independence.
+
+See [daemon-owned user preferences](preference-authority.md) for the authoritative RAM cache, IPC clients and deferred persistence.
 
 ## Process contract
 
@@ -90,3 +93,30 @@ Agent workflow links are pinned to revisions selected by Qt Visualization.
 clang-tidy complexity thresholds and the adapted Chromium checkdeps implementation
 come from that reference. Audio, DSP, deployment and user-account rules were not copied.
 Third-party checkdeps provenance and license live beside its source.
+
+[Tray presets](tray-presets.md) describes the optional action builder, platform capability
+catalog, ordered execution and isolated preview contract.
+
+## Extending device, BIOS and OS support
+
+1. Define or reuse a narrow standard-C++ application port and typed capability,
+   observation, command and failure results. Keep protocol fields out of QML.
+2. Implement the OS adapter and inject it at the relevant composition root. Select
+   native modules in CMake; contribute only qualified features to the catalog.
+3. For a new RedmiBook/BIOS, qualify exact identity, GET format and allowed SETs
+   independently. Do not widen an existing allowlist from a matching model label.
+   Confirm native completion and observed result; retain unknown-outcome barriers.
+4. Reuse session/machine IPC ownership, event subscriptions and reconciliation.
+   Adding an adapter must not create a second preference authority or GUI polling loop.
+5. Cover port behavior with fakes/contracts, compile both platform paths and obtain
+   separate target-device acceptance before advertising hardware support.
+
+Current Windows controls include qualified firmware charge/performance/microphone,
+internal display, battery telemetry, Windows power plans, manual energy saver and
+brightness. Linux native-control adapters remain explicit unimplemented boundaries
+and do not populate unsupported UI actions. Dynamic plugins are not required:
+composition can select another adapter without duplicating the presentation.
+
+See [tray presets](tray-presets.md), [Windows power controls](windows-power-controls.md)
+and [validation scope](validation.md). The planned module-layout tree is a blueprint,
+not a claim that every proposed directory or Linux host already exists.

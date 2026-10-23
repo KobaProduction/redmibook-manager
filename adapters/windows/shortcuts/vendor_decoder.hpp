@@ -22,6 +22,8 @@ class VendorEventDecoder final {
     void reset() noexcept;
 
   private:
+    std::optional<application::shortcuts::VendorNotification>
+    finish_activation(std::chrono::milliseconds observed_at);
     bool valid_time(std::chrono::milliseconds observed_at);
     bool supported_{false};
     std::optional<std::chrono::milliseconds> leading_;

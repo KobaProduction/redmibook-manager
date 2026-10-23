@@ -1,4 +1,5 @@
 #include "adapters/windows/hosting/service_admin.hpp"
+#include "adapters/windows/battery/policy_store.hpp"
 #include "adapters/windows/hosting/client_pipe.hpp"
 #include "adapters/windows/hosting/handle.hpp"
 #include <array>
@@ -105,6 +106,9 @@ int execute(SC_HANDLE service, std::string_view command) {
 } // namespace
 
 int service_command(std::string_view command) {
+    if ((command == "--install" || command == "--configure") &&
+        !windows_battery::provision_policy_directory())
+        return 1;
     const ServiceHandle manager(
         OpenSCManagerW(nullptr, nullptr, SC_MANAGER_CONNECT | SC_MANAGER_CREATE_SERVICE));
     if (manager.get() == nullptr) {

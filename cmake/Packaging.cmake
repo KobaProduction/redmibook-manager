@@ -4,10 +4,15 @@ install(TARGETS redmibook-manager redmibook-service redmibook-session redmibook-
 install(FILES "${PROJECT_SOURCE_DIR}/LICENSE" DESTINATION .)
 install(DIRECTORY "${PROJECT_SOURCE_DIR}/packaging/licenses/" DESTINATION licenses)
 install(FILES "${PROJECT_SOURCE_DIR}/packaging/THIRD_PARTY_NOTICES.md" DESTINATION licenses)
+if(WIN32)
+    # Rescan the QML library at deployment, including imports added since configure.
+    set(manager_qml_deploy_options DEPLOY_TOOL_OPTIONS --qmldir "${PROJECT_SOURCE_DIR}/presentation/qml")
+endif()
 qt_generate_deploy_qml_app_script(TARGET redmibook-manager
     OUTPUT_SCRIPT deploy_script
     NO_TRANSLATIONS
     INCLUDE_PLUGINS qoffscreen
+    ${manager_qml_deploy_options}
     EXCLUDE_PLUGIN_TYPES qmltooling platforminputcontexts vectorimageformats generic)
 install(SCRIPT "${deploy_script}")
 qt_generate_deploy_app_script(TARGET redmibook-session OUTPUT_SCRIPT session_deploy NO_TRANSLATIONS EXCLUDE_PLUGIN_TYPES vectorimageformats)
@@ -37,6 +42,7 @@ if(WIN32)
     set(CPACK_NSIS_COMPRESSOR "zlib")
     set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64\\Koba Production")
     set(CPACK_NSIS_DEFINES "Var RmbMaintenance")
+    set(CPACK_NSIS_PRODUCT_MESSAGES "${PROJECT_SOURCE_DIR}/packaging/windows/messages.nsh")
     file(READ "${PROJECT_SOURCE_DIR}/packaging/windows/preinstall.nsh" CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS)
     file(READ "${PROJECT_SOURCE_DIR}/packaging/windows/postinstall.nsh" CPACK_NSIS_EXTRA_INSTALL_COMMANDS)
     file(READ "${PROJECT_SOURCE_DIR}/packaging/windows/uninstall.nsh" CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS)

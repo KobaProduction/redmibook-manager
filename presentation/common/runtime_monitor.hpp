@@ -10,6 +10,7 @@ class RuntimeMonitor final : public QObject {
   public:
     explicit RuntimeMonitor(application::SessionPort &port);
     void refresh();
+    void set_foreground(bool foreground);
     void accept(const application::SessionReply &reply);
     [[nodiscard]] const application::SessionReply &reply() const {
         return reply_;

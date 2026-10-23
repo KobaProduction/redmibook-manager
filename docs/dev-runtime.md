@@ -1,5 +1,24 @@
 # Windows development runtime
 
+## UI design iteration
+
+Use focused previews while choosing a design; do not package or reinstall on every
+UI edit. The tray preview renders the actual shared Widgets presentation with fake
+read-only state and isolated preferences, without desktop input or hardware access:
+
+```powershell
+./tools/render-previews.ps1 -TrayOnly -Build -OutputDirectory .tools/tray-design
+```
+
+Review the generated PNGs with the owner. Keep the installed runtime intact during
+this loop. A separate interactive dev tray may be started when requested; identify
+it clearly and preserve installed-process ownership. After the owner requests an
+installation/finalized batch, incrementally build the complete runtime and use the
+normal installer upgrade path (tools/install-dev.ps1 for authorized unattended dev
+updates). This does not authorize full verify or Git publication.
+
+## Isolated build-tree runtime
+
 `tools/dev-session.ps1` runs the build-tree machine diagnostic host, resident
 session, optional tray and optional Manager as the current user. It does not
 install or update a package, change SCM, request elevation or register autostart.
@@ -49,6 +68,26 @@ build/start. Stop/status recover the original build path from the process ledger
 
 ## Isolation and ownership
 
+For visual inspection without desktop capture or input, build the dedicated
+presentation preview and render the existing Manager UI contract offscreen:
+
+```powershell
+./tools/render-previews.ps1 -BuildDirectory build/debug -Build
+```
+
+The script uses the configured Qt/compiler paths, supplies Windows fonts, and
+writes PNGs under `.tools/ui-preview` with bounded child processes. OSD/tray scenes
+are labelled presentation fixtures with temporary preferences; Manager's UI contract
+also uses temporary preferences. No mouse/keyboard input, native hardware writes,
+desktop screenshots or foreground activation are performed. The offscreen backend
+uses Fusion: these images verify composition, glyphs, palette and shared surfaces,
+not the native Fluent backend, audible playback or physical key delivery. Actual
+read-only firmware/charging observations are separate evidence.
+Installed development updates await the session pipe asynchronously before the
+single compatibility probe; no fixed startup sleep or repeated probes are used.
+`tools/install-dev.ps1` opens Manager only with explicit `-OpenManager`, so an
+agent's update does not additionally request foreground focus during the owner's work.
+
 The controller keeps a per-checkout scope token, process ledger and logs in
 ignored `.tools/dev-runtime`. The scope remains stable across restarts so test
 preferences persist. GUI preferences and update history live under the platform's
@@ -85,3 +124,6 @@ This loop replaces packaging/installation during ordinary development, not final
 quality gates or hardware acceptance. Run only the checks affected by a concrete
 change while iterating; follow `development.md` for the final verification cadence.
 Native Linux runtime acceptance remains deferred.
+
+For the optional simulated interactive preset tray, run
+`./tools/render-previews.ps1 -InteractivePresets -Build`. See [tray presets](tray-presets.md).

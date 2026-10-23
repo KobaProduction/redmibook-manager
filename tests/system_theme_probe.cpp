@@ -69,7 +69,8 @@ int run(QApplication &app) {
     UpdatesFake source;
     manager::presentation::UpdateModel updates(source, QStringLiteral("windows-x86_64"));
     QQmlApplicationEngine engine;
-    engine.setInitialProperties({{QStringLiteral("manager"), QVariant::fromValue(&model)},
+    engine.setInitialProperties({{QStringLiteral("preferenceConnection"), QVariant::fromValue(&preferences)},
+                                 {QStringLiteral("manager"), QVariant::fromValue(&model)},
                                  {QStringLiteral("updates"), QVariant::fromValue(&updates)},
                                  {QStringLiteral("about"), QVariant::fromValue(&about)}});
     engine.loadFromModule(QStringLiteral("Redmibook.Manager"), QStringLiteral("Main"));

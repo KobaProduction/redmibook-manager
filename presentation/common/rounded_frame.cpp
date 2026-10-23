@@ -15,9 +15,10 @@ void RoundedFrame::set_rounded(bool enabled) {
 void RoundedFrame::paintEvent(QPaintEvent *) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    painter.setBrush(palette().window());
-    painter.setPen(palette().mid().color());
-    const auto area = QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5);
+    painter.setBrush(emphasized_ ? palette().alternateBase() : palette().window());
+    painter.setPen(QPen(emphasized_ ? palette().windowText().color() : palette().mid().color(),
+                        emphasized_ ? 2.0 : 1.0));
+    const auto area = QRectF(rect()).adjusted(1.0, 1.0, -1.0, -1.0);
     const qreal radius = rounded_ ? 8.0 : 0.0;
     painter.drawRoundedRect(area, radius, radius);
 }

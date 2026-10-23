@@ -30,3 +30,12 @@ https://gcc.gnu.org/releases.html (GCC 13.1.0).
 The source repository includes Chromium checkdeps under its BSD license, with
 provenance and adaptations recorded in `tools/vendor/chromium_checkdeps`. It is a
 development-only tool and is not included in runtime packages.
+
+## MingCute icon
+
+The laptop hotkey symbol (`presentation/assets/vendor-key.svg`) is MingCute's
+regular `system/switch.svg`, by MingCute Design, licensed under Apache-2.0.
+Its geometry and original SVG are unchanged; Qt applies the current UI icon color.
+
+- Source: https://github.com/Richard9394/MingCute/blob/main/assets/svg/core/regular/system/switch.svg
+- License: `MingCute/LICENSE` in the installed licenses directory.

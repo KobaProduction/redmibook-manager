@@ -8,9 +8,9 @@ vendor/product subfolders below are our product decision.
 | Content | Location | Writer |
 | --- | --- | --- |
 | Executables, Qt runtime, read-only resources and licenses | Program Files/Koba Production/Redmibook Manager | Elevated installer/updater only |
-| User settings, including Mi-key bindings and window preferences | LocalAppData/Koba Production/Redmibook Manager/settings.json | That user's GUI/session agent |
+| User settings, including Mi-key bindings and window preferences | LocalAppData/Koba Production/Redmibook Manager/settings.json | That user's resident session daemon only |
 | User logs and cache | LocalAppData/Koba Production/Redmibook Manager/logs and cache | That user's processes |
-| Future machine hardware policy and service state | ProgramData/Koba Production/Redmibook Manager/service | Authorized service and administrators |
+| Machine charge policy and write journal | ProgramData/Koba Production/Redmibook Manager/service | LocalService, SYSTEM and administrators |
 | Future service logs | ProgramData/Koba Production/Redmibook Manager/logs | Authorized service and administrators |
 | Temporary files | A unique owned subdirectory of the Windows temporary directory | The creating process |
 | Start-menu shortcuts | Common Programs/Redmibook Manager | Elevated installer |
@@ -29,26 +29,47 @@ roaming policy. The portable ZIP also uses user data outside its binaries by def
 a truly self-contained writable portable mode needs a separate acceptance decision.
 
 Program Files remains read-only to ordinary users. Do not grant Users/Everyone write
-access to it. When machine policy storage is implemented, setup must create its ProgramData
+access to it. Setup creates its ProgramData
 directories with explicit ACLs for administrators, SYSTEM and its selected service
 identity. Ordinary users must not directly overwrite hardware policy, executable paths
 or service-trusted input. The GUI requests validated changes through authorized IPC;
 it does not acquire administrator rights merely to save its own preferences.
 
-Updates replace program files and preserve user/service data. Future settings need
+Updates replace program files and preserve user/service data. Settings use
 versioned schemas and safe migration. Uninstall must preserve personal settings by
 default; any removal of settings must be an explicit user choice and restricted to
 owned product subdirectories. Do not recursively delete the shared Koba Production root.
 
-The Windows scaffold installs binaries, licenses, shortcuts, uninstall registration,
+The Windows installer installs binaries, licenses, shortcuts, uninstall registration,
 a LocalService machine host and an HKLM Run entry for the user's session host.
-The native Manager and tray remain ordinary-user processes. Preferences use Qt's
-AppLocalDataLocation, QSaveFile and QLockFile; installed binaries are never writable data.
+The native Manager and tray remain ordinary-user processes. The resident session alone persists preferences using AppLocalDataLocation and
+atomic QSaveFile writes. Manager/tray use IPC; installed binaries are never writable data.
 The machine host owns the qualified charge/performance command allowlist; the GUI
 never acquires administrator rights. TM2309 firmware read/write acceptance succeeded
-under LocalService, so no LocalSystem account is required. No machine policy store
-or ProgramData ACL provisioning is currently needed.
+under LocalService, so no LocalSystem account is required. Setup provisions the service
+data directory with a protected inheritable ACL for LocalService, SYSTEM and administrators.
+Explicit charge selections persist in charge-policy.v1; charge-write.pending prevents
+automatic firmware writes after an interrupted/unconfirmed write, including service restart.
+Updates preserve both files. Missing policy means no automatic change; firmware readback
+is never adopted as user intent. Ordinary GUI clients cannot modify these files directly.
+The same protected directory contains charge-events.jsonl (512 KiB, one previous rotated
+file), recording UTC reason and before/desired/after limits/status. The authenticated
+read-only charge diagnostic exposes its last flushed entry without opening arbitrary files.
 The portable bundle does not register a service or sign-in entry.
+
+## Installer experience
+
+User-facing installation opens the installer executable directly as a visible
+English/Russian wizard. Do not substitute a silent PowerShell launcher or a console
+window. `/S` is reserved for explicitly requested unattended automation.
+The welcome page explains the supported laptop controls, Manager, machine service,
+resident hotkey/OSD component and tray, administrator requirement, and preservation
+of settings during updates. The progress page shows component shutdown, file copy,
+service configuration/check, sign-in registration and restoration. Console helpers
+run hidden; their synchronous output is captured in the installation details.
+The finish page explains the Start-menu entry, tray mouse actions, sign-in behavior
+and independent background lifetimes. Never report completion after a failed service
+check or unverified component restart. Do not launch the GUI elevated from setup.
 
 The registered sign-in command starts the resident session with `--with-tray`.
 That host reads per-user `ui.trayAutostart` (default true) before opening the tray.

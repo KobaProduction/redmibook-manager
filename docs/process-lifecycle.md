@@ -4,9 +4,9 @@
 
 Define shared interfaces before implementing Windows/Linux hosts. Product roles
 do not depend on SCM, systemd, tray availability or a fixed executable count.
-The current diagnostic scaffold has separate Manager, tray, resident session/OSD
-and machine executables. Windows provides native diagnostic IPC; Linux machine
-hosting remains unavailable. Keep version 0.1.0.
+The current application has separate Manager, tray, resident session/OSD
+and machine executables. Windows provides diagnostic and qualified firmware IPC;
+Linux machine hosting remains unavailable. VERSION.txt owns the base version.
 
 | Component | Responsibility | Lifetime |
 | --- | --- | --- |
@@ -29,8 +29,10 @@ shutdown as merely closing tray. Killing all session components necessarily remo
 our input/custom OSD until supervision restarts them: rendering requires a live
 renderer or desktop notification server. Session exit differs from daemon shutdown.
 
-Manager and tray retain a shared presentation health policy and poll diagnostics
-every two seconds; the session client has a three-second request timeout. Keep
+Manager and tray retain a shared presentation health policy. Manager and the open
+tray dashboard poll diagnostics every two seconds; a hidden tray polls every ten
+seconds and requests fresh status when its dashboard or context menu opens.
+The session client has a three-second request timeout. Keep
 session unavailable, core unavailable and incompatible version/build distinct.
 Compare both product version and payload build against the core's authenticated
 reply; equal base versions alone do not establish matching binaries. An unavailable
@@ -38,6 +40,24 @@ or incompatible core remains visible in the dashboard/menu/Manager instead of
 silently retaining a healthy state. Diagnostic access remains available.
 The session coalesces up to eight concurrent probes into one core request and
 returns the result to every waiting live client, coalescing diagnostic feedback.
+
+The resident session owns separate bounded Qt thread pools for input commands
+(two workers) and device observations (three workers). Telemetry cannot occupy the
+command queue. Native dependencies are captured by shared ownership; completion
+signals deliver results to the session event loop. Pools outlive their controllers
+and drain only at process teardown. A request timeout does not cancel a native call
+or permit a second conflicting write.
+
+Battery sampling uses one timer: the shortest active observer interval while data
+is available, otherwise ten seconds. Closing the last observer returns to the
+background interval; an unavailable sensor also falls back to that interval.
+Periodic ticks skip an in-flight read rather than accumulating requests. Power
+events still request an immediate refresh. The machine charge-policy guard retains
+its independent ten-second safety cadence.
+
+Refresh-rate OSD is shown as soon as the native adapter returns its observed
+result. It does not wait for a second Qt refresh-rate notification or a fixed
+settling delay. Failure deadlines and the OSD display duration remain separate.
 
 Tray replacement is serialized per user/session: hold a handover lock, request
 graceful shutdown through the owned local endpoint, wait for the instance lock,
@@ -92,7 +112,7 @@ identity in the session runtime. Decide machine-policy permissions before hardwa
 
 Same-build reinstall is only a reinstall check. Upgrade acceptance uses different
 payloads A/B, changed hashes/build identities and obsolete-file fixtures while product
-version can remain 0.1.0. Build, product, IPC and schema versions are distinct.
+version can remain unchanged. Build, product, IPC and schema versions are distinct.
 
 1. Stage/validate B, serialize updates and preserve data/recovery information.
 2. Enter authorized maintenance. Quiesce owned runtimes and clients through host

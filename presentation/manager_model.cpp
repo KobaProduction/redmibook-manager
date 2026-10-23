@@ -1,9 +1,23 @@
 #include "presentation/manager_model.hpp"
 #include <QPointer>
+#include <QStringList>
 #include <QTimer>
 #include <array>
 
 namespace manager::presentation {
+QVariantList ManagerModel::traySections() const {
+    const QStringList labels{tr("Performance mode"), tr("Screen refresh rate"), tr("Charge limit"),
+                             tr("Battery power"),    tr("Microphone"),          tr("Connection status")};
+    QVariantList result;
+    for (std::size_t index = 0; index < application::tray_section_ids.size(); ++index) {
+        const auto id = application::tray_section_ids[index];
+        result.append(QVariantMap{
+            {QStringLiteral("id"), QString::fromUtf8(id.data(), static_cast<qsizetype>(id.size()))},
+            {QStringLiteral("label"), labels.at(static_cast<qsizetype>(index))},
+            {QStringLiteral("enabled"), preferences_.tray_section_enabled(id)}});
+    }
+    return result;
+}
 namespace {
 const std::array<QString, 3> languages{QStringLiteral("system"), QStringLiteral("en"), QStringLiteral("ru")};
 const std::array<QString, 3> themes{QStringLiteral("system"), QStringLiteral("light"),
@@ -21,10 +35,37 @@ int index_of(const std::array<QString, 3> &values, const QString &value) {
 ManagerModel::ManagerModel(Preferences &preferences, application::SessionPort &runtime)
     : preferences_(preferences), runtime_(runtime), monitor_(runtime), applied_design_(preferences.design()),
       pending_design_(preferences.design() == QStringLiteral("classic") ? 1 : 0) {
+    design_initialized_ = preferences.available();
     connect(&preferences_, &Preferences::changed, this, &ManagerModel::changed);
+    connect(&preferences_, &Preferences::errorOccurred, this, [this](const QString &message) {
+        design_restart_pending_ = false;
+        reset_pending_ = false;
+        emit errorOccurred(message);
+    });
+    connect(&preferences_, &Preferences::changed, this, &ManagerModel::observe_design);
     connect(&preferences_, &Preferences::languageChanged, this, &ManagerModel::changed);
     connect(&monitor_, &RuntimeMonitor::changed, this, &ManagerModel::changed);
     connect(&displays_, &DisplayCatalog::changed, this, &ManagerModel::displaysChanged);
+}
+
+void ManagerModel::observe_design() {
+
+    if (!design_initialized_) {
+        applied_design_ = preferences_.design();
+        pending_design_ = applied_design_ == QStringLiteral("classic") ? 1 : 0;
+        design_initialized_ = true;
+        emit changed();
+    }
+    if (reset_pending_ && preferences_.design() == QStringLiteral("fluent")) {
+        reset_pending_ = false;
+        pending_design_ = preferences_.design() == QStringLiteral("classic") ? 1 : 0;
+        emit changed();
+    }
+    const auto requested = pending_design_ == 1 ? QStringLiteral("classic") : QStringLiteral("fluent");
+    if (design_restart_pending_ && preferences_.design() == requested) {
+        design_restart_pending_ = false;
+        emit restartRequested();
+    }
 }
 
 int ManagerModel::languageIndex() const {
@@ -48,8 +89,12 @@ int ManagerModel::fnSAction() const {
     return preferences_.fn_s_action();
 }
 
-int ManagerModel::fnKAction() const {
-    return preferences_.fn_k_action();
+int ManagerModel::vendorKeyAction() const {
+    return preferences_.vendor_key_action();
+}
+void ManagerModel::setVendorKeyAction(int action) {
+    preference_error_ = !preferences_.set_vendor_key_action(action);
+    emit changed();
 }
 
 QString ManagerModel::osdScreen() const {
@@ -76,19 +121,35 @@ void ManagerModel::setDesign(int index) {
     emit changed();
 }
 
+void ManagerModel::resetSettings() {
+    preference_error_ = false;
+    reset_pending_ = true;
+    if (!preferences_.reset_defaults()) {
+        reset_pending_ = false;
+        emit errorOccurred(tr("Could not reset preferences."));
+        return;
+    }
+    emit changed();
+}
+
 bool ManagerModel::designPending() const {
     return (pending_design_ == 1 ? QStringLiteral("classic") : QStringLiteral("fluent")) != applied_design_;
 }
 void ManagerModel::applyDesign() {
-    if (!designPending()) {
+    if (!designPending() || design_restart_pending_) {
         return;
     }
+    const auto requested = pending_design_ == 1 ? QStringLiteral("classic") : QStringLiteral("fluent");
+    if (preferences_.available() && preferences_.design() == requested) {
+        emit restartRequested();
+        return;
+    }
+    design_restart_pending_ = true;
     preference_error_ =
         !preferences_.set_design(pending_design_ == 1 ? QStringLiteral("classic") : QStringLiteral("fluent"));
     emit changed();
-    if (!preference_error_) {
-        emit restartRequested();
-    }
+    if (preference_error_)
+        design_restart_pending_ = false;
 }
 bool ManagerModel::roundedCorners() const {
     return preferences_.rounded_corners();
@@ -120,11 +181,6 @@ void ManagerModel::setTrayAutostart(bool enabled) {
 
 void ManagerModel::setFnSAction(int action) {
     preference_error_ = !preferences_.set_fn_s_action(action);
-    emit changed();
-}
-
-void ManagerModel::setFnKAction(int action) {
-    preference_error_ = !preferences_.set_fn_k_action(action);
     emit changed();
 }
 
@@ -169,23 +225,28 @@ void ManagerModel::setTheme(int index) {
 }
 
 void ManagerModel::request(application::SessionCommand command) {
-    if (busy()) {
+    if (busy())
         return;
-    }
     busy_ = true;
     emit changed();
     const QPointer<ManagerModel> receiver(this);
     const bool started = runtime_.request(command, [receiver](const application::SessionReply &reply) {
-        if (receiver) {
-            receiver->monitor_.accept(reply);
-            receiver->busy_ = false;
-            emit receiver->changed();
-        }
+        if (receiver)
+            receiver->finishRequest(reply);
     });
     if (!started) {
         busy_ = false;
         emit changed();
+        emit errorOccurred(tr("Session runtime unavailable"));
     }
+}
+
+void ManagerModel::finishRequest(const application::SessionReply &reply) {
+    monitor_.accept(reply);
+    busy_ = false;
+    emit changed();
+    if (!reply.connected || !reply.daemon.connected)
+        emit errorOccurred(monitor_.status_text());
 }
 
 void ManagerModel::diagnostic() {

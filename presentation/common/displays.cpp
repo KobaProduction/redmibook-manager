@@ -1,9 +1,67 @@
 #include "presentation/common/displays.hpp"
 #include <QCryptographicHash>
+#include <QDebug>
+#include <QEvent>
 #include <QGuiApplication>
+#include <QTimer>
 #include <algorithm>
+#include <utility>
 
 namespace manager::presentation {
+namespace {
+class WindowActivation final : public QObject {
+  public:
+    explicit WindowActivation(QWindow &window) : QObject(&window), window_(window) {
+        window_.installEventFilter(this);
+        deadline_.setSingleShot(true);
+        connect(&deadline_, &QTimer::timeout, this, [this] {
+            pending_ = false;
+            native_focus_ = {};
+            qWarning("Window activation expired before exposure");
+        });
+    }
+    void request(std::function<void()> native_focus) {
+        native_focus_ = std::move(native_focus);
+        pending_ = true;
+        deadline_.start(5000);
+        QTimer::singleShot(0, this, [this] { activate(); });
+    }
+
+  protected:
+    bool eventFilter(QObject *object, QEvent *event) override {
+        if (event->type() == QEvent::Expose)
+            activate();
+        return QObject::eventFilter(object, event);
+    }
+
+  private:
+    QWindow &window_;
+    QTimer deadline_;
+    std::function<void()> native_focus_;
+    bool pending_{false};
+    void activate() {
+        if (!pending_ || !window_.isExposed())
+            return;
+        pending_ = false;
+        deadline_.stop();
+        window_.raise();
+        window_.requestActivate();
+        const auto focus = std::exchange(native_focus_, {});
+        if (focus)
+            focus();
+    }
+};
+void request_activation(QWindow &window, std::function<void()> native_focus) {
+    for (auto *child : window.children()) {
+        if (auto *activation = dynamic_cast<WindowActivation *>(child)) {
+            activation->request(std::move(native_focus));
+            return;
+        }
+    }
+    auto *activation = new WindowActivation(window);
+    activation->request(std::move(native_focus));
+}
+} // namespace
 QString display_id(const QScreen &screen) {
     const auto identity = screen.name() + screen.manufacturer() + screen.model() + screen.serialNumber();
     return QString::fromLatin1(
@@ -24,7 +82,7 @@ QRect centered_window(const QRect &area, const QSize &size) {
                 QPoint((area.width() - fitted.width()) / 2, (area.height() - fitted.height()) / 2),
             fitted};
 }
-void present_window(QWindow &window, const QPoint &anchor) {
+void present_window(QWindow &window, const QPoint &anchor, std::function<void()> native_focus) {
     auto *screen = resolve_display(QStringLiteral("auto"), anchor);
     if (screen == nullptr) {
         return;
@@ -36,8 +94,7 @@ void present_window(QWindow &window, const QPoint &anchor) {
     if (maximized) {
         window.showMaximized();
     }
-    window.raise();
-    window.requestActivate();
+    request_activation(window, std::move(native_focus));
 }
 DisplayCatalog::DisplayCatalog() {
     for (auto *screen : QGuiApplication::screens()) {

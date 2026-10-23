@@ -13,17 +13,23 @@ class TrayClient final : public QObject {
   public:
     TrayClient(Preferences &preferences, application::SessionPort &session);
     [[nodiscard]] bool show();
+    void activate(QSystemTrayIcon::ActivationReason reason);
     void toggleDashboard();
+    void openDashboard();
     void setDeviceState(TrayDeviceState state);
     [[nodiscard]] bool saveDashboard(const QString &path);
   signals:
     void openManager();
     void restartComponents();
     void profileRequested(int index);
-    void refreshRequested();
+    void refreshRequested(unsigned int hz);
+    void presetRequested(const QString &preset, const QString &button);
     void dashboardOpened();
+    void dashboardVisibilityChanged(bool visible);
 
   private:
+    bool preferences_available_{true};
+    QString preference_status_;
     RuntimeMonitor runtime_;
     TrayDashboard dashboard_;
     QSystemTrayIcon icon_;
@@ -35,7 +41,6 @@ class TrayClient final : public QObject {
     void connect_actions();
 
     void bind_preferences(Preferences &preferences);
-    void activate(QSystemTrayIcon::ActivationReason reason);
     void retranslate();
 };
 } // namespace manager::presentation

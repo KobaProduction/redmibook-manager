@@ -7,8 +7,42 @@ import ".."
 
 Pane {
     id: root
+    property bool preferencesAvailable: true
     required property ManagerModel manager
+    required property DeviceControlsModel controls
+    required property PresetsModel presets
     padding: 0
+    onPreferencesAvailableChanged: { if (!preferencesAvailable) resetDialog.close() }
+    Dialog {
+        id: resetDialog
+        objectName: "resetSettingsDialog"
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        width: Math.min(480, parent.width - 32)
+        implicitHeight: 340
+        height: Math.min(implicitHeight, parent.height - 32)
+        enabled: root.preferencesAvailable
+        modal: true
+        title: qsTr("Reset settings?")
+        background: Surface { cornerRadius: root.manager.cornerRadius; implicitWidth: 0; implicitHeight: 0 }
+        contentItem: Item {
+            implicitHeight: resetMessage.implicitHeight
+            Text {
+                id: resetMessage
+                width: parent.width
+                text: qsTr("Reset language, appearance, shortcuts and tray settings? Custom presets will be removed. Screen refresh rate and its configured choices will stay unchanged. On supported hardware, the charge limit will be restored to 100% first. If that cannot be confirmed, settings will not be reset.")
+                color: root.palette.windowText
+                font: resetDialog.font
+                wrapMode: Text.WordWrap
+            }
+        }
+        footer: DialogButtonBox {
+            implicitHeight: Math.max(resetAccept.implicitHeight, resetCancel.implicitHeight) + topPadding + bottomPadding
+            Button { id: resetAccept; text: qsTr("Reset"); DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole }
+            Button { id: resetCancel; text: qsTr("Cancel"); DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
+        }
+        onAccepted: { if (root.preferencesAvailable) root.controls.prepareSettingsReset() }
+    }
     ScrollView {
         id: scroll
         objectName: "settingsScroll"
@@ -27,12 +61,6 @@ Pane {
             width: scroll.availableWidth
             spacing: 16
             Label { text: qsTr("Settings"); font.pixelSize: 26; font.bold: true }
-            Label {
-                visible: root.manager.preferenceError
-                text: root.manager.runtimeStatus
-                Layout.fillWidth: true
-                wrapMode: Text.WordWrap
-            }
             Surface {
                 cornerRadius: root.manager.cornerRadius
                 padding: 18
@@ -42,7 +70,7 @@ Pane {
                     spacing: 10
                     Label { text: qsTr("Appearance"); font.pixelSize: 18; font.bold: true }
                     Label { text: qsTr("Language / Язык") }
-                    ComboBox {
+                    ChoiceBox {
                         objectName: "languageSelector"
                         model: [qsTr("System"), "English", "Русский"]
                         Accessible.name: qsTr("Interface language")
@@ -60,25 +88,6 @@ Pane {
                                 text: modelData
                                 checked: root.manager.themeIndex === index
                                 onClicked: root.manager.setTheme(index)
-                            }
-                        }
-                    }
-                    Label { text: qsTr("Interface design") }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        RadioButton { text: "Fluent"; checked: root.manager.designIndex === 0; onClicked: root.manager.setDesign(0) }
-                        RadioButton { text: qsTr("Classic"); checked: root.manager.designIndex === 1; onClicked: root.manager.setDesign(1) }
-                        Item { Layout.fillWidth: true }
-                        Item {
-                            implicitWidth: applyDesign.implicitWidth
-                            implicitHeight: applyDesign.implicitHeight
-                            Button {
-                                id: applyDesign
-                                objectName: "applyDesignButton"
-                                anchors.fill: parent
-                                text: qsTr("Apply and restart")
-                                visible: root.manager.designPending
-                                onClicked: root.manager.applyDesign()
                             }
                         }
                     }
@@ -122,7 +131,53 @@ Pane {
                             onClicked: root.manager.diagnostic()
                         }
                     }
-                    MonitorPicker { manager: root.manager; Layout.fillWidth: true }
+                    CheckBox {
+                        text: qsTr("Show on-screen indicator")
+                        checked: root.manager.osdEnabled
+                        onClicked: root.manager.setOsdEnabled(checked)
+                    }
+                    MonitorPicker { manager: root.manager; Layout.fillWidth: true; enabled: root.manager.osdEnabled }
+                }
+            }
+            Surface {
+                cornerRadius: root.manager.cornerRadius
+                padding: 18
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: 10
+                    Label { text: qsTr("Sound"); font.pixelSize: 18; font.bold: true }
+                    CheckBox {
+                        text: qsTr("Play a sound when switching device modes")
+                        checked: root.manager.osdSound
+                        onClicked: root.manager.setOsdSound(checked)
+                    }
+                }
+            }
+            Surface {
+                cornerRadius: root.manager.cornerRadius
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: 12
+                    Label { text: qsTr("Tray settings"); font.pixelSize: 18; font.bold: true }
+                    TraySettings { manager: root.manager; presets: root.presets; Layout.fillWidth: true }
+                }
+            }
+            Surface {
+                cornerRadius: root.manager.cornerRadius
+                padding: 18
+                Layout.fillWidth: true
+                RowLayout {
+                    width: parent.width
+                    spacing: 12
+                    Label { text: qsTr("Default settings"); font.pixelSize: 18; font.bold: true; Layout.fillWidth: true }
+                    Button {
+                        objectName: "resetSettingsButton"
+                        text: qsTr("Reset settings")
+                        enabled: !root.controls.busy
+                        onClicked: resetDialog.open()
+                    }
                 }
             }
         }

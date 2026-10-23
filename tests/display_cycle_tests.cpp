@@ -23,7 +23,14 @@ bool internal_only() {
     if (display::cycle_internal_refresh(control).observed_hz != 120 || control.changed != "laptop")
         return false;
     control.snapshot.displays[1].current_hz = 120;
-    return display::cycle_internal_refresh(control).observed_hz == 60;
+    if (display::cycle_internal_refresh(control).observed_hz != 60)
+        return false;
+    control.snapshot.displays[1].available_hz.push_back(165);
+    return display::selected_refresh_rates(control.snapshot.displays[1].available_hz, {}) ==
+               std::vector<unsigned int>{60, 120, 165} &&
+           display::selected_refresh_rates(control.snapshot.displays[1].available_hz, {60, 120}) ==
+               std::vector<unsigned int>{60, 120} &&
+           !display::next_refresh_rate(120, {}).has_value();
 }
 bool refuses_ambiguous_or_missing() {
     Refresh control;

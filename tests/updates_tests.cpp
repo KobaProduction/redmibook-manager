@@ -39,7 +39,8 @@ bool asset_selection() {
     const auto data = release(QStringLiteral("v0.1.0-alpha.999999"), true);
     const auto windows = decode_release(data, QStringLiteral("windows-x86_64"));
     const auto arm = decode_release(data, QStringLiteral("windows-arm64"));
-    return windows.state == UpdateState::Available && !windows.download_url.empty() &&
+    // This fixture is older than the installed product; asset selection is still valid.
+    return windows.state == UpdateState::Current && !windows.download_url.empty() &&
            arm.download_url.empty() && !arm.release_url.empty() &&
            manager::adapters::decode_releases({release(QStringLiteral("v0.1.0")), data},
                                               QStringLiteral("windows-x86_64"))

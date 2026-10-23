@@ -82,12 +82,12 @@ always runs its own checks independently.
 ## Packaging and acceptance
 
 Follow [the Windows installation and data contract](windows-installation.md) for
-standard directories, update persistence and future service permissions.
+standard directories, update persistence and service permissions.
 
 CPack installs into a staging tree and Qt's QML deployment script collects runtime
 libraries/plugins/imports. Windows ZIP is portable; the NSIS installer is machine-wide
 and provides uninstall. Linux TGZ is a bundle; DEB installs the same app plus a desktop entry.
-Windows setup registers the diagnostic service and session sign-in entry; extracting
+Windows setup registers the qualified firmware service and session sign-in entry; extracting
 the portable ZIP does neither. Qt LGPL/GPL notices and license
 files must accompany deployment; application code remains MIT.
 
@@ -99,9 +99,9 @@ NSIS registers 64-bit machine uninstall and all-user Start-menu shortcuts. Launc
 GUI normally from its shortcut; it does not require administrative rights. Re-running
 the installer updates the existing install
 directory without changing the base version. Restart Manager quiesces owned clients
-and the diagnostic service before replacement and restores prior running components.
+and the machine service before replacement and restores prior running components.
 If a component cannot stop, setup fails before replacement. This is installer-based updating,
-not an implemented network update checker or downloader.
+separate from the release checker, which opens downloads only after a user click.
 The pinned CMake NSIS template in `packaging/windows` fixes initialization to the
 all-user, 64-bit registry context and remembers the machine install directory while
 preserving explicit test /D overrides. Its provenance and license are included.

@@ -1,6 +1,7 @@
 #include "apps/desktop/manager_window.hpp"
 #include "adapters/local_api/session_client.hpp"
 #include "adapters/platform/runtime.hpp"
+#include "adapters/platform/window_appearance.hpp"
 #include "presentation/common/displays.hpp"
 #include <QCursor>
 #include <QDir>
@@ -15,7 +16,11 @@ void activate_window(QQmlApplicationEngine &engine, const QPoint &anchor, Manage
         if (auto *window = qobject_cast<QQuickWindow *>(object)) {
             if (activation == ManagerActivation::Overview)
                 window->setProperty("page", 0);
-            presentation::present_window(*window, anchor);
+            if (!window->property("startupPresented").toBool())
+                continue;
+            presentation::present_window(*window, anchor, [window] {
+                adapters::request_window_foreground(static_cast<std::uintptr_t>(window->winId()));
+            });
         }
     }
 }
@@ -69,6 +74,9 @@ void accept_activation(QLocalServer &server, QQmlApplicationEngine &engine) {
     }
 }
 } // namespace
+bool ManagerInstance::activate_existing(ManagerActivation activation) {
+    return notify_existing(adapters::session_endpoint() + QStringLiteral(".manager"), activation);
+}
 bool ManagerInstance::acquire(QQmlApplicationEngine &engine, ManagerActivation activation) {
     const auto name = adapters::session_endpoint() + QStringLiteral(".manager");
     if (notify_existing(name, activation)) {

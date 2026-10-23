@@ -7,6 +7,7 @@
 
 namespace manager::adapters {
 [[nodiscard]] QString session_endpoint();
+[[nodiscard]] QString preferences_endpoint();
 [[nodiscard]] QString preferences_directory();
 void configure_gui_identity();
 bool launch_component(const QString &name, const QStringList &arguments = {});

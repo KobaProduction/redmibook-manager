@@ -19,14 +19,10 @@ namespace manager::application::display {
 [[nodiscard]] inline std::vector<unsigned int>
 selected_refresh_rates(std::span<const unsigned int> advertised,
                        const std::vector<unsigned int> &configured) {
-    if (!valid_refresh_selection(configured))
+    if (!configured.empty() && !valid_refresh_selection(configured))
         return {};
-    auto selected = configured;
+    auto selected = configured.empty() ? std::vector<unsigned int>{60, 120, 165} : configured;
     std::ranges::sort(selected);
-    const bool default_selection = selected == std::vector<unsigned int>{60, 165};
-    if (default_selection && std::ranges::find(advertised, 165) == advertised.end() &&
-        std::ranges::find(advertised, 120) != advertised.end())
-        selected = {60, 120};
     std::erase_if(selected, [advertised](unsigned int hz) {
         return std::ranges::find(advertised, hz) == advertised.end();
     });
@@ -35,7 +31,7 @@ selected_refresh_rates(std::span<const unsigned int> advertised,
 
 [[nodiscard]] inline std::optional<unsigned int>
 next_refresh_rate(unsigned int current_hz, const std::vector<unsigned int> &selected) {
-    if (!valid_refresh_selection(selected))
+    if (selected.empty() || !valid_refresh_selection(selected))
         return {};
     auto sorted = selected;
     std::ranges::sort(sorted);

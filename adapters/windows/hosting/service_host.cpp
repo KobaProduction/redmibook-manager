@@ -78,6 +78,11 @@ int maintenance_command() {
     LocalFree(static_cast<void *>(arguments));
     return result;
 }
+int probe_host() {
+    const auto result = NativeDiagnostic{}.probe();
+    std::cout << result.version << ' ' << result.build << ' ' << result.process_id << '\n';
+    return result.connected ? 0 : 1;
+}
 } // namespace
 
 int run_machine_host(int argc, char *argv[]) {
@@ -97,11 +102,8 @@ int run_machine_host(int argc, char *argv[]) {
     if (command == "--maintain" && argc == 4) {
         return maintenance_command();
     }
-    if (command == "--probe") {
-        const auto result = NativeDiagnostic{}.probe();
-        std::cout << result.version << ' ' << result.build << ' ' << result.process_id << '\n';
-        return result.connected ? 0 : 1;
-    }
+    if (command == "--probe")
+        return probe_host();
     return windows::service_command(command);
 }
 } // namespace manager::adapters

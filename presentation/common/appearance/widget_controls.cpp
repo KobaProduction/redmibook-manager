@@ -11,7 +11,9 @@ QString surface_controls_style(bool rounded) {
                "QPushButton:pressed, QToolButton:pressed { background: palette(mid); }"
                "QPushButton:focus, QToolButton:focus { border-color: palette(highlight); }"
                "QToolButton:checked { background: palette(highlight); color: palette(highlighted-text); }"
-               "QPushButton:disabled, QToolButton:disabled { color: palette(button-text); }")
+               "QPushButton:disabled, QToolButton:disabled { color: palette(button-text); }"
+               "QToolButton:checked:disabled { background: palette(highlight); color: "
+               "palette(highlighted-text); }")
         .arg(rounded ? 4 : 0);
 }
 

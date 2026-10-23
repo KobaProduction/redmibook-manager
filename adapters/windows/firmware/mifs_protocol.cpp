@@ -6,7 +6,8 @@ namespace manager::adapters::windows_firmware {
 namespace {
 
 bool reading(MifsCommand command) {
-    return command == MifsCommand::ReadCharge || command == MifsCommand::ReadPerformance;
+    return command == MifsCommand::ReadCharge || command == MifsCommand::ReadPerformance ||
+           command == MifsCommand::ReadMicrophone;
 }
 
 bool battery(MifsCommand command) {
@@ -41,6 +42,14 @@ FirmwareSupport firmware_support(const FirmwareIdentity &identity) {
 
 std::array<std::uint8_t, 32> encode(MifsCommand command) {
     std::array<std::uint8_t, 32> packet{};
+    if (command == MifsCommand::ReadMicrophone || command == MifsCommand::MuteMicrophone ||
+        command == MifsCommand::UnmuteMicrophone) {
+        packet[1] = reading(command) ? 0xFA : 0xFB;
+        packet[3] = 0x0A;
+        packet[4] = 5;
+        packet[6] = command == MifsCommand::UnmuteMicrophone ? 1 : 0;
+        return packet;
+    }
     packet[1] = reading(command) ? 0xFA : 0xFB;
     packet[3] = battery(command) ? 0x10 : 0x08;
     packet[4] = battery(command) ? 2 : profile_value(command);
@@ -63,10 +72,21 @@ MifsReply validate_reply(MifsCommand command, MifsReply reply) {
     if (word(reply, 0) == 0xE000)
         return {TransportStatus::Unsupported, {}, "Firmware rejected this operation"};
     if (word(reply, 0) != 0x8000)
-        return {TransportStatus::Failed, {}, "Unknown firmware response status"};
+        return {reading(command) ? TransportStatus::Failed : TransportStatus::OutcomeUnknown,
+                {},
+                "Unknown firmware response status"};
     if (reading(command) && word(reply, 2) != static_cast<std::uint16_t>(encode(command)[3] << 8))
         return {TransportStatus::Failed, {}, "Firmware GET selector mismatch"};
+    if (command == MifsCommand::ReadMicrophone && (word(reply, 4) != 5 || dword(reply, 6) > 1))
+        return {TransportStatus::Failed, {}, "Firmware microphone GET payload mismatch"};
     return reply;
+}
+
+MifsReply observe_reply(MifsCommand command, MifsReply reply, bool &unknown_write) {
+    auto validated = validate_reply(command, std::move(reply));
+    if (!reading(command) && validated.status == TransportStatus::OutcomeUnknown)
+        unknown_write = true;
+    return validated;
 }
 
 } // namespace manager::adapters::windows_firmware

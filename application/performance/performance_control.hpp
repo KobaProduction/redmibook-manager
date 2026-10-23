@@ -26,6 +26,7 @@ struct Observation {
     Status status{Status::Unavailable};
     std::optional<Profile> profile;
     std::string detail;
+    bool operator==(const Observation &) const = default;
 };
 
 // Synchronous and caller-owned; execute off the GUI thread. Read is side-effect-free.

@@ -8,6 +8,19 @@
 #include <QAccessibilityHints>
 namespace manager::presentation {
 namespace {
+void light_palette(QPalette &palette) {
+    palette.setColor(QPalette::Window, QColor(QStringLiteral("#f1f3f6")));
+    palette.setColor(QPalette::Base, QColor(QStringLiteral("#ffffff")));
+    palette.setColor(QPalette::Button, QColor(QStringLiteral("#e5e8ed")));
+    palette.setColor(QPalette::ToolTipBase, QColor(QStringLiteral("#ffffff")));
+    for (auto role : {QPalette::WindowText, QPalette::Text, QPalette::ButtonText, QPalette::ToolTipText}) {
+        palette.setColor(role, QColor(QStringLiteral("#20242b")));
+        palette.setColor(QPalette::Disabled, role, QColor(QStringLiteral("#69717d")));
+    }
+    palette.setColor(QPalette::PlaceholderText, QColor(QStringLiteral("#59616e")));
+    palette.setColor(QPalette::Mid, QColor(QStringLiteral("#929aa5")));
+    palette.setColor(QPalette::Midlight, QColor(QStringLiteral("#cbd1d9")));
+}
 void dark_palette(QPalette &palette) {
     palette.setColor(QPalette::Window, QColor(QStringLiteral("#25282d")));
     palette.setColor(QPalette::Base, QColor(QStringLiteral("#191c20")));
@@ -25,12 +38,23 @@ void dark_palette(QPalette &palette) {
 void neutral_palette(QPalette &palette) {
     const auto window = palette.color(QPalette::Window);
     const bool dark = window.lightness() < 128;
-    const auto surface = dark ? window.lighter(145) : window.darker(104);
+    const auto surface = dark ? window.lighter(145) : palette.color(QPalette::Base);
     palette.setColor(QPalette::AlternateBase, surface);
-    palette.setColor(QPalette::Accent, QColor(dark ? QStringLiteral("#dedede") : QStringLiteral("#555555")));
-    palette.setColor(QPalette::Highlight, palette.color(QPalette::Accent));
-    palette.setColor(QPalette::HighlightedText,
-                     QColor(dark ? QStringLiteral("#202020") : QStringLiteral("#ffffff")));
+    const QColor accent(dark ? QStringLiteral("#dedede") : QStringLiteral("#000000"));
+    const QColor accent_text(dark ? QStringLiteral("#202020") : QStringLiteral("#ffffff"));
+    for (const auto group : {QPalette::Active, QPalette::Inactive, QPalette::Disabled}) {
+        palette.setColor(group, QPalette::Accent, accent);
+        palette.setColor(group, QPalette::Highlight, accent);
+        palette.setColor(group, QPalette::HighlightedText, accent_text);
+    }
+}
+void scheme_palette(QPalette &palette, const QString &mode) {
+    if (mode == QStringLiteral("dark")) {
+        dark_palette(palette);
+    } else if (mode == QStringLiteral("light") || palette.color(QPalette::Window).lightness() >= 128) {
+        light_palette(palette);
+    }
+    neutral_palette(palette);
 }
 } // namespace
 
@@ -86,12 +110,8 @@ void ThemeController::apply_palette() {
     QPalette palette = (mode_ == QStringLiteral("system") || highContrast)
                            ? system_palette_
                            : QApplication::style()->standardPalette();
-    if (!highContrast) {
-        if (mode_ == QStringLiteral("dark")) {
-            dark_palette(palette);
-        }
-        neutral_palette(palette);
-    }
+    if (!highContrast)
+        scheme_palette(palette, mode_);
     QGuiApplication::setPalette(palette);
     QApplication::setPalette(palette);
     applying_ = false;

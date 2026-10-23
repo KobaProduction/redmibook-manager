@@ -70,6 +70,14 @@ int dashboard_smoke(QApplication &app, const QString &screenshot) {
     preferences.set_theme(QStringLiteral("dark"));
     adapters::SessionClient session;
     presentation::TrayClient tray(preferences, session);
+    tray.setDeviceState({.profileIndex = 0,
+                         .profileAvailable = true,
+                         .refreshHz = 120,
+                         .refreshAvailable = true,
+                         .microphoneAvailable = true,
+                         .microphoneMuted = false,
+                         .status = {},
+                         .refreshRates = {60, 120}});
     tray.toggleDashboard();
     QTimer::singleShot(
         400, &tray, [&tray, screenshot] { QCoreApplication::exit(tray.saveDashboard(screenshot) ? 0 : 1); });

@@ -5,6 +5,7 @@
 #include <QLocale>
 #include <QQmlEngine>
 #include <QStyleHints>
+#include <algorithm>
 #include <utility>
 
 namespace manager::presentation {
@@ -26,14 +27,35 @@ QString resolve_language(const QString &requested) {
 Preferences::Preferences(application::PreferencePort &store, QObject *parent)
     : QObject(parent), store_(store) {
     store_.observe([this] { refresh(); });
+    store_.observe_connection([this] { emit connectionChanged(); });
+    connect(this, &Preferences::languageChanged, this, &Preferences::connectionChanged);
+    store_.observe_error([this] {
+        emit errorOccurred(
+            tr("The background runtime could not save preferences. Changes may not survive a restart."));
+    });
     connect(&appearance_, &ThemeController::changed, this, &Preferences::paletteChanged);
     refresh();
 }
 
 Preferences::~Preferences() {
     store_.observe({});
+    store_.observe_connection({});
+    store_.observe_error({});
 }
 
+QString Preferences::connectionText() const {
+    switch (store_.connection()) {
+    case application::PreferenceConnection::Ready:
+        return {};
+    case application::PreferenceConnection::Connecting:
+        return tr("Connecting to the background runtime…");
+    case application::PreferenceConnection::Incompatible:
+        return tr("Background runtime version is incompatible. Restart the components.");
+    case application::PreferenceConnection::Unavailable:
+        return tr("Background runtime is unavailable. Controls are disabled until reconnection.");
+    }
+    return {};
+}
 QString Preferences::language() const {
     return QString::fromStdString(value_.language);
 }
@@ -136,8 +158,16 @@ bool Preferences::set_refresh_cycle_rates(const std::vector<unsigned int> &rates
 int Preferences::fn_s_action() const {
     return static_cast<int>(value_.fn_s_action);
 }
-int Preferences::fn_k_action() const {
-    return static_cast<int>(value_.fn_k_action);
+
+int Preferences::vendor_key_action() const {
+    return static_cast<int>(value_.vendor_key_action);
+}
+bool Preferences::set_vendor_key_action(int action) {
+    if (!application::shortcuts::valid_binding_action(action) ||
+        !store_.update("vendorKeyAction", std::to_string(action)))
+        return false;
+    refresh();
+    return true;
 }
 bool Preferences::set_fn_s_action(int action) {
     if (!application::shortcuts::valid_binding_action(action) ||
@@ -146,9 +176,29 @@ bool Preferences::set_fn_s_action(int action) {
     refresh();
     return true;
 }
-bool Preferences::set_fn_k_action(int action) {
-    if (!application::shortcuts::valid_binding_action(action) ||
-        !store_.update("fnKAction", std::to_string(action)))
+bool Preferences::set_battery_interval_ms(int interval) {
+    if (!application::valid_battery_interval(interval) ||
+        !store_.update("batteryIntervalMs", std::to_string(interval)))
+        return false;
+    refresh();
+    return true;
+}
+bool Preferences::tray_section_enabled(std::string_view id) const {
+    return std::find(value_.tray_sections.begin(), value_.tray_sections.end(), id) !=
+           value_.tray_sections.end();
+}
+bool Preferences::set_tray_section_enabled(const QString &id, bool enabled) {
+    auto sections = value_.tray_sections;
+    const auto key = id.toStdString();
+    std::erase(sections, key);
+    if (enabled)
+        sections.push_back(key);
+    if (!application::valid_tray_sections(sections))
+        return false;
+    QJsonArray array;
+    for (const auto &section : sections)
+        array.append(QString::fromStdString(section));
+    if (!store_.update("traySections", QJsonDocument(array).toJson(QJsonDocument::Compact).toStdString()))
         return false;
     refresh();
     return true;
@@ -156,20 +206,20 @@ bool Preferences::set_fn_k_action(int action) {
 
 void Preferences::refresh() {
     const auto next = store_.read();
-    if (!next || (initialized_ && next->revision == value_.revision)) {
+    if (!next || (initialized_ && next->revision == value_.revision))
         return;
-    }
-    if (!apply_language(QString::fromStdString(next->language))) {
+    if (!apply_language(QString::fromStdString(next->language)))
         return;
-    }
+    const bool theme_changed = !initialized_ || next->theme != value_.theme;
     value_ = *next;
     initialized_ = true;
-    apply_theme();
+    if (theme_changed)
+        apply_theme();
     emit changed();
 }
 
 bool Preferences::set_language(const QString &value) {
-    if (!apply_language(value) || !store_.update("language", value.toStdString())) {
+    if (!store_.update("language", value.toStdString())) {
         apply_language(language());
         return false;
     }

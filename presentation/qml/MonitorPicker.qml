@@ -44,7 +44,6 @@ Control {
                     }
                 }
                 onClicked: {
-                    root.manager.setOsdScreen("auto")
                     root.manager.setOsdPosition(index)
                 }
             }

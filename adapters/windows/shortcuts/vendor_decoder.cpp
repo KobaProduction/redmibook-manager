@@ -69,11 +69,18 @@ VendorEventDecoder::consume(std::span<const std::uint8_t> packet, std::chrono::m
             leading_ = observed_at;
         return {};
     }
+    return finish_activation(observed_at);
+}
+
+} // namespace manager::adapters::windows_shortcuts
+
+namespace manager::adapters::windows_shortcuts {
+std::optional<application::shortcuts::VendorNotification>
+VendorEventDecoder::finish_activation(std::chrono::milliseconds observed_at) {
     const auto leading = leading_;
     leading_.reset();
     if (!leading || observed_at - *leading > pair_window)
         return {};
     return application::shortcuts::VendorActivation{application::shortcuts::VendorKey::MiButton, ++sequence_};
 }
-
 } // namespace manager::adapters::windows_shortcuts

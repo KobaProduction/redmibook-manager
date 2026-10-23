@@ -3,7 +3,8 @@ InitPluginsDir
 IfFileExists "$INSTDIR\bin\redmibook-service.exe" 0 rmb_remove_registration
 CopyFiles /SILENT "$INSTDIR\bin\redmibook-service.exe" "$PLUGINSDIR\RedmibookManagerMaintenance.exe"
 StrCpy $RmbMaintenance "$PLUGINSDIR\rmb-remove"
-Exec '"$PLUGINSDIR\RedmibookManagerMaintenance.exe" --maintain "$INSTDIR\bin" "$RmbMaintenance"'
+ExecShell "open" "$PLUGINSDIR\RedmibookManagerMaintenance.exe" '--maintain "$INSTDIR\bin" "$RmbMaintenance"' SW_HIDE
+IfErrors rmb_remove_failed
 StrCpy $0 0
 rmb_remove_wait:
 IfFileExists "$RmbMaintenance.ready" rmb_remove_service
@@ -12,8 +13,9 @@ Sleep 100
 IntOp $0 $0 + 1
 IntCmp $0 300 rmb_remove_failed rmb_remove_wait rmb_remove_failed
 rmb_remove_service:
-ExecWait '"$INSTDIR\bin\redmibook-service.exe" --uninstall' $0
-IntCmp $0 0 rmb_remove_commit
+nsExec::ExecToLog '"$INSTDIR\bin\redmibook-service.exe" --uninstall'
+Pop $0
+StrCmp $0 "0" rmb_remove_commit
 Goto rmb_remove_failed
 rmb_remove_commit:
 FileOpen $0 "$RmbMaintenance.remove" w

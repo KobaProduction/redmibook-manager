@@ -25,6 +25,21 @@ bool check_window(const QQmlApplicationEngine &engine, const QString &screenshot
 
 void schedule_smoke_test(QQmlApplicationEngine &engine, const QString &screenshot) {
     QTimer::singleShot(500, &engine, [&engine, screenshot] {
+        if (QCoreApplication::arguments().contains(QStringLiteral("--loading-preview"))) {
+            if (!check_window(engine, screenshot)) {
+                QCoreApplication::exit(1);
+                return;
+            }
+            auto *window = qobject_cast<QQuickWindow *>(engine.rootObjects().first());
+            const auto first = window->grabWindow();
+            QTimer::singleShot(150, &engine, [window, first, screenshot] {
+                const auto next = window->grabWindow();
+                const bool saved =
+                    screenshot.isEmpty() || next.save(screenshot + QStringLiteral(".next.png"));
+                QCoreApplication::exit(!next.isNull() && first != next && saved ? 0 : 1);
+            });
+            return;
+        }
         QCoreApplication::exit(check_window(engine, screenshot) ? 0 : 1);
     });
 }

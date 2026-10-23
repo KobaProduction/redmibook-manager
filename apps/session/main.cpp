@@ -1,6 +1,12 @@
+#include "adapters/integration/preset_executor.hpp"
+#include "adapters/local_api/preference_authority.hpp"
 #include "adapters/local_api/session_client.hpp"
 #include "adapters/local_api/session_server.hpp"
+#include "adapters/platform/firmware_controls.hpp"
+#include "adapters/platform/power_controls.hpp"
+#include "adapters/platform/power_scheme.hpp"
 #include "adapters/platform/runtime.hpp"
+#include "adapters/platform/session_controls.hpp"
 #include "adapters/storage/ui_preferences/store.hpp"
 #include "application/runtime/connection_health.hpp"
 #include "apps/session/device_state_publisher.hpp"
@@ -8,7 +14,7 @@
 #include "apps/session/update_scheduler.hpp"
 #include "apps/session/vendor_actions.hpp"
 #include "presentation/common/preferences.hpp"
-#include "presentation/osd/diagnostic_osd.hpp"
+#include "presentation/osd/osd_presenter.hpp"
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QDebug>
@@ -51,9 +57,10 @@ int request_status(QApplication &app, const QCommandLineParser &parser) {
     return app.exec();
 }
 
-std::unique_ptr<manager::session::InputActions> session_input(manager::presentation::Preferences &preferences,
+std::unique_ptr<manager::session::InputActions> session_input(manager::presentation::OsdPresenter &osd,
+                                                              manager::session::WorkQueues &work,
                                                               const QCommandLineParser &parser) {
-    auto input = std::make_unique<manager::session::InputActions>(preferences);
+    auto input = std::make_unique<manager::session::InputActions>(osd, work);
     if (parser.isSet(QStringLiteral("microphone-hotkey"))) {
         const auto result = input->bind_microphone(parser.value(QStringLiteral("microphone-hotkey")));
         if (result.status != manager::application::shortcuts::BindingStatus::Active) {
@@ -63,32 +70,58 @@ std::unique_ptr<manager::session::InputActions> session_input(manager::presentat
     return input;
 }
 
+class SessionRuntime final {
+  public:
+    SessionRuntime(manager::presentation::Preferences &preferences, const QString &directory,
+                   const QCommandLineParser &parser)
+        : read_(diagnostic_), osd_(preferences), updates_(preferences, directory),
+          server_(read_, osd_, &osd_), input_(session_input(osd_, work_, parser)), state_(work_),
+          vendor_(
+              preferences, osd_, work_,
+              [] {
+                  manager::adapters::launch_component(QStringLiteral("redmibook-manager"),
+                                                      {QStringLiteral("--overview")});
+              },
+              [] {
+                  manager::adapters::launch_component(QStringLiteral("redmibook-tray"),
+                                                      {QStringLiteral("--open-dashboard")});
+              },
+              [this] { state_.refresh(); }) {
+        state_.setMicrophoneReconciliation([this] { vendor_.reconcileMicrophone(); });
+        ready = server_.listen();
+        QObject::connect(&server_, &manager::adapters::SessionServer::openTray, &server_,
+                         [] { manager::adapters::launch_component(QStringLiteral("redmibook-tray")); });
+        QObject::connect(&server_, &manager::adapters::SessionServer::restartRequested, &server_,
+                         [] { manager::adapters::launch_component(QStringLiteral("redmibook-session")); });
+        if (ready && parser.isSet(QStringLiteral("with-tray")) && preferences.tray_autostart())
+            manager::adapters::launch_component(QStringLiteral("redmibook-tray"));
+    }
+    bool ready{false};
+
+  private:
+    manager::session::WorkQueues work_;
+    manager::adapters::NativeDiagnostic diagnostic_;
+    manager::application::ReadRuntimeStatus read_;
+    manager::presentation::OsdPresenter osd_;
+    manager::session::UpdateScheduler updates_;
+    manager::adapters::SessionServer server_;
+    std::unique_ptr<manager::session::InputActions> input_;
+    manager::session::DeviceStatePublisher state_;
+    manager::session::VendorActions vendor_;
+};
 int run_session(QApplication &app, manager::presentation::Preferences &preferences, const QString &directory,
-                const QCommandLineParser &parser) {
-    const manager::adapters::NativeDiagnostic diagnostic;
-    const manager::application::ReadRuntimeStatus read(diagnostic);
-    manager::presentation::DiagnosticOsd osd(preferences);
-    manager::session::UpdateScheduler updates(preferences, directory);
-    manager::adapters::SessionServer server(read, osd);
-    const auto input = session_input(preferences, parser);
-    if (!server.listen()) {
-        return 1;
-    }
-    manager::session::DeviceStatePublisher state;
-    manager::session::VendorActions vendor_input(
-        preferences,
-        [] {
-            manager::adapters::launch_component(QStringLiteral("redmibook-manager"),
-                                                {QStringLiteral("--overview")});
-        },
-        [&state] { state.refresh(); });
-    QObject::connect(&server, &manager::adapters::SessionServer::openTray, &app,
-                     [] { manager::adapters::launch_component(QStringLiteral("redmibook-tray")); });
-    QObject::connect(&server, &manager::adapters::SessionServer::restartRequested, &app,
-                     [] { manager::adapters::launch_component(QStringLiteral("redmibook-session")); });
-    if (parser.isSet(QStringLiteral("with-tray")) && preferences.tray_autostart()) {
-        manager::adapters::launch_component(QStringLiteral("redmibook-tray"));
-    }
+                const QCommandLineParser &parser, manager::adapters::PreferenceClient &client) {
+    std::unique_ptr<SessionRuntime> runtime;
+    QObject boot_context;
+    const auto start = [&] {
+        if (runtime || !client.read() || !preferences.available())
+            return;
+        runtime = std::make_unique<SessionRuntime>(preferences, directory, parser);
+        if (!runtime->ready)
+            app.exit(1);
+    };
+    QObject::connect(&preferences, &manager::presentation::Preferences::changed, &boot_context, start);
+    QTimer::singleShot(0, &boot_context, start);
     return app.exec();
 }
 
@@ -98,6 +131,8 @@ void configure(QCommandLineParser &parser) {
     parser.addOption({QStringLiteral("with-tray"), QStringLiteral("Open tray client")});
     parser.addOption(
         {QStringLiteral("endpoint"), QStringLiteral("Print this session IPC endpoint and exit")});
+    parser.addOption({QStringLiteral("preferences-endpoint"),
+                      QStringLiteral("Print per-user preferences IPC endpoint and exit")});
     parser.addOption({QStringLiteral("probe"), QStringLiteral("Send bounded diagnostic request")});
     parser.addOption({QStringLiteral("shutdown"), QStringLiteral("Stop session background runtime")});
     parser.addOption({QStringLiteral("microphone-hotkey"),
@@ -116,6 +151,10 @@ int main(int argc, char *argv[]) {
     QCommandLineParser parser;
     configure(parser);
     parser.process(app);
+    if (parser.isSet(QStringLiteral("preferences-endpoint"))) {
+        QTextStream(stdout) << manager::adapters::preferences_endpoint() << Qt::endl;
+        return 0;
+    }
     if (parser.isSet(QStringLiteral("endpoint"))) {
         QTextStream(stdout) << manager::adapters::session_endpoint() << Qt::endl;
         return 0;
@@ -123,12 +162,18 @@ int main(int argc, char *argv[]) {
     if (parser.isSet(QStringLiteral("probe")) || parser.isSet(QStringLiteral("shutdown"))) {
         return request_status(app, parser);
     }
-    manager::adapters::UiPreferenceStore store(manager::adapters::preferences_directory());
-    manager::presentation::Preferences preferences(store);
-    QLockFile lock(
-        QDir(store.directory()).filePath(manager::adapters::session_endpoint() + QStringLiteral(".lock")));
-    if (!lock.tryLock(2000)) {
+    const auto directory = manager::adapters::preferences_directory();
+    QDir().mkpath(directory);
+    QLockFile lock(QDir(directory).filePath(manager::adapters::session_endpoint() + QStringLiteral(".lock")));
+    if (!lock.tryLock(2000))
         return 0;
-    }
-    return run_session(app, preferences, store.directory(), parser);
+    manager::adapters::PreferenceAuthority authority(
+        directory, manager::adapters::preferences_endpoint(), [] {
+            using namespace manager::adapters;
+            PresetExecutor executor(make_core_performance_control(), std::make_shared<NativeRefresh>(),
+                                    make_power_schemes(), make_brightness(), make_energy_saver());
+            return executor.choices();
+        });
+    manager::presentation::Preferences preferences(authority.client());
+    return run_session(app, preferences, directory, parser, authority.client());
 }

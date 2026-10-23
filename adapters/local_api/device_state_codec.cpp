@@ -1,4 +1,5 @@
 #include "adapters/local_api/device_state_codec.hpp"
+#include "adapters/local_api/battery_telemetry_codec.hpp"
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -21,6 +22,17 @@ QJsonObject microphone_json(const app::microphone::Observation &value) {
             {"muted", value.muted ? QJsonValue(*value.muted) : QJsonValue()},
             {"hardwareMute",
              value.hardware_mute_supported ? QJsonValue(*value.hardware_mute_supported) : QJsonValue()}};
+}
+QJsonObject firmware_microphone_json(const app::microphone::FirmwareState &value) {
+    return {{"status", static_cast<int>(value.status)},
+            {"muted", value.desired_muted ? QJsonValue(*value.desired_muted) : QJsonValue()}};
+}
+app::microphone::FirmwareState parse_firmware_microphone(const QJsonObject &object) {
+    app::microphone::FirmwareState value;
+    value.status = status(object, 8, app::microphone::FirmwareStateStatus::Unavailable);
+    if (object.value("muted").isBool())
+        value.desired_muted = object.value("muted").toBool();
+    return value;
 }
 QJsonObject display_json(const app::display::Snapshot &value) {
     QJsonArray items;
@@ -101,8 +113,10 @@ QByteArray encode_device_state(const application::overview::DeviceState &state) 
                              {"build", MANAGER_BUILD_ID},
                              {"revision", QString::number(state.revision)},
                              {"microphone", microphone_json(state.microphone)},
+                             {"microphoneFirmware", firmware_microphone_json(state.microphone_firmware)},
                              {"display", display_json(state.displays)},
                              {"battery", battery_json(state)},
+                             {"batteryTelemetry", encode_battery_telemetry(state.battery_telemetry)},
                              {"performance", profile}};
     return QJsonDocument(object).toJson(QJsonDocument::Compact) + '\n';
 }
@@ -110,6 +124,7 @@ std::optional<application::overview::DeviceState> decode_state_object(const QJso
     application::overview::DeviceState state;
     state.revision = object.value("revision").toString().toULongLong();
     state.microphone = parse_microphone(object.value("microphone").toObject());
+    state.microphone_firmware = parse_firmware_microphone(object.value("microphoneFirmware").toObject());
     const auto displays = object.value("display").toObject();
     state.displays.status = status(displays, 6, application::display::Status::Unavailable);
     const auto items = displays.value("items").toArray();
@@ -118,6 +133,7 @@ std::optional<application::overview::DeviceState> decode_state_object(const QJso
     for (const auto item : items)
         state.displays.displays.push_back(parse_display(item.toObject()));
     parse_battery(object.value("battery").toObject(), state);
+    state.battery_telemetry = decode_battery_telemetry(object.value("batteryTelemetry").toObject());
     parse_performance(object.value("performance").toObject(), state);
     return state;
 }

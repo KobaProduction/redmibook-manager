@@ -3,6 +3,7 @@
 #include "adapters/windows/battery/charge_control.hpp"
 #include "adapters/windows/performance/performance_control.hpp"
 
+#include <bit>
 #include <iostream>
 #include <vector>
 
@@ -100,7 +101,7 @@ bool unsupported_and_malformed() {
         return false;
     manager::adapters::windows_battery::ChargeControl control(transport,
                                                               {"XIAOMI", "TM2309", "RMAMT6B0P0B0B"});
-    if (battery::apply_charge_limit(control, static_cast<battery::ChargeLimit>(40)).status !=
+    if (battery::apply_charge_limit(control, std::bit_cast<battery::ChargeLimit>(std::uint8_t{40})).status !=
         battery::Status::InvalidRequest)
         return false;
     transport.charge = 8;

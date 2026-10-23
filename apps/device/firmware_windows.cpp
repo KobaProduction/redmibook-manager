@@ -1,6 +1,7 @@
 #include "adapters/device_profile/native_profile.hpp"
 #include "adapters/platform/firmware_controls.hpp"
 #include "adapters/windows/battery/charge_control.hpp"
+#include "adapters/windows/firmware/microphone_state.hpp"
 #include "adapters/windows/performance/performance_control.hpp"
 #include "apps/device/firmware.hpp"
 #include "apps/device/qualification.hpp"
@@ -43,6 +44,16 @@ QJsonObject firmware_status() {
             {QStringLiteral("performanceCapability"), static_cast<int>(performance.capability())}};
 }
 namespace {
+QJsonObject microphone_firmware_status() {
+    adapters::windows_firmware::NativeWmiTransport transport;
+    const auto state = adapters::windows_firmware::read_microphone_state(transport, identity());
+    return {{"known", state.status == application::microphone::FirmwareStateStatus::Ready &&
+                          state.desired_muted.has_value()},
+            {"source", "firmware-intent"},
+            {"status", static_cast<int>(state.status)},
+            {"desiredMuted", state.desired_muted ? QJsonValue(*state.desired_muted) : QJsonValue()},
+            {"detail", QString::fromStdString(state.detail)}};
+}
 QJsonObject charge_command(const QString &value) {
     bool valid{};
     const auto percent = value.toInt(&valid);
@@ -82,18 +93,21 @@ QJsonObject core_status() {
             {"performance", performance_json(performance->read())},
             {"performanceCapability", static_cast<int>(performance->capability())}};
 }
+QJsonObject core_charge_command(const QString &value) {
+    const int limit = value.toInt();
+    if (limit != 80 && limit != 100)
+        return {{"error", "invalid-charge-limit"}};
+    auto control = adapters::make_core_charge_control();
+    return charge_json(application::battery::apply_charge_limit(
+        *control, static_cast<application::battery::ChargeLimit>(limit)));
+}
 QJsonObject core_command(const QStringList &arguments) {
     if (arguments.size() == 1 && arguments.front() == QStringLiteral("core-status"))
         return core_status();
     if (arguments.size() != 2)
         return {{"error", "invalid-core-command"}};
     if (arguments.front() == QStringLiteral("core-charge")) {
-        const int limit = arguments.back().toInt();
-        if (limit != 80 && limit != 100)
-            return {{"error", "invalid-charge-limit"}};
-        auto control = adapters::make_core_charge_control();
-        return charge_json(application::battery::apply_charge_limit(
-            *control, static_cast<application::battery::ChargeLimit>(limit)));
+        return core_charge_command(arguments.back());
     }
     const QStringList profiles{QStringLiteral("balanced"), QStringLiteral("quiet"), QStringLiteral("turbo")};
     const auto index = profiles.indexOf(arguments.back());
@@ -105,6 +119,8 @@ QJsonObject core_command(const QStringList &arguments) {
 }
 } // namespace
 QJsonObject firmware_command(const QStringList &arguments) {
+    if (arguments.size() == 1 && arguments.front() == QStringLiteral("firmware-microphone"))
+        return microphone_firmware_status();
     if (!arguments.isEmpty() && arguments.front().startsWith(QStringLiteral("core-")))
         return core_command(arguments);
     if (arguments.size() == 2 && arguments.front() == QStringLiteral("qualify-firmware"))

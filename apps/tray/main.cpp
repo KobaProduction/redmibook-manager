@@ -1,6 +1,6 @@
+#include "adapters/local_api/preference_channel.hpp"
 #include "adapters/local_api/session_client.hpp"
 #include "adapters/platform/runtime.hpp"
-#include "adapters/storage/ui_preferences/store.hpp"
 #include "apps/tray/device_controls.hpp"
 #include "apps/tray/tray_operations.hpp"
 #include "presentation/common/preferences.hpp"
@@ -65,9 +65,11 @@ int main(int argc, char *argv[]) {
     if (smoke > 0 && smoke + 1 < app.arguments().size()) {
         return manager::tray::dashboard_smoke(app, app.arguments().at(smoke + 1));
     }
-    manager::adapters::UiPreferenceStore store(manager::adapters::preferences_directory());
+    manager::adapters::PreferenceClient store(manager::adapters::preferences_endpoint());
     manager::presentation::Preferences preferences(store);
-    manager::tray::Instance instance(store.directory());
+    QObject::connect(&preferences, &manager::presentation::Preferences::reconnectRequested, &app,
+                     [] { manager::adapters::ensure_session(); });
+    manager::tray::Instance instance(manager::adapters::preferences_directory());
     if (!instance.acquire()) {
         QMessageBox::warning(
             nullptr, QCoreApplication::translate("TrayClient", "Tray already running"),
@@ -87,5 +89,7 @@ int main(int argc, char *argv[]) {
     if (!tray.show()) {
         return 2;
     }
+    if (app.arguments().contains(QStringLiteral("--open-dashboard")))
+        QTimer::singleShot(0, &tray, &manager::presentation::TrayClient::openDashboard);
     return app.exec();
 }

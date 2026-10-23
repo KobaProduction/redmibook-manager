@@ -1,166 +1,116 @@
 # Product and interface contract
 
-## Purpose
+## Scope and supported hardware
 
-RedmiBook Manager is an open source local laptop-control application. Initial hardware
-target: Xiaomi Redmi Book Pro 16 2024. Windows is the first acceptance platform; Linux
-uses the same application contracts and QML interface, with separate OS adapters.
-No WebView, browser frontend, cloud account or telemetry is needed for core operation.
+RedmiBook Manager is a native C++20/Qt Quick laptop manager. Current base version:
+**1.1.5**. Windows acceptance targets Redmi Book Pro 16 2024, XIAOMI TM2309/V24C1,
+BIOS RMAMT6B0P0A0A. Linux retains shared contracts and build/package paths; deep
+Linux desktop/hardware acceptance is deferred. No WebView, cloud account or usage
+telemetry is required. See [validation](validation.md) for the acceptance boundary
+and [hardware investigation](hardware-investigation.md) for qualification evidence.
 
-The owner specifies product behavior and accepts visible results. Agents implement
-small reviewable changes, run checks and supply evidence rather than asking the owner
-to program or troubleshoot routine build failures.
-Current priority is the Windows installer, installed launch and installer-based
-updates. Further Linux environment preparation and GUI/package acceptance are deferred;
-retain the source separation without making Linux setup a gate for the owner's Windows preview.
+## Interface
 
-Windows installation is machine-wide under `C:/Program Files/Koba Production/Redmibook Manager`
-and requires administrator consent. The GUI runs as a regular user. Future privileged
-hardware work belongs to a separate service. Keep writable machine state in ProgramData
-and user preferences in the user's application-data directory, outside installed binaries.
+Navigation order is Overview, Device, Hotkeys, Settings, About. Overview projects
+assembled controls and observed device state. Device combines battery telemetry,
+charge limit/manual energy saver, microphone, internal display and useful known
+BIOS/system-board identity. No duplicate Diagnostics or separate Battery navigation
+page is needed. About owns runtime/version details, connectivity and licenses.
+Unknown identity fields and absent capabilities are omitted, not filled with
+unsupported-control placeholder cards.
 
-## Hello World acceptance
+Manager uses Fluent controls, System/Light/Dark appearance and System/English/Russian
+language selection. Changes apply live across clients through daemon preferences.
+Light selected controls use a black accent; custom drawing inherits centralized
+palettes. The startup shell applies the saved palette before exposure and loads
+content asynchronously behind a centered animated spinner, without skeletons or
+loading text. Offline/retry states stay in the same window. Follow
+[Qt UI conventions](qt-ui-conventions.md).
 
-- A packaged native Manager opens overview, battery, Mi-key, settings and diagnostics pages.
-- It explicitly says battery/Mi-key functions are not implemented.
-- Portable and installed applications run without a development Qt installation on PATH.
-- Installer and uninstaller complete; tests and quality gates pass.
-- The owner can open the portable build and inspect the window.
+Left-click tray toggles its compact dashboard; right-click opens its menu. The
+header combines title/version and compact monochrome power, charge-policy,
+microphone and connection information, subject to visibility preferences. Device
+controls show observed state, not an optimistic successful write. Closing either
+client leaves session hotkeys, OSD and machine policies running. The vendor key
+opens and activates Overview by default, including an already-open Manager.
 
-The Windows installer registers a diagnostic-only LocalService host and a per-user
-sign-in session host. The latter owns OSD independently of the optional tray/Manager.
-No key capture, performance control or firmware writes are implemented.
+## Controls and presets
 
-## Subsequent product scope
+- Charge policies are fixed 80% and full charge. Do not send 40–100% codes from
+  other boards to TM2309. User intent persists at the machine authority; an
+  accepted transport call or matching policy bit alone does not prove cutoff.
+- The independent ten-second machine guard checks telemetry. Charging at or above
+  80% with selected protection triggers confirmed recovery: restore drifted policy
+  directly, or use a confirmed 100 → 80 sequence when the 80% bit was retained.
+  Healthy readings cause no SET. Unknown outcomes block further firmware writes
+  until reconciliation, including across restart. No five-minute fallback remains.
+- Battery telemetry includes charge state/percentage, capacities, estimated wear,
+  voltage and directional rate in W. Energy uses Wh. Battery details request
+  100 ms/1 sec/5 sec sampling only while visible; open tray requests one second.
+- Firmware profiles are Quiet, Balanced and Performance. Native profile 3 may be
+  called Turbo in protocol/research sources. FullSpeed/profile 4 remains blocked.
+  Do not promise specific CPU clocks, undervolting or energy savings from a label.
+- Only a uniquely identified built-in panel is controlled, using enumerated modes
+  and readback. Users select the rates used in cycling; external/ambiguous sources
+  are refused. Reset does not change the current display mode.
+- Qualified microphone control SETs and confirms the firmware intent/LED flag via
+  the machine service. Session synchronization applies the observed intent to the
+  Windows communications endpoint without disabling the driver. Physical events
+  invalidate/read state, never echo another SET. Unknown or stale reads cannot
+  authorize audio changes. Flag and actual endpoint state remain distinct.
+- Hotkeys expose configurable application actions, including no action and opening
+  Manager/tray. Fn+K is a fixed firmware-owned profile control; its announcement
+  must not execute a second command. Fn+S is a session-managed refresh action.
+- Windows manual energy saver is distinct from firmware profiles and Windows power
+  schemes. It is runtime-qualified and confirmed through native observation. Do
+  not change automatic thresholds or administrative policy. Brightness is a preset
+  action, not a duplicate standalone Windows brightness slider.
 
-The first functional iteration defines shared interfaces with Windows/Linux adapters,
-machine/session background runtimes, independent OSD and optional tray/settings.
-Closing tray/settings must preserve background input and feedback. Follow
-[process lifecycle and update acceptance](process-lifecycle.md), including a genuine
-payload A-to-B upgrade test. The current scaffold provides diagnostic IPC between hosts.
+[Tray presets](tray-presets.md) owns the extensible ordered-action contract and
+[Windows power controls](windows-power-controls.md) owns native qualification.
+The daemon creates one editable, localized Power/Economy/Performance starter preset,
+hidden from tray by default. User captions remain literal. Actions are preflighted,
+run in order and stop on unconfirmed results without rolling back earlier changes.
+Reset restores the hidden factory preset and full charging while preserving the
+current display mode. Settings has expanded tray configuration and independent
+OSD visibility and sound controls; all feedback shares one presenter.
 
-The first useful controls will be 80% / full-charge protection and user-assigned actions
-for the physical Mi key. The accepted process design separates the hardware service,
-session runtime and optional GUI, so closing tray/settings must not stop active control or OSD.
-Hardware controls remain future acceptance requirements.
+## Authorities, background work and installation
 
-Left-clicking the tray toggles a compact dashboard near the icon; right-click opens
-the context menu. The dashboard's three performance buttons is an explicitly labelled mock:
-it sends no hardware command. Diagnostic feedback defaults to the active display's
-top-left work-area corner with a 24-pixel margin and does not take focus. Settings
-offers one schematic display with nine position dots for active-display placement and an immediate diagnostic test. Tray sign-in startup defaults
-to enabled and can be disabled independently of the service/session. Manager opens
-manually. The dashboard shows the base version and Koba Production; its close-tray
-action belongs only in the right-click menu.
+The resident session daemon owns user preferences, keeps validated revisions in RAM,
+broadcasts accepted changes and coalesces atomic persistence. Clients communicate
+through IPC, never through settings-file reads/writes/watches or locks. The machine
+service separately owns privileged firmware policy and its write journal. Offline,
+incompatible, unconfirmed and denied states stay distinct. See
+[preference authority](preference-authority.md) and [component contracts](component-contracts.md).
 
-UI direction: a compact overview, battery settings, Mi-key actions, application/startup
-settings and diagnostics. Native controls, keyboard navigation, scalable text and a
-shared theme should remain consistent across screens. Unsupported and failed operations
-must have honest states; unavailable actions must not look successfully enabled.
-The Hello World layout is a technical prototype, not an approved final visual design.
-New screen layouts and consequential behavior are shown to the owner before treating
-them as an established product contract.
+Native commands/queries run on workers with completion events and bounded deadlines;
+GUI deadlines do not prove cancellation. Native notifications drive updates and
+one bounded ten-second reconciliation recovers missed events. Background reads do
+not flicker busy state or disable controls. Required battery sampling/charge guard
+are explicit exceptions to event-only observation. See [process lifecycle](process-lifecycle.md).
 
-The starting UI languages are English and Russian, with a System option and immediate
-switching. Appearance supports System/Light/Dark and follows OS changes in System mode.
-Persist per-user choices and apply them consistently to settings, tray and OSD. Follow
-[Qt UI conventions](qt-ui-conventions.md); these preferences are implemented with a
-versioned per-user store and shared live Qt controllers.
+Windows setup is elevated and machine-wide under
+`Program Files/Koba Production/Redmibook Manager`; Manager/tray run unelevated.
+Writable state stays in LocalAppData/ProgramData. Updates preserve preferences and
+verify session/core product/build compatibility. Distribution uses the visible
+installer; explicitly requested local automation may use `tools/install-dev.ps1`.
+See [installation contract](windows-installation.md).
 
-## Development and version ownership
+## About, licenses and updates
 
-C++20 + Qt 6 / QML + CMake. Follow the dependency rule in `architecture.md`, Serena
-requirements in `AGENTS.md`, and executable checks in `development.md`.
-Do not add unused DDD patterns or implement unrelated firmware-research work implicitly.
+About attributes Koba Production, links source and provides local application and
+dependency licenses. Application code is MIT; dependency licenses remain separate.
+The Russian MIT text is informational. Manual and optional daily release checks use
+the public GitHub API with bounded responses/deadlines. The resident session performs
+at most one persisted automatic check per 24 hours. A user click opens the matching
+OS/architecture download or release page; the checker does not install automatically.
+The alpha/stable comparison and immutable build rules live in [release policy](releasing.md).
 
-`VERSION.txt` is the single source for application/package base version: **1.1.1** (owner-authorized).
-Only an explicit owner instruction may change it. CI must never bump it automatically.
-Alpha/beta labels identify release maturity; build identifiers distinguish artifacts
-without changing the application base version. See `releasing.md`.
+## Version ownership
 
-The separate remote `research` branch is not part of this implementation. Do not merge,
-delete or replace it without an explicit decision by the owner.
-
-## About and updates
-
-About owns publisher attribution, GitHub link and manual/daily update checks.
-The resident session performs at most one persisted automatic check per 24 hours;
-users may disable it. User-triggered checks are immediate. Requests use the public
-GitHub releases API with a ten-second deadline and bounded response size. No token,
-account or telemetry is required. No release/404 is distinct from network failure.
-
-The current alpha channel accepts stable and `x.y.z-alpha.N` releases; the stable
-channel excludes prereleases. Compare numeric base version, maturity, then alpha
-sequence. CI embeds its workflow run number as MANAGER_RELEASE_SEQUENCE; a local
-build has sequence zero. Base product version stays 1.1.1. Search the most recent
-100 release records and select the highest supported semantic version.
-
-Choose the exact OS/architecture installer asset (currently Windows x86_64 EXE or
-Linux x86_64 DEB). When no matching asset exists, offer the release page instead of
-a package for a different architecture. Download opens the validated GitHub asset
-in the default browser, only after a user click. This iteration does not run an
-installer automatically or promise silent signed updates. A daily notification is
-owned by the session and remains independent of the tray.
-
-## Device profile and local licenses
-
-About identifies Koba Production as developer, links the source repository, and
-opens complete application/dependency license texts locally. Application source stays
-MIT; Qt retains its own license. The Russian MIT text is informational and explicitly
-subordinate to the original English text. Do not label all bundled software MIT.
-
-DeviceProfilePort is a framework-independent read port. Windows reads model,
-manufacturer, baseboard, BIOS vendor/version/date and the published EC revision from
-SMBIOS through GetSystemFirmwareTable. These values are Observed, never proof of
-algorithm compatibility. The flash-chip model remains unknown. Linux explicitly
-reports NotImplemented; Demo remains a test fixture. A displayed identity alone
-never authorizes a firmware algorithm or proves that charge control works.
-
-## Native adapter iteration
-
-The device-controls page reads and changes the current user's default communications
-microphone mute state through Windows Core Audio, checking the same endpoint afterward.
-It enumerates active displays and offers only refresh rates at the current resolution,
-orientation, pixel format and scan mode. Changes are tested, temporary and read back;
-they do not change firmware or write a display mode to the registry. Refresh is explicit.
-Linux implementations return NotImplemented. These controls belong to the user session,
-not to an elevated machine service.
-
-An opt-in session microphone shortcut uses RegisterHotKey with repeat suppression.
-It remains active with Manager and tray closed. No binding is captured by default;
-the first development binding is provided through --microphone-hotkey Ctrl+Alt+M.
-This opt-in binding is separate from the vendor key source.
-
-The subsequent TM2309/P0A0A event qualification adds a normal-user resident WMI
-subscription, independent of tray/Manager. Mi opens Manager (binding customization
-remains future work). Fn+K displays the firmware announcement without another SET.
-Fn+S cycles only a uniquely identified active built-in panel, using enumerated modes
-and readback. A cloned/ambiguous source is refused rather than changing an external
-display. F4 firmware intent is applied explicitly through Windows EndpointVolume,
-not toggled again or implemented by disabling a device/driver. The LED alone is not
-proof of actual mute. Startup leaves Windows capture unchanged until a real event;
-authoritative firmware-state recovery and multi-device target selection remain open.
-Hardware-mute capability is exposed separately from current mute/readback.
-
-Battery and vendor performance use separate application ports and policies, with a
-narrow Windows MIFS transport. TM2309 supports the documented fixed 80%/full policy;
-40–100% codes from other boards must not be sent to it. Firmware reads are separate
-from write qualification. Owner-operated SET/GET qualification on RMAMT6B0P0A0A
-confirmed 80%/full and Balanced/Quiet/Turbo, followed by restoration of both original
-settings. Only these discrete policies are enabled; FullSpeed remains blocked.
-Unknown BIOS writes are refused before transport. A matching policy readback confirms a setting,
-not physical charge cutoff. See hardware-investigation.md for evidence and open limits.
-
-The machine host owns qualified firmware operations through a separate authenticated
-pipe with a closed command allowlist, active-console authorization and exact version/build
-compatibility. Manager and tray remain unelevated clients. A native write with unknown
-outcome blocks further writes until reconciliation. The development CLI also provides
-`core-status` and explicit `core-charge`/`core-performance` commands for this same path.
-
-Manager and tray subscribe to the resident session's bounded read-only device-state
-stream. Microphone callbacks, screen events and completed commands trigger resynchronization;
-there is no periodic hardware polling. Slow firmware reads run separately from audio/display
-reads. Fn+S cycles the configured supported rates (60/165 by default, 60/120 fallback).
-Fn+S and Fn+K bindings persist; rebinding Fn+K cannot suppress the firmware's own profile change.
-Mi opens Overview, including an already-open Manager. The tray microphone icon is read-only
-until reverse synchronization with the keyboard LED is established.
+`VERSION.txt` is the single base-version source. Owner-authorized checkpoint commits
+may increment patch at most once. Previews, builds and installations retain the
+current version and use distinct payload identities. CI never bumps versions.
+Major/minor and stable publication require explicit owner decisions. Preserve the
+independent remote research branch; it is not part of this implementation.

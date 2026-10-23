@@ -28,12 +28,14 @@ struct Capability {
     Status status{Status::Unavailable};
     std::vector<ChargeLimit> allowed_limits;
     std::string detail;
+    bool operator==(const Capability &) const = default;
 };
 
 struct Observation {
     Status status{Status::Unavailable};
     std::optional<ChargeLimit> limit;
     std::string detail;
+    bool operator==(const Observation &) const = default;
 };
 
 // Synchronous, caller-owned and thread-confined. Read never changes hardware.

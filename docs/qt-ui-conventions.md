@@ -1,7 +1,7 @@
 # Qt UI language and appearance contract
 
 Mandatory for agents changing UI, translations, appearance, UI preferences or their
-packaging. The scaffold implements live language/theme preferences in Manager, tray
+packaging. The application implements live language/theme preferences in Manager, tray
 and OSD; native desktop acceptance remains platform-specific. Use Qt 6.10 APIs compatible with pinned Qt 6.10.2.
 The Qt 6.10 documentation currently identifies some pages as 6.10.3; do not infer
 permission to upgrade the toolchain or use APIs introduced after our pinned version.
@@ -49,17 +49,21 @@ center-left/center/center-right, bottom-left/bottom-center/bottom-right; default
 `trayAutostart` is a boolean, default true. This per-user preference controls only
 whether sign-in composition opens the optional tray, never service/session lifetime.
 Settings provides a Test indicator action through the existing diagnostic use case.
+`osdEnabled` and `osdSound` are independent daemon-owned preferences, both defaulting
+to true. Hiding OSD does not suppress event sound. Sound has its own settings block;
+turning OSD off also hides an already visible indicator. All feedback uses the same
+presenter and event deduplication. Overview uses the shared microphone control port
+and cached battery telemetry for charge/discharge power and estimated wear.
 
-Preferences remain in the per-user data location from windows-installation.md or
-the Linux XDG mapping. They never require administrator rights or belong to the
-machine daemon. Publish revisioned preference changes to live session/client UI;
-late-started processes read the current snapshot. The storage adapter serializes
-concurrent owned-key updates; do not let one process overwrite another's settings.
-Watch both the settings file and its parent directory. Re-add a removed file watch
-after atomic replacement, as documented by [QFileSystemWatcher](https://doc.qt.io/qt-6.10/qfilesystemwatcher.html#fileChanged).
-Hidden tray views also retranslate explicitly on the shared preference notification.
-Cross-process tests must check an already-running view through en -> ru -> en;
-checking only the writer's translator does not establish synchronization.
+[Daemon-owned preferences](preference-authority.md) governs persistence and propagation.
+The resident daemon owns per-user data, validates commands and caches the current
+revision in RAM. Manager and tray use IPC snapshots and commands, never preference
+file reads/writes, file watchers or preference-file locks. Deferred atomic writes
+run on a daemon worker. Offline, incompatible and failed requests remain explicit;
+there is no client-side persistence fallback. Isolated previews/test stores are separate.
+Already-running clients must retranslate through en -> ru -> en via daemon broadcasts;
+checking only a writer's translator does not establish synchronization.
+
 Localization controllers still work if no tray/settings client exists. Headless
 machine code returns stable diagnostic codes/typed values, never pretranslated UI text.
 
@@ -129,11 +133,11 @@ actual palette changes. Any necessary unsupported-backend fallback must be centr
 in this adapter, based on a documented/tested Qt palette/style path. Never claim that
 calling setColorScheme proves all surfaces changed, or add per-screen light/dark hacks.
 
-Manager uses Qt Quick Controls FluentWinUI3 by default and offers Fusion as Classic.
+Manager uses Qt Quick Controls FluentWinUI3 as its only production interface style.
 Select it centrally through QQuickStyle::setStyle before loading any QML controls.
 Use unqualified QtQuick.Controls imports; never switch style modules inside pages.
-`design` is fluent/classic. Selection remains a draft until Apply and restart Manager;
-persist the selection before requesting a scoped Manager-only restart.
+Legacy `design` values remain readable for compatibility; Classic does not select
+Fusion in production. Settings has no style selector or Apply/restart action.
 `theme` remains system/light/dark and applies live. Qt Widgets (tray and OSD) use
 Fusion with the same shared palette. They do not instantiate Qt Quick styles.
 Keep styling in this composition boundary and standard Qt palettes, without per-page
@@ -145,6 +149,11 @@ Standard controls inherit palette roles. QML custom drawing uses inherited palet
 roles/shared semantic colors; Widgets use QPalette and respect active/inactive/disabled
 groups. Status/accent tokens belong to one appearance module. No independent theme
 tables in forms, OSD or menus; no literal black/white foreground/background patches.
+The central light palette uses a soft gray window, white surfaces, dark primary text
+and readable secondary text. Shared Surface outlines separate cards without page-local
+theme logic. ChoiceBox retains native ComboBox behavior and popup while sharing a
+palette-based outline and chevron, including on white cards. Isolated preset captures
+support `tools/render-previews.ps1 -PresetSettings -Style FluentWinUI3 -Theme Light`.
 Do not leave manual overrides that block returning to System. Icons must remain
 legible against the effective palette. Respect accessibility/high-contrast information
 reported by Qt; palette preferences never change hardware or other users' settings.
@@ -244,7 +253,109 @@ palette roles and the common rounding preference. Do not assign per-button style
 inside tray/dashboard or leave one action on a different default Fusion look.
 RoundedFrame composes the shared surface control policy; views own layout/actions.
 
+Tray tooltips contain only product name and version. The mini-dashboard header is
+one vertically centered row: product, version, microphone and runtime-health icons.
+Omit the publisher credit here. Runtime health uses a compact standard Qt status
+symbol (plug / disconnected plug / compatibility warning); its translated tooltip and accessible name distinguish unavailable session,
+unavailable core, incompatible components and ready. Keep connection diagnostics
+in About and the context menu. Header icons scale with the title font metrics and
+device pixel ratio; microphone OSD scales its icon with its own text font metrics.
+
+Do not insert pending/success labels into page layouts. Errors use the application's
+message dialog; progress indicators keep a fixed slot beside the relevant action.
+Refresh reuses the resident session's state feed instead of starting duplicate client
+hardware reads. Reapply the shared palette only for actual theme changes, and preserve
+selected-state contrast in the disabled palette group. Built-in display rate buttons
+are shared by Overview and Devices. Indicator position and legacy display reset are
+saved atomically. `osdSound` controls the standard system beep for device-mode OSD.
+All OSD kinds use the single session-owned `OsdPresenter`: diagnostic test, Mi,
+microphone, performance and refresh rate share one emphasized RoundedFrame, icon/text
+layout, palette-derived border, rounding, placement, timeout and sound policy.
+The diagnostic Test action must exercise that same renderer and sound preference.
+Do not introduce separate diagnostic/vendor/microphone OSD windows. Native-key
+handlers receive this presenter by reference; closing Manager/tray does not own it.
+Confirmed GUI results use the version/build-checked, per-user feedback transport;
+it accepts semantic state values only and cannot execute hardware commands. Queued
+delivery is not proof of visible rendering, and failed delivery is not replayed.
+Duplicate consecutive values per device kind are suppressed across OEM/GUI sources.
+All status/device glyphs are monochrome SVG symbols tinted with the inherited
+WindowText palette via `symbol_pixmap`; microphone mute uses a crossed microphone,
+not green/red color. Every OSD kind includes a glyph; failures use a warning glyph.
+Manager and tray read and change preferences only through daemon IPC. The daemon
+owns the RAM revision and deferred atomic QSaveFile persistence on its worker;
+clients do not read/watch settings files or take preference-file locks. A per-user
+authority lifetime lease prevents duplicate owners and is released only after the
+store flushes, as specified in preference-authority.md.
+
 The application mark is presentation/assets/app-icon.svg. app-icon.ico is its
 multi-resolution Windows derivative (16 through 256 px). GUI resources and Windows
 EXE/setup resources use that same mark; Linux installs the SVG in the hicolor theme.
 The tray reuses the application icon instead of painting a separate letter/font.
+
+Battery-page auto-refresh renews a session-owned sampling lease every second only while
+the page is visible and its window is active and not minimized. Navigation/hiding releases
+it; disconnection or missing renewals expires it after 3.5 seconds (500 ms watchdog tick).
+The selector offers 100 ms, 1 sec (default) and 5 sec in both languages,
+persisted as batteryIntervalMs (100, 1000, 5000). Legacy 5 ms maps to 5000 ms.
+The session samples at the minimum interval of live clients; only one native job can run.
+These are requested sampling intervals, not guarantees of new driver measurements or
+real-time scheduling. Do not repeat full firmware/audio/display refresh on these ticks.
+Native failure pauses fast sampling; power events, manual refresh and coarse background
+observation can recover it. Stable telemetry emits no new state frame. Changed battery
+values use a separate notification; unrelated controls are not invalidated. Qt text
+properties handle equal rendered values without forcing repaint/update of the window.
+Background policy protection keeps its independent machine lifetime and ten-second
+native telemetry guard; it does not depend on a visible UI or a session sampling lease.
+Show Charge / Discharge and absolute W; at zero use native discharging state, otherwise
+Charge. Wh remains the capacity unit. Missing rate remains unknown, never zero.
+
+Tray configuration uses stable section IDs from UiPreferences, stored in traySections.
+The expanded Tray settings section exposes the same list; the dashboard registers native widget sections against
+these IDs. Visibility is configurable for performance, refresh, limit, power, microphone
+and connection. Adding a section requires its ID, translated label and widget mount;
+it must not introduce a duplicate hardware/policy owner. Connection uses a chain-link
+glyph, distinct from battery/power. Header limit and directional W use shared state.
+
+Tray configuration is expanded within Settings, with its own heading and shared scroll area.
+The dashboard shows power, charge limit, microphone and connection in that order.
+Hide rates that round to 0.0 W. An open dashboard renews the shared battery sampling
+lease every second at 1000 ms and requests a fresh sample immediately. Closing it releases
+the lease; the session retains a ten-second background cache refresh. Manager and tray
+share the same sampling authority; neither polls firmware for battery telemetry.
+
+The tray header is one row: brand/version, optional nonzero power, charge-policy
+symbol, microphone, connection. Do not add a second indicator row or visible limit
+text. The battery mark with an arrow ending at a stop bar denotes charge policy; the actual threshold is in its
+localized hover tooltip and accessible name, never an unlabeled state-of-charge
+percentage. Icons stay within their SVG viewBox including stroke bounds.
+
+Performance selectors use the visual order Quiet / Balanced / Performance
+(Тихий / Сбалансированный / Производительный). Keep firmware profile IDs separate
+from this visual order; renaming Turbo in presentation does not change its native value.
+
+For shared Surface, keep leftPadding/rightPadding/topPadding/bottomPadding bound to
+padding explicitly. Fluent control definitions may otherwise supply individual edge
+bindings that defeat a caller's uniform padding value. Keep selected navigation and
+icon foregrounds tied to HighlightedText/ButtonText roles; neutral accents must not
+produce white-on-white selected content in isolated previews.
+
+The FluentWinUI3 documentation supports using the style across platforms; do not
+blanket-disable it for previews. The public preview-style override is restricted to
+isolated offscreen capture. A focused -PresetSettings -Style FluentWinUI3 capture
+is not a replacement for full theme/language or native compositor acceptance.
+
+Settings provides a confirmed reset of user preferences, including shortcuts and custom
+tray presets. PreferencePort resets the owned ui object atomically under the normal
+daemon authority, increments the revision and preserves other record fields and the
+configured display refresh choices. All clients receive the usual preference
+notifications. Language/theme and other live preferences update immediately;
+the interface remains Fluent. Reset never changes the
+physical display mode. Before resetting user preferences, the device controller
+asynchronously restores the 100% charge policy on qualified hardware through the
+existing core port and verifies firmware readback. A failed, unavailable or unknown
+result blocks the preference reset. Unimplemented or unqualified charge control is
+skipped without native writes; the confirmation states that battery restoration applies
+on supported hardware. Firmware readback confirms policy, not physical cutoff. Empty
+refresh choices mean the advertised subset of standard 60/120/165 Hz choices, not a
+default physical refresh rate. Never implement it as a sequence of per-key writes or
+delete the whole user-data directory.

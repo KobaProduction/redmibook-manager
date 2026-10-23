@@ -9,9 +9,12 @@ DeviceControlsModel::DeviceControlsModel(
     std::shared_ptr<application::microphone::ControlPort> microphone,
     std::shared_ptr<application::display::RefreshPort> refresh, Preferences &preferences,
     std::shared_ptr<application::battery::ChargeControl> battery,
-    std::shared_ptr<application::performance::PerformanceControl> performance)
+    std::shared_ptr<application::performance::PerformanceControl> performance,
+    std::shared_ptr<application::feedback::Presenter> feedback,
+    std::shared_ptr<application::microphone::FirmwareStatePort> firmware)
     : microphone_(std::move(microphone)), refresh_(std::move(refresh)), battery_(std::move(battery)),
-      performance_(std::move(performance)), preferences_(preferences) {
+      performance_(std::move(performance)), feedback_(std::move(feedback)), firmware_(std::move(firmware)),
+      preferences_(preferences) {
     if (!microphone_ || !refresh_) {
         throw std::invalid_argument("Device controls require owned ports");
     }
@@ -20,6 +23,7 @@ DeviceControlsModel::DeviceControlsModel(
     connect(&deadline_, &QTimer::timeout, this, &DeviceControlsModel::expireTask);
     connect(&pending_, &QFutureWatcher<TaskResult>::finished, this, &DeviceControlsModel::completeTask);
     connect(&preferences, &Preferences::languageChanged, this, &DeviceControlsModel::changed);
+    connect(&preferences, &Preferences::languageChanged, this, &DeviceControlsModel::batteryTelemetryChanged);
     connect(&preferences, &Preferences::changed, this, &DeviceControlsModel::changed);
 }
 bool DeviceControlsModel::microphoneAvailable() const {
@@ -64,17 +68,15 @@ QVariantList DeviceControlsModel::screens() const {
 }
 QString DeviceControlsModel::operationStatus() const {
     switch (outcome_) {
-    case Outcome::Running:
-        return tr("Waiting for the device operation…");
     case Outcome::TimedOut:
         return tr("The operation exceeded its deadline. The native call may still finish; its result is "
                   "unconfirmed. Refresh when available.");
     case Outcome::Unknown:
         return tr("The native operation outcome is unknown. Its cancellation is not confirmed.");
-    case Outcome::Confirmed:
-        return tr("Change confirmed by Windows readback");
     case Outcome::Failed:
         return tr("Change failed or could not be confirmed; refresh status before retrying");
+    case Outcome::Running:
+    case Outcome::Confirmed:
     case Outcome::None:
         return {};
     }
@@ -94,12 +96,13 @@ void DeviceControlsModel::startTask(std::function<TaskResult()> task, bool comma
 }
 
 void DeviceControlsModel::expireTask() {
-    if (!busy_) {
+    if (!busy_ || outcome_ == Outcome::TimedOut) {
         return;
     }
     outcome_ = Outcome::TimedOut;
     invalidateState();
     emit changed();
+    emit errorOccurred(operationStatus());
 }
 
 void DeviceControlsModel::completeTask() {
@@ -114,6 +117,7 @@ void DeviceControlsModel::completeTask() {
         } catch (...) {
             invalidateState();
             outcome_ = Outcome::Failed;
+            emit errorOccurred(operationStatus());
         }
     }
     emit changed();
@@ -128,13 +132,42 @@ void DeviceControlsModel::refresh() {
         return readSnapshot(microphone, refresh, battery, performance);
     });
 }
+
+void DeviceControlsModel::beginRefresh() {
+    refreshing_ = true;
+    emit changed();
+}
+void DeviceControlsModel::finishRefresh(application::overview::RefreshResult result) {
+    refreshing_ = false;
+    emit changed();
+    switch (result) {
+    case application::overview::RefreshResult::Completed:
+        return;
+    case application::overview::RefreshResult::Failed:
+        emit errorOccurred(tr("Could not refresh device state."));
+        return;
+    case application::overview::RefreshResult::TimedOut:
+        emit errorOccurred(tr("Device state refresh timed out. Native calls may still finish."));
+        return;
+    case application::overview::RefreshResult::Unavailable:
+        emit errorOccurred(tr("Session runtime unavailable"));
+        return;
+    }
+}
 void DeviceControlsModel::setMicrophoneMuted(bool muted) {
+    if (!preferences_.available() || !microphoneControllable())
+        return;
     startTask(
-        [microphone = microphone_, muted] {
-            const auto observed = microphone->set_muted(muted);
-            const bool confirmed =
-                observed.status == application::microphone::Status::Ready && observed.muted == muted;
-            return TaskResult{observed, {}, confirmed ? Outcome::Confirmed : Outcome::Failed};
+        [firmware = firmware_, muted] {
+            TaskResult result;
+            result.firmware = firmware->request(muted);
+            const auto &state = *result.firmware;
+            using application::microphone::FirmwareStateStatus;
+            result.outcome = state.status == FirmwareStateStatus::OutcomeUnknown ? Outcome::Unknown
+                             : state.status == FirmwareStateStatus::Ready && state.desired_muted == muted
+                                 ? Outcome::Confirmed
+                                 : Outcome::Failed;
+            return result;
         },
         true);
 }

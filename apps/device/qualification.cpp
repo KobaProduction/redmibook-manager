@@ -35,7 +35,7 @@ class DeviceLock {
 };
 class Qualification {
   public:
-    Qualification(fw::FirmwareIdentity identity, QString path)
+    Qualification(const fw::FirmwareIdentity &identity, QString path)
         : path_(std::move(path)), battery_(transport_, identity), performance_(transport_, identity) {}
     QJsonObject run();
 

@@ -13,7 +13,10 @@ enum class Command : unsigned {
     ReadPerformance,
     Balanced,
     Quiet,
-    Turbo
+    Turbo,
+    ReadMicrophone,
+    MuteMicrophone,
+    UnmuteMicrophone
 };
 enum class Status : unsigned {
     Available,

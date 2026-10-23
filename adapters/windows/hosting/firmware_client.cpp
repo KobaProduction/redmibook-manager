@@ -158,7 +158,31 @@ class CorePerformance final : public performance::PerformanceControl {
         return {performance::Status::InvalidRequest, {}, "unknown-profile"};
     }
 };
+class CoreMicrophoneState final : public application::microphone::FirmwareStatePort {
+  public:
+    application::microphone::FirmwareState read() const override {
+        return execute(wire::Command::ReadMicrophone);
+    }
+    application::microphone::FirmwareState request(bool muted) const override {
+        return execute(muted ? wire::Command::MuteMicrophone : wire::Command::UnmuteMicrophone);
+    }
+
+  private:
+    static application::microphone::FirmwareState execute(wire::Command command) {
+        using application::microphone::FirmwareStateStatus;
+        const auto reply = exchange_core(command);
+        const auto status = windows::microphone_status(reply.status);
+        if (status != FirmwareStateStatus::Ready)
+            return {status, {}, reply.detail};
+        if (reply.value != 0 && reply.value != 1)
+            return {FirmwareStateStatus::Failed, {}, "core-microphone-state-invalid"};
+        return {status, reply.value == 1, reply.detail};
+    }
+};
 } // namespace
+std::shared_ptr<application::microphone::FirmwareStatePort> make_core_microphone_state() {
+    return std::make_shared<CoreMicrophoneState>();
+}
 std::shared_ptr<application::battery::ChargeControl> make_core_charge_control() {
     return std::make_shared<CoreCharge>();
 }

@@ -1,4 +1,5 @@
 #include "adapters/local_api/session_server.hpp"
+#include "adapters/local_api/feedback_channel.hpp"
 #include "adapters/local_api/session_client.hpp"
 #include <QCoreApplication>
 #include <QTimer>
@@ -8,8 +9,9 @@
 #include "adapters/local_api/session_codec.hpp"
 namespace manager::adapters {
 SessionServer::SessionServer(const application::ReadRuntimeStatus &read,
-                             application::DiagnosticFeedbackPort &feedback)
-    : read_(read), feedback_(feedback) {
+                             application::DiagnosticFeedbackPort &feedback,
+                             application::feedback::Presenter *device_feedback)
+    : read_(read), feedback_(feedback), device_feedback_(device_feedback) {
     connect(&server_, &QLocalServer::newConnection, this, &SessionServer::accept);
     connect(&watcher_, &QFutureWatcher<application::DiagnosticReply>::finished, this,
             &SessionServer::completed);
@@ -30,7 +32,7 @@ bool SessionServer::listen(const QString &endpoint) {
 void SessionServer::accept() {
     while (server_.hasPendingConnections()) {
         auto *socket = server_.nextPendingConnection();
-        socket->setReadBufferSize(128);
+        socket->setReadBufferSize(512);
         connect(socket, &QLocalSocket::readyRead, this, [this, socket] { handle(socket); });
         connect(socket, &QLocalSocket::disconnected, socket, &QObject::deleteLater);
         QTimer::singleShot(4000, socket, [socket] {
@@ -80,10 +82,12 @@ void SessionServer::handle(QLocalSocket *socket) {
     if (!socket->canReadLine()) {
         return;
     }
-    const auto command = socket->readLine(128).trimmed();
+    const auto command = socket->readLine(512).trimmed();
     socket->disconnect(this);
     if (command == "RMB/1 status" || command == "RMB/1 diagnostic") {
         probe(socket, command.endsWith("diagnostic"));
+    } else if (command.startsWith("RMB/1 feedback ")) {
+        present_feedback(socket, command);
     } else if (command == "RMB/1 open-tray") {
         respond(socket, last_reply_);
         emit openTray();
@@ -92,6 +96,13 @@ void SessionServer::handle(QLocalSocket *socket) {
     } else {
         socket->disconnectFromServer();
     }
+}
+void SessionServer::present_feedback(QLocalSocket *socket, const QByteArray &command) {
+    const auto event = decode_feedback(command);
+    const auto delivery = event && device_feedback_ ? device_feedback_->present(*event)
+                                                    : application::feedback::Delivery::Invalid;
+    socket->write(QByteArray("RMB/1 feedback ") + QByteArray::number(static_cast<int>(delivery)) + '\n');
+    socket->disconnectFromServer();
 }
 void SessionServer::stop_session(QLocalSocket *socket, bool restart) {
     respond(socket, last_reply_);

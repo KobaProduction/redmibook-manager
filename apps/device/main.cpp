@@ -41,11 +41,14 @@ QJsonObject snapshot() {
 }
 QJsonObject microphone_command(const QString &action) {
     const manager::adapters::NativeMicrophone control;
+    if (action == QStringLiteral("read"))
+        return microphone_json(control.read());
     if (action == QStringLiteral("toggle")) {
         return microphone_json(manager::application::microphone::toggle(control));
     }
     if (action == QStringLiteral("mute") || action == QStringLiteral("unmute")) {
-        return microphone_json(control.set_muted(action == QStringLiteral("mute")));
+        return microphone_json(
+            manager::application::microphone::set_muted_confirmed(control, action == QStringLiteral("mute")));
     }
     return {{QStringLiteral("error"), QStringLiteral("invalid-microphone-action")}};
 }

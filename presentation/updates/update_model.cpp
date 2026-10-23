@@ -8,7 +8,7 @@ QString UpdateModel::status() const {
         return tr("Checking for updates…");
     }
     if (!checked_) {
-        return tr("Updates have not been checked yet.");
+        return tr("Not checked yet.");
     }
     switch (result_.state) {
     case application::UpdateState::Available:
@@ -36,6 +36,7 @@ void UpdateModel::check() {
         if (receiver) {
             receiver->result_ = result;
             receiver->checked_ = true;
+            receiver->checked_at_ = QDateTime::currentDateTime();
             receiver->busy_ = false;
             emit receiver->changed();
         }

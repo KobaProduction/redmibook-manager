@@ -1,10 +1,15 @@
 set(sources "@MANAGER_CPP@")
 set(tidy_sources "@MANAGER_TIDY_SOURCES@")
+set(format_arguments "")
+foreach(source IN LISTS sources)
+    string(APPEND format_arguments "\"${source}\"\n")
+endforeach()
+file(WRITE "@CMAKE_BINARY_DIR@/format-sources.rsp" "${format_arguments}")
 if(MODE STREQUAL "format-check")
-    execute_process(COMMAND "@CLANG_FORMAT@" --dry-run --Werror ${sources}
+    execute_process(COMMAND "@CLANG_FORMAT@" --dry-run --Werror "@@CMAKE_BINARY_DIR@/format-sources.rsp"
         COMMAND_ERROR_IS_FATAL ANY)
 elseif(MODE STREQUAL "format")
-    execute_process(COMMAND "@CLANG_FORMAT@" -i ${sources} COMMAND_ERROR_IS_FATAL ANY)
+    execute_process(COMMAND "@CLANG_FORMAT@" -i "@@CMAKE_BINARY_DIR@/format-sources.rsp" COMMAND_ERROR_IS_FATAL ANY)
 elseif(MODE STREQUAL "lint")
     foreach(source IN LISTS tidy_sources)
         execute_process(COMMAND "@CLANG_TIDY@" -p "@CMAKE_BINARY_DIR@" "${source}"

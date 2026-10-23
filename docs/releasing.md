@@ -8,20 +8,26 @@
 - `codex/*`: scoped agent branches. Local work and verification precede publication.
 - Existing `research` is independent and preserved; no automatic integration.
 
-The repository must actually receive a workflow before GitHub can execute it.
-Creating YAML locally does not establish a passing server pipeline or branch protection.
-The initial Hello World stage is accepted locally first. Do not push to `release`,
-create remote tags or publish a release as a side effect of ordinary local verification.
-The current owner gate also forbids commits and all remote mutations until the owner
-has personally checked the app and explicitly authorizes the corresponding Git action.
+The tracked workflow is .github/workflows/ci.yml. Its presence does not establish
+a passing server pipeline or branch protection. Local builds/installations never
+authorize publication by themselves. Publish or promote only after explicit owner
+authorization and the required local checks; preserve remote branch restrictions.
+An owner-requested alpha publication promotes the same verified source commit to
+release. The workflow creates its immutable tag only after the matrix succeeds.
 
 ## Version and immutable builds
 
-`VERSION.txt` owns the application and package base version, currently `1.1.1`.
-Only the owner authorizes a base-version change. No automatic major/minor/patch bump.
+`VERSION.txt` owns the application and package base version, currently `1.1.5`.
+Product versions identify checkpoint commits. A patch increment may be included
+only in an owner-authorized checkpoint commit, at most once per checkpoint.
+Uncommitted iterations, previews, builds, packaging and installations retain the
+current version; distinguish their binaries with the payload build identity.
+Do not commit solely to obtain a version bump or infer Git authorization from an
+installation request. Major/minor changes require an explicit owner decision.
+CI never bumps versions.
 
-An alpha publication from `release` uses `v1.1.1-alpha.<workflow-run-number>`.
-The suffix identifies an immutable build; the executable still reports `1.1.1`.
+An alpha publication from `release` uses `v1.1.5-alpha.<workflow-run-number>`.
+The suffix identifies an immutable build; the executable still reports `1.1.5`.
 CI embeds the same run number as `MANAGER_RELEASE_SEQUENCE` for update comparison.
 The default `MANAGER_RELEASE_CHANNEL` is alpha; stable must be selected explicitly
 when the owner authorizes a stable publication.
