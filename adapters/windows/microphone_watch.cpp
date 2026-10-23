@@ -161,7 +161,7 @@ class Watch final : public application::microphone::ChangeSubscription {
 };
 } // namespace
 std::unique_ptr<application::microphone::ChangeSubscription>
-watch_native_microphone(std::function<void()> changed) {
-    return std::make_unique<Watch>(std::move(changed));
+watch_native_microphone(const std::function<void()> &changed) {
+    return std::make_unique<Watch>(changed);
 }
 } // namespace manager::adapters

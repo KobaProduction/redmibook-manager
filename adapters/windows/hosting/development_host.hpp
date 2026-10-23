@@ -14,11 +14,11 @@ namespace manager::adapters::windows {
 }
 
 [[nodiscard]] inline bool development_server(DWORD pid) {
-    const auto *value = std::getenv("MANAGER_DEV_CORE_PID");
-    if (value == nullptr || development_scope().empty()) {
+    const auto value = environment_value("MANAGER_DEV_CORE_PID");
+    if (!value || development_scope().empty()) {
         return false;
     }
-    const std::string text(value);
+    const auto &text = *value;
     DWORD expected = 0;
     const auto result = std::from_chars(text.data(), text.data() + text.size(), expected);
     return result.ec == std::errc{} && result.ptr == text.data() + text.size() && expected != 0 &&

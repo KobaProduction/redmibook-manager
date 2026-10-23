@@ -1,10 +1,10 @@
 #include "presentation/power_controls_model.hpp"
 #include <QCoreApplication>
 #include <QEventLoop>
-#include <QThread>
 #include <QTimer>
 #include <atomic>
 #include <mutex>
+#include <thread>
 
 namespace {
 namespace power = manager::application::power;
@@ -30,10 +30,12 @@ class Saver final : public power::SaverPort {
     mutable std::atomic<int> reads{0};
     std::atomic<int> writes{0};
     mutable std::atomic<bool> gui_read{false};
+    const std::thread::id gui_thread{std::this_thread::get_id()};
     std::function<void()> after_second_read;
     power::Saver read() const override {
         const bool value = cached.load();
-        gui_read.store(gui_read.load() || QThread::currentThread() == QCoreApplication::instance()->thread());
+        if (std::this_thread::get_id() == gui_thread)
+            gui_read.store(true);
         if (++reads == 2 && after_second_read)
             after_second_read();
         return {power::SaverStatus::Ready, value, true};

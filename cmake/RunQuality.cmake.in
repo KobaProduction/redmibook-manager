@@ -1,5 +1,13 @@
 set(sources "@MANAGER_CPP@")
 set(tidy_sources "@MANAGER_TIDY_SOURCES@")
+set(tidy_arguments "")
+if("@CMAKE_CXX_COMPILER_ID@" STREQUAL "GNU" AND "@WIN32@")
+    # Windows LLVM wheels default to MSVC; analyze against the actual MinGW kit.
+    get_filename_component(mingw_root "@CMAKE_CXX_COMPILER@" DIRECTORY)
+    get_filename_component(mingw_root "${mingw_root}" DIRECTORY)
+    list(APPEND tidy_arguments "--extra-arg=--target=x86_64-w64-windows-gnu"
+        "--extra-arg=--sysroot=${mingw_root}")
+endif()
 set(format_arguments "")
 foreach(source IN LISTS sources)
     string(APPEND format_arguments "\"${source}\"\n")
@@ -11,10 +19,11 @@ if(MODE STREQUAL "format-check")
 elseif(MODE STREQUAL "format")
     execute_process(COMMAND "@CLANG_FORMAT@" -i "@@CMAKE_BINARY_DIR@/format-sources.rsp" COMMAND_ERROR_IS_FATAL ANY)
 elseif(MODE STREQUAL "lint")
-    foreach(source IN LISTS tidy_sources)
-        execute_process(COMMAND "@CLANG_TIDY@" -p "@CMAKE_BINARY_DIR@" "${source}"
-            WORKING_DIRECTORY "@PROJECT_SOURCE_DIR@" COMMAND_ERROR_IS_FATAL ANY)
-    endforeach()
+    string(REPLACE ";" "\n" tidy_source_lines "${tidy_sources}")
+    file(WRITE "@CMAKE_BINARY_DIR@/tidy-sources.txt" "${tidy_source_lines}\n")
+    execute_process(COMMAND "@Python3_EXECUTABLE@" "@PROJECT_SOURCE_DIR@/tools/run-clang-tidy.py"
+        "@CLANG_TIDY@" "@CMAKE_BINARY_DIR@" "@CMAKE_BINARY_DIR@/tidy-sources.txt" ${tidy_arguments}
+        WORKING_DIRECTORY "@PROJECT_SOURCE_DIR@" COMMAND_ERROR_IS_FATAL ANY)
 else()
     message(FATAL_ERROR "Unknown quality operation: ${MODE}")
 endif()

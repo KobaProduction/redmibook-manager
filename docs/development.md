@@ -22,7 +22,11 @@ Qt is pinned to 6.10.2 in CI; C++20, GCC 13 (MinGW 13.1 on Windows), LLVM 19,
 CMake 3.30+ and Ninja are the baseline. Python is used only as a standard-library
 runner for vendored checkdeps and its regression tests; this is not a Python product.
 Windows CI installs version-pinned LLVM binary wheels from `tools/requirements-quality.txt`;
-the application has no Python runtime dependency. This small tool-only requirements
+the MinGW quality runner explicitly supplies the GNU target and compiler-kit sysroot,
+so LLVM does not accidentally analyze Qt with the runner's MSVC standard library.
+The full configured source list runs in at most four analyzer processes; diagnostics
+are retained per failed file and any failure blocks the quality target.
+The application has no Python runtime dependency. This small tool-only requirements
 file deliberately does not introduce a Python application/package environment.
 CI pins action revisions and aqt 3.3.0. System packages come from the named runner
 distribution; this is not a hermetic toolchain or bit-reproducible binary guarantee.

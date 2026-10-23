@@ -46,8 +46,8 @@ class PowerWatch final : public application::battery::PowerSubscription {
     HPOWERNOTIFY source_{}, level_{}, resume_{};
 };
 } // namespace
-std::unique_ptr<application::battery::PowerSubscription> watch_power(std::function<void()> changed,
+std::unique_ptr<application::battery::PowerSubscription> watch_power(const std::function<void()> &changed,
                                                                      bool observe_level) {
-    return std::make_unique<PowerWatch>(std::move(changed), observe_level);
+    return std::make_unique<PowerWatch>(changed, observe_level);
 }
 } // namespace manager::adapters

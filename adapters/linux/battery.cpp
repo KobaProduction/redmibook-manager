@@ -12,7 +12,7 @@ class Battery final : public application::battery::TelemetryPort {
 std::shared_ptr<application::battery::TelemetryPort> make_battery_telemetry() {
     return std::make_shared<Battery>();
 }
-std::unique_ptr<application::battery::PowerSubscription> watch_power(std::function<void()>, bool) {
+std::unique_ptr<application::battery::PowerSubscription> watch_power(const std::function<void()> &, bool) {
     return {};
 }
 } // namespace manager::adapters
