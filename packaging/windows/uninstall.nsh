@@ -1,8 +1,13 @@
 SetShellVarContext all
 InitPluginsDir
 IfFileExists "$INSTDIR\bin\redmibook-service.exe" 0 rmb_remove_registration
-CopyFiles /SILENT "$INSTDIR\bin\redmibook-service.exe" "$PLUGINSDIR\RedmibookManagerMaintenance.exe"
 StrCpy $RmbMaintenance "$PLUGINSDIR\rmb-remove"
+; Optional registry reads in the NSIS template can leave the error flag set.
+; Check each operation's own result instead of inheriting that flag.
+ClearErrors
+CopyFiles /SILENT "$INSTDIR\bin\redmibook-service.exe" "$PLUGINSDIR\RedmibookManagerMaintenance.exe"
+IfErrors rmb_remove_failed
+ClearErrors
 ExecShell "open" "$PLUGINSDIR\RedmibookManagerMaintenance.exe" '--maintain "$INSTDIR\bin" "$RmbMaintenance"' SW_HIDE
 IfErrors rmb_remove_failed
 StrCpy $0 0

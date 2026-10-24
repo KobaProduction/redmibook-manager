@@ -6,6 +6,7 @@ IfFileExists "$INSTDIR\bin\redmibook-manager.exe" 0 rmb_prepare_done
 SetOutPath "$PLUGINSDIR"
 File /oname=RedmibookManagerMaintenance.exe "${INST_DIR}\bin\redmibook-service.exe"
 StrCpy $RmbMaintenance "$PLUGINSDIR\rmb-update"
+ClearErrors
 ExecShell "open" "$PLUGINSDIR\RedmibookManagerMaintenance.exe" '--maintain "$INSTDIR\bin" "$RmbMaintenance"' SW_HIDE
 IfErrors rmb_prepare_failed
 StrCpy $0 0
