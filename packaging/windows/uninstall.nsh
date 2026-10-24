@@ -21,7 +21,19 @@ rmb_remove_commit:
 FileOpen $0 "$RmbMaintenance.remove" w
 FileWrite $0 "remove"
 FileClose $0
-Goto rmb_remove_registration
+; Keep the plugin directory and its completion marker alive until maintenance
+; acknowledges removal. Otherwise cleanup can erase .remove before it is read.
+StrCpy $1 0
+rmb_remove_finish_wait:
+IfFileExists "$RmbMaintenance.done" rmb_remove_finish_check
+Sleep 100
+IntOp $1 $1 + 1
+IntCmp $1 300 rmb_remove_failed rmb_remove_finish_wait rmb_remove_failed
+rmb_remove_finish_check:
+FileOpen $0 "$RmbMaintenance.done" r
+FileRead $0 $1
+FileClose $0
+StrCmp $1 "0" rmb_remove_registration rmb_remove_failed
 rmb_remove_failed:
 FileOpen $0 "$RmbMaintenance.commit.tmp" w
 FileWrite $0 "cancel"

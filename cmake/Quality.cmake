@@ -27,6 +27,8 @@ else()
     list(FILTER MANAGER_TIDY_SOURCES EXCLUDE REGEX "/apps/device/firmware_windows.cpp$")
     list(FILTER MANAGER_TIDY_SOURCES EXCLUDE REGEX "/apps/device/qualification.cpp$")
     list(FILTER MANAGER_TIDY_SOURCES EXCLUDE REGEX "/tests/payload_tests.cpp$")
+    # This WMI contract target is assembled only on Windows, like payload-tests.
+    list(FILTER MANAGER_TIDY_SOURCES EXCLUDE REGEX "/tests/firmware_safety_tests.cpp$")
 endif()
 add_custom_target(format-check
     COMMAND "${CMAKE_COMMAND}" -DMODE=format-check -P "${CMAKE_BINARY_DIR}/RunQuality.cmake")

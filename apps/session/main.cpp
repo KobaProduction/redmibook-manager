@@ -141,6 +141,23 @@ void configure(QCommandLineParser &parser) {
     parser.addOption(
         {QStringLiteral("output"), QStringLiteral("Write diagnostic JSON"), QStringLiteral("path")});
 }
+manager::application::presets::Catalog preset_catalog() {
+    using namespace manager::adapters;
+    PresetExecutor executor(make_core_performance_control(), std::make_shared<NativeRefresh>(),
+                            make_power_schemes(), make_brightness(), make_energy_saver());
+    return executor.choices();
+}
+int run_resident_session(QApplication &app, const QCommandLineParser &parser) {
+    const auto directory = manager::adapters::preferences_directory();
+    QDir().mkpath(directory);
+    QLockFile lock(QDir(directory).filePath(manager::adapters::session_endpoint() + QStringLiteral(".lock")));
+    if (!lock.tryLock(2000))
+        return 0;
+    manager::adapters::PreferenceAuthority authority(directory, manager::adapters::preferences_endpoint(),
+                                                     preset_catalog);
+    manager::presentation::Preferences preferences(authority.client());
+    return run_session(app, preferences, directory, parser, authority.client());
+}
 } // namespace
 
 int main(int argc, char *argv[]) {
@@ -159,21 +176,7 @@ int main(int argc, char *argv[]) {
         QTextStream(stdout) << manager::adapters::session_endpoint() << Qt::endl;
         return 0;
     }
-    if (parser.isSet(QStringLiteral("probe")) || parser.isSet(QStringLiteral("shutdown"))) {
+    if (parser.isSet(QStringLiteral("probe")) || parser.isSet(QStringLiteral("shutdown")))
         return request_status(app, parser);
-    }
-    const auto directory = manager::adapters::preferences_directory();
-    QDir().mkpath(directory);
-    QLockFile lock(QDir(directory).filePath(manager::adapters::session_endpoint() + QStringLiteral(".lock")));
-    if (!lock.tryLock(2000))
-        return 0;
-    manager::adapters::PreferenceAuthority authority(
-        directory, manager::adapters::preferences_endpoint(), [] {
-            using namespace manager::adapters;
-            PresetExecutor executor(make_core_performance_control(), std::make_shared<NativeRefresh>(),
-                                    make_power_schemes(), make_brightness(), make_energy_saver());
-            return executor.choices();
-        });
-    manager::presentation::Preferences preferences(authority.client());
-    return run_session(app, preferences, directory, parser, authority.client());
+    return run_resident_session(app, parser);
 }

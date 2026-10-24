@@ -57,12 +57,11 @@ function Assert-Bundle {
 function Remove-TestInstallation {
     $uninstaller = Join-Path $installRoot 'Uninstall.exe'
     if (Test-Path -LiteralPath $uninstaller) {
-        Invoke-BoundedProcess $uninstaller '/S'
-        for ($attempt = 0; $attempt -lt 100; $attempt++) {
-            $executableExists = Test-Path -LiteralPath (Join-Path $installRoot 'bin/redmibook-manager.exe')
-            if (-not $executableExists -and -not (Test-Path -LiteralPath $registryKey)) { break }
-            Start-Sleep -Milliseconds 100
-        }
+        # _?= disables NSIS's detached temp-copy launcher. Wait for the real
+        # uninstaller, running outside its install tree so it can remove itself.
+        $helper = Join-Path $testRoot 'RedmibookManagerUninstall.exe'
+        Copy-Item -LiteralPath $uninstaller -Destination $helper -Force
+        Invoke-BoundedProcess $helper "/S _?=$installRoot"
         if (Test-Path -LiteralPath (Join-Path $installRoot 'bin/redmibook-manager.exe')) {
             throw 'Uninstaller left the application executable in place'
         }

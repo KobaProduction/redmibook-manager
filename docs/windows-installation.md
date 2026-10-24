@@ -91,6 +91,11 @@ starts and probes the service. Manifest pruning removes only previously owned ob
 payload files. User settings survive replacement and uninstall. Payload rollback after
 partial file-copy failure is not yet transactional; an error must be reported explicitly.
 
+Uninstall waits for the maintenance removal acknowledgement before its temporary
+handshake directory is cleaned. Automated package checks copy the uninstaller into
+their owned temporary directory and use NSIS `_?=` to wait for its actual completion
+and exit code; the detached launcher alone is not uninstall evidence.
+
 ## Microsoft authorities
 
 - [Known folder identifiers and architecture-specific Program Files mapping](https://learn.microsoft.com/en-us/windows/win32/shell/knownfolderid)

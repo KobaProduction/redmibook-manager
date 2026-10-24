@@ -51,6 +51,45 @@ void restart(manager::adapters::SessionClient &client, QObject &owner) {
     });
     watcher->setFuture(QtConcurrent::run([] { return manager::adapters::restart_machine_runtime(); }));
 }
+bool acquire_instance(manager::tray::Instance &instance) {
+    if (instance.acquire())
+        return true;
+    QMessageBox::warning(
+        nullptr, QCoreApplication::translate("TrayClient", "Tray already running"),
+        QCoreApplication::translate("TrayClient",
+                                    "The previous tray did not close. A second tray was not started."));
+    return false;
+}
+void connect_tray(manager::presentation::TrayClient &tray, manager::adapters::SessionClient &client,
+                  QApplication &app) {
+    QObject::connect(&tray, &manager::presentation::TrayClient::openManager, &app,
+                     [] { manager::adapters::launch_component(QStringLiteral("redmibook-manager")); });
+    QObject::connect(&tray, &manager::presentation::TrayClient::restartComponents, &app,
+                     [&client, &app] { restart(client, app); });
+}
+int present_tray(QApplication &app, manager::presentation::TrayClient &tray) {
+    if (!tray.show())
+        return 2;
+    if (app.arguments().contains(QStringLiteral("--open-dashboard")))
+        QTimer::singleShot(0, &tray, &manager::presentation::TrayClient::openDashboard);
+    return app.exec();
+}
+int run_tray(QApplication &app) {
+    manager::adapters::PreferenceClient store(manager::adapters::preferences_endpoint());
+    manager::presentation::Preferences preferences(store);
+    QObject::connect(&preferences, &manager::presentation::Preferences::reconnectRequested, &app,
+                     [] { manager::adapters::ensure_session(); });
+    manager::tray::Instance instance(manager::adapters::preferences_directory());
+    if (!acquire_instance(instance))
+        return 1;
+    manager::adapters::ensure_session();
+    manager::adapters::SessionClient client;
+    manager::presentation::TrayClient tray(preferences, client);
+    manager::tray::DeviceControls controls(tray, preferences);
+    controls.start();
+    connect_tray(tray, client, app);
+    return present_tray(app, tray);
+}
 } // namespace
 
 int main(int argc, char *argv[]) {
@@ -58,38 +97,10 @@ int main(int argc, char *argv[]) {
     app.setQuitOnLastWindowClosed(false);
     app.setStyle(QStringLiteral("Fusion"));
     manager::adapters::configure_gui_identity();
-    if (app.arguments().contains(QStringLiteral("--close"))) {
+    if (app.arguments().contains(QStringLiteral("--close")))
         return manager::tray::close_existing() ? 0 : 1;
-    }
     const auto smoke = app.arguments().indexOf(QStringLiteral("--dashboard-smoke"));
-    if (smoke > 0 && smoke + 1 < app.arguments().size()) {
+    if (smoke > 0 && smoke + 1 < app.arguments().size())
         return manager::tray::dashboard_smoke(app, app.arguments().at(smoke + 1));
-    }
-    manager::adapters::PreferenceClient store(manager::adapters::preferences_endpoint());
-    manager::presentation::Preferences preferences(store);
-    QObject::connect(&preferences, &manager::presentation::Preferences::reconnectRequested, &app,
-                     [] { manager::adapters::ensure_session(); });
-    manager::tray::Instance instance(manager::adapters::preferences_directory());
-    if (!instance.acquire()) {
-        QMessageBox::warning(
-            nullptr, QCoreApplication::translate("TrayClient", "Tray already running"),
-            QCoreApplication::translate("TrayClient",
-                                        "The previous tray did not close. A second tray was not started."));
-        return 1;
-    }
-    manager::adapters::ensure_session();
-    manager::adapters::SessionClient client;
-    manager::presentation::TrayClient tray(preferences, client);
-    manager::tray::DeviceControls controls(tray, preferences);
-    controls.start();
-    QObject::connect(&tray, &manager::presentation::TrayClient::openManager, &app,
-                     [] { manager::adapters::launch_component(QStringLiteral("redmibook-manager")); });
-    QObject::connect(&tray, &manager::presentation::TrayClient::restartComponents, &app,
-                     [&] { restart(client, app); });
-    if (!tray.show()) {
-        return 2;
-    }
-    if (app.arguments().contains(QStringLiteral("--open-dashboard")))
-        QTimer::singleShot(0, &tray, &manager::presentation::TrayClient::openDashboard);
-    return app.exec();
+    return run_tray(app);
 }
