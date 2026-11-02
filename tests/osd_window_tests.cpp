@@ -1,6 +1,7 @@
 #include "adapters/platform/window_appearance.hpp"
 #include <bit>
 #include <iostream>
+#include <string>
 #include <thread>
 #include <windows.h>
 
