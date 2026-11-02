@@ -1,17 +1,20 @@
 #include "adapters/local_api/feedback_channel.hpp"
 #include "adapters/local_api/session_client.hpp"
+#include "application/runtime/build_identity.hpp"
 #include <QLocalSocket>
 #include <QTimer>
 namespace manager::adapters {
 QByteArray encode_feedback(application::feedback::Event event) {
-    return QByteArray("RMB/1 feedback ") + MANAGER_APP_VERSION + ' ' + MANAGER_BUILD_ID + ' ' +
+    return QByteArray("RMB/1 feedback ") + manager::application::build_identity::version + ' ' +
+           manager::application::build_identity::payload + ' ' +
            QByteArray::number(static_cast<unsigned int>(event.kind)) + ' ' + QByteArray::number(event.value) +
            '\n';
 }
 std::optional<application::feedback::Event> decode_feedback(const QByteArray &frame) {
     const auto fields = frame.trimmed().split(' ');
     if (fields.size() != 6 || fields[0] != "RMB/1" || fields[1] != "feedback" ||
-        fields[2] != MANAGER_APP_VERSION || fields[3] != MANAGER_BUILD_ID)
+        fields[2] != manager::application::build_identity::version ||
+        fields[3] != manager::application::build_identity::payload)
         return {};
     bool kind_ok = false;
     bool value_ok = false;

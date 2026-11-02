@@ -1,4 +1,5 @@
 #include "tests/fixtures/preset_preview.hpp"
+#include "application/runtime/build_identity.hpp"
 #include "apps/desktop/preview_presets.hpp"
 #include "presentation/tray/dashboard.hpp"
 #include <QApplication>
@@ -11,10 +12,11 @@ class Session final : public manager::application::SessionPort {
     bool request(manager::application::SessionCommand,
                  std::function<void(manager::application::SessionReply)> done) override {
         done({true,
-              {true, MANAGER_APP_VERSION, MANAGER_BUILD_ID, 1},
+              {true, manager::application::build_identity::version,
+               manager::application::build_identity::payload, 1},
               2,
-              MANAGER_APP_VERSION,
-              MANAGER_BUILD_ID});
+              manager::application::build_identity::version,
+              manager::application::build_identity::payload});
         return true;
     }
 };

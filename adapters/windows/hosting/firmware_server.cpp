@@ -7,6 +7,7 @@
 #include "adapters/windows/hosting/development_host.hpp"
 #include "adapters/windows/hosting/firmware_status.hpp"
 #include "adapters/windows/performance/performance_control.hpp"
+#include "application/runtime/build_identity.hpp"
 #include <array>
 #include <mutex>
 #include <thread>
@@ -44,8 +45,8 @@ bool console_caller(HANDLE pipe) {
 wire::Reply base_reply(wire::Command command) {
     wire::Reply reply;
     reply.command = command;
-    reply.version = MANAGER_APP_VERSION;
-    reply.build = MANAGER_BUILD_ID;
+    reply.version = manager::application::build_identity::version;
+    reply.build = manager::application::build_identity::payload;
     reply.process = GetCurrentProcessId();
     return reply;
 }

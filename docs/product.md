@@ -105,7 +105,7 @@ The Russian MIT text is informational. Manual and optional daily release checks 
 the public GitHub API with bounded responses/deadlines. The resident session performs
 at most one persisted automatic check per 24 hours. A user click opens the matching
 OS/architecture download or release page; the checker does not install automatically.
-The alpha/stable comparison and immutable build rules live in [release policy](releasing.md).
+The version comparison and immutable build rules live in [release policy](releasing.md).
 
 ## Version ownership
 
@@ -113,5 +113,5 @@ Git is the single version source. Builds never assign or increment versions.
 The nearest first-parent version tag plus subsequent commits determines the numeric
 version; commit SHA and uncommitted-content hash determine payload compatibility.
 Repeated builds of unchanged inputs keep the same identity. Local and CI builds use
-the same generated identity manifest. Major/minor and stable publication require explicit owner decisions. Preserve the
+the same generated identity manifest. Major/minor changes and publication require explicit owner decisions. Preserve the
 independent remote research branch; it is not part of this implementation.

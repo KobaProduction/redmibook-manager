@@ -1,4 +1,5 @@
 #include "application/updates/release_identity.hpp"
+#include "application/runtime/build_identity.hpp"
 #include <charconv>
 #include <limits>
 namespace manager::application {
@@ -23,9 +24,10 @@ std::optional<ReleaseIdentity> release_identity(std::string_view text) {
     return result;
 }
 ReleaseIdentity installed_release() {
-    const bool stable = std::string_view(MANAGER_RELEASE_CHANNEL) == "stable";
-    return {.version = release_version(MANAGER_APP_VERSION).value_or(ReleaseVersion{}),
+    const bool stable = std::string_view(manager::application::build_identity::channel) == "stable";
+    return {.version =
+                release_version(manager::application::build_identity::version).value_or(ReleaseVersion{}),
             .stable = stable,
-            .sequence = stable ? 0U : MANAGER_RELEASE_SEQUENCE};
+            .sequence = stable ? 0U : manager::application::build_identity::sequence};
 }
 } // namespace manager::application

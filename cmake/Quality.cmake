@@ -41,11 +41,19 @@ if(BUILD_TESTING)
 else()
     list(FILTER MANAGER_TIDY_SOURCES EXCLUDE REGEX "/tests/")
 endif()
+# Compiler-recorded dependencies must be current before analysis results can be reused.
+get_property(quality_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
+foreach(quality_target IN LISTS quality_targets)
+    get_target_property(quality_type ${quality_target} TYPE)
+    if(quality_type MATCHES "^(EXECUTABLE|STATIC_LIBRARY|SHARED_LIBRARY|OBJECT_LIBRARY)$")
+        list(APPEND lint_dependencies ${quality_target})
+    endif()
+endforeach()
 configure_file("${PROJECT_SOURCE_DIR}/cmake/RunQuality.cmake.in"
     "${CMAKE_BINARY_DIR}/RunQuality.cmake" @ONLY)
 add_custom_target(lint
     COMMAND "${CMAKE_COMMAND}" -DMODE=lint -P "${CMAKE_BINARY_DIR}/RunQuality.cmake"
-    DEPENDS ${lint_dependencies})
+    DEPENDS ${lint_dependencies} USES_TERMINAL)
 add_custom_target(boundaries
     COMMAND "${Python3_EXECUTABLE}" tools/vendor/chromium_checkdeps/checkdeps.py --root .
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
@@ -56,6 +64,7 @@ add_custom_target(qml-strict
     DEPENDS redmibook-manager VERBATIM)
 add_custom_target(quality DEPENDS format-check lint boundaries qml-strict)
 if(BUILD_TESTING)
+    add_test(NAME analysis-cache-contract COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tests/tidy_cache_tests.py")
     add_test(NAME architecture-boundaries
         COMMAND "${Python3_EXECUTABLE}" tools/vendor/chromium_checkdeps/checkdeps.py --root .)
     set_tests_properties(architecture-boundaries PROPERTIES WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")

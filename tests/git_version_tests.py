@@ -34,7 +34,7 @@ class GitVersionTests(unittest.TestCase):
 
     def test_clean_tag_and_repeat(self):
         identity = self.identity()
-        self.assertEqual(identity["displayVersion"], "1.2.3-alpha.7")
+        self.assertEqual(identity["displayVersion"], "1.2.3")
         self.assertEqual(identity["build"], "g" + self.git("rev-parse", "HEAD"))
         self.assertFalse(identity["dirty"])
         self.assertEqual(identity, self.identity())
@@ -43,7 +43,7 @@ class GitVersionTests(unittest.TestCase):
         (self.source / "source.txt").write_text("next\n", encoding="utf-8")
         self.git("commit", "-qam", "next")
         before = self.identity()
-        self.assertEqual(before["displayVersion"], "1.2.4-alpha.0")
+        self.assertEqual(before["displayVersion"], "1.2.4")
         self.git("tag", before["releaseTag"])
         after = self.identity()
         for key in ("version", "build", "displayVersion", "releaseTag", "sequence"):

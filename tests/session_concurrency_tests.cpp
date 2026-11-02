@@ -1,4 +1,5 @@
 #include "adapters/local_api/session_server.hpp"
+#include "application/runtime/build_identity.hpp"
 #include <QCoreApplication>
 #include <QTimer>
 #include <QUuid>
@@ -35,7 +36,8 @@ class Client final : public QObject {
 };
 bool valid(const Client &client) {
     return client.message.startsWith("RMB/1 OK ") && client.message.contains(" up 1 0.1.0 test ") &&
-           client.message.endsWith(QByteArray(MANAGER_APP_VERSION) + ' ' + MANAGER_BUILD_ID + '\n');
+           client.message.endsWith(QByteArray(manager::application::build_identity::version) + ' ' +
+                                   manager::application::build_identity::payload + '\n');
 }
 } // namespace
 int main(int argc, char *argv[]) {

@@ -1,6 +1,7 @@
 #include "adapters/local_api/session_client.hpp"
 #include "adapters/platform/development_scope.hpp"
 #include "adapters/platform/runtime.hpp"
+#include "application/runtime/build_identity.hpp"
 #include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDir>
@@ -38,7 +39,8 @@ void configure_gui_identity() {
     QCoreApplication::setOrganizationName(QStringLiteral("Koba Production"));
     QCoreApplication::setApplicationName(QStringLiteral("Redmibook Manager"));
     QGuiApplication::setApplicationDisplayName(QStringLiteral("RedmiBook Manager"));
-    QCoreApplication::setApplicationVersion(QStringLiteral(MANAGER_DISPLAY_VERSION));
+    QCoreApplication::setApplicationVersion(
+        QString::fromLatin1(manager::application::build_identity::display_version));
     QGuiApplication::setWindowIcon(QIcon(QStringLiteral(":/icons/app-icon.ico")));
     register_application_restart();
 }

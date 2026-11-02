@@ -1,5 +1,6 @@
 #include "adapters/local_api/preference_channel.hpp"
 #include "adapters/storage/ui_preferences/presets_codec.hpp"
+#include "application/runtime/build_identity.hpp"
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <algorithm>
@@ -9,13 +10,14 @@ namespace {
 constexpr qint64 frame_limit = 131072;
 QByteArray frame(QJsonObject object) {
     object.insert("protocol", 1);
-    object.insert("version", MANAGER_APP_VERSION);
-    object.insert("build", MANAGER_BUILD_ID);
+    object.insert("version", manager::application::build_identity::version);
+    object.insert("build", manager::application::build_identity::payload);
     return QJsonDocument(object).toJson(QJsonDocument::Compact) + '\n';
 }
 bool compatible(const QJsonObject &object) {
-    return object.value("protocol").toInt() == 1 && object.value("version") == MANAGER_APP_VERSION &&
-           object.value("build") == MANAGER_BUILD_ID;
+    return object.value("protocol").toInt() == 1 &&
+           object.value("version") == manager::application::build_identity::version &&
+           object.value("build") == manager::application::build_identity::payload;
 }
 } // namespace
 PreferenceServer::PreferenceServer(UiPreferenceStore &store, QString endpoint)

@@ -27,9 +27,9 @@ def resolve(source):
     distance = int(git(source, "rev-list", "--count", "--first-parent", f"{tag}..HEAD"))
     major, minor, patch = (int(match[index]) for index in (1, 2, 3))
     version = f"{major}.{minor}.{patch + distance}"
-    channel = "stable" if distance == 0 and match[4] is None else "alpha"
-    sequence = int(match[4]) if distance == 0 and match[4] else 0
-    release_tag = f"v{version}" + (f"-alpha.{sequence}" if channel == "alpha" else "")
+    channel = "stable"
+    sequence = 0
+    release_tag = f"v{version}"
     diff = git(source, "diff", "--no-ext-diff", "--no-renames", "--diff-filter=CDMRTUXB", "--binary", "HEAD", binary=True)
     added = git(source, "diff", "--no-ext-diff", "--no-renames", "--diff-filter=A", "--name-only", "-z", "HEAD", binary=True)
     untracked = git(source, "ls-files", "--others", "--exclude-standard", "-z", binary=True)
@@ -46,22 +46,22 @@ def resolve(source):
     build = f"g{revision}" + (f".dirty.{dirty_hash}" if dirty else "")
     suffix = f"-g{revision[:12]}-dirty-{dirty_hash[:12]}" if dirty else ""
     files = git(source, "ls-files", "--cached", "--others", "--exclude-standard", "-z", binary=True)
-    inputs = [str(source / name.decode("utf-8")) for name in files.split(b"\0") if name and (source / name.decode("utf-8")).exists()]
+    inputs = [(source / name.decode("utf-8")).as_posix() for name in files.split(b"\0") if name and (source / name.decode("utf-8")).exists()]
     for name in ("HEAD", "index", "packed-refs", f"refs/tags/{tag}"):
         path = source / git(source, "rev-parse", "--git-path", name)
         if path.exists():
-            inputs.append(str(path))
+            inputs.append(path.as_posix())
     branch = subprocess.run(["git", "-C", str(source), "symbolic-ref", "-q", "HEAD"], capture_output=True)
     if branch.returncode == 0:
-        inputs.append(str(source / git(source, "rev-parse", "--git-path", branch.stdout.decode().strip())))
+        inputs.append((source / git(source, "rev-parse", "--git-path", branch.stdout.decode().strip())).as_posix())
     return {
         "identity": {"version": version, "displayVersion": release_tag[1:], "build": build,
                      "commit": revision, "baseTag": tag, "distance": distance, "dirty": dirty,
                      "channel": channel, "sequence": sequence, "releaseTag": release_tag,
                      "packageSuffix": suffix},
         "inputs": inputs,
-        "gitDirectories": [str((source / git(source, "rev-parse", "--git-path", "packed-refs")).parent),
-                           str(source / git(source, "rev-parse", "--git-path", "refs/tags"))],
+        "gitDirectories": [(source / git(source, "rev-parse", "--git-path", "packed-refs")).parent.as_posix(),
+                           (source / git(source, "rev-parse", "--git-path", "refs/tags")).as_posix()],
     }
 
 

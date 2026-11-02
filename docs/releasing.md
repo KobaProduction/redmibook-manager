@@ -4,7 +4,7 @@
 
 - `main`: development integration; build/test/package CI on pushes and pull requests.
 - `release`: explicit promotion of a reviewed, locally accepted revision. A push runs
-  the same Windows/Linux matrix and, only after all jobs pass, publishes an alpha prerelease.
+  the same Windows/Linux matrix and, only after all jobs pass, publishes a release.
 - `codex/*`: scoped agent branches. Local work and verification precede publication.
 - Existing `research` is independent and preserved; no automatic integration.
 
@@ -12,7 +12,7 @@ The tracked workflow is .github/workflows/ci.yml. Its presence does not establis
 a passing server pipeline or branch protection. Local builds/installations never
 authorize publication by themselves. Publish or promote only after explicit owner
 authorization and the required local checks; preserve remote branch restrictions.
-An owner-requested alpha publication promotes the same verified source commit to
+An owner-requested publication promotes the same verified source commit to
 release. The workflow creates its immutable tag only after the matrix succeeds.
 
 ## Version and immutable builds
@@ -21,11 +21,12 @@ Git is the sole version authority. `tools/git-version.py` is shared by every CMa
 configuration, local packaging and CI. There is no editable version file, local
 build counter, timestamp identity or CI-run-number version override.
 
-The nearest first-parent tag `vMAJOR.MINOR.PATCH[-alpha.SEQUENCE]` supplies the release
-series. Each subsequent first-parent commit advances patch once and uses alpha.0;
-at the tag itself its channel/sequence are preserved. For example, one commit after
-v1.1.5-alpha.13 resolves to 1.1.6-alpha.0. Major/minor and stable tags remain explicit
-owner decisions. Tagging that computed candidate does not change its version or SHA.
+The nearest first-parent version tag supplies the release series. Each subsequent
+first-parent commit advances patch once. Versions and new tags use only
+`MAJOR.MINOR.PATCH` and `vMAJOR.MINOR.PATCH`, without alpha/beta suffixes or a second
+counter. Historical alpha tags remain valid numeric baselines: one commit after
+v1.1.5-alpha.13 resolves to 1.1.6. Major/minor changes remain explicit owner decisions.
+Tagging the computed version does not change its version or SHA.
 Repeated builds never advance anything. Complete history and version tags are required;
 missing/shallow Git metadata fails explicitly instead of inventing a version.
 
@@ -50,7 +51,7 @@ or move an existing tag. No commit/publication is authorized merely by a local b
 3. Installer/application/uninstaller check in an isolated test location.
 4. Independent review and a known source commit; no pending source changes.
 5. Windows/Linux CI build, test, deployment and package checks on that revision.
-6. Package checksums and a source-commit link attached to the prerelease.
+6. Package checksums and a source-commit link attached to the release.
 
 Unsigned development artifacts must be described as such. Linux headless checks do not
 replace desktop/hardware acceptance; native battery and hotkey support require separate

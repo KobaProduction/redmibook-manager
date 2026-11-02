@@ -1,6 +1,7 @@
 #include "adapters/local_api/feedback_channel.hpp"
 #include "adapters/local_api/session_server.hpp"
 #include "adapters/storage/ui_preferences/store.hpp"
+#include "application/runtime/build_identity.hpp"
 #include "presentation/osd/osd_presenter.hpp"
 #include <QApplication>
 #include <QLabel>
@@ -14,7 +15,7 @@ bool wire_contract() {
     const auto frame = encode_feedback({Kind::Performance, 3});
     const auto event = decode_feedback(frame);
     auto incompatible = frame;
-    incompatible.replace(MANAGER_BUILD_ID, "different-build");
+    incompatible.replace(manager::application::build_identity::payload, "different-build");
     return event && event->kind == Kind::Performance && event->value == 3 && !decode_feedback(incompatible) &&
            !decode_feedback(encode_feedback({Kind::Performance, 4})) && !decode_feedback(frame + " extra") &&
            !decode_feedback("RMB/1 feedback invalid");

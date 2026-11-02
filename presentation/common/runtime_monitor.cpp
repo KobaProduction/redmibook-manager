@@ -1,4 +1,5 @@
 #include "presentation/common/runtime_monitor.hpp"
+#include "application/runtime/build_identity.hpp"
 #include <QPointer>
 
 namespace manager::presentation {
@@ -38,7 +39,8 @@ void RuntimeMonitor::accept(const application::SessionReply &reply) {
     emit changed();
 }
 QString RuntimeMonitor::status_text() const {
-    switch (application::connection_health(reply_, {MANAGER_APP_VERSION, MANAGER_BUILD_ID})) {
+    switch (application::connection_health(reply_, {manager::application::build_identity::version,
+                                                    manager::application::build_identity::payload})) {
     case application::ConnectionHealth::SessionUnavailable:
         return tr("Session runtime unavailable");
     case application::ConnectionHealth::CoreUnavailable:

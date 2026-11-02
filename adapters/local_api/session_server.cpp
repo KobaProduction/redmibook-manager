@@ -1,6 +1,7 @@
 #include "adapters/local_api/session_server.hpp"
 #include "adapters/local_api/feedback_channel.hpp"
 #include "adapters/local_api/session_client.hpp"
+#include "application/runtime/build_identity.hpp"
 #include <QCoreApplication>
 #include <QTimer>
 #include <QtConcurrentRun>
@@ -43,8 +44,9 @@ void SessionServer::accept() {
 }
 
 void SessionServer::respond(QLocalSocket *socket, const application::DiagnosticReply &reply) {
-    socket->write(encode_session_reply(reply, static_cast<std::uint32_t>(QCoreApplication::applicationPid()),
-                                       {MANAGER_APP_VERSION, MANAGER_BUILD_ID}));
+    socket->write(encode_session_reply(
+        reply, static_cast<std::uint32_t>(QCoreApplication::applicationPid()),
+        {manager::application::build_identity::version, manager::application::build_identity::payload}));
     socket->disconnectFromServer();
 }
 

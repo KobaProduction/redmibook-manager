@@ -1,4 +1,5 @@
 #include "presentation/tray/tray_client.hpp"
+#include "application/runtime/build_identity.hpp"
 #include <QApplication>
 #include <QMessageBox>
 #include <QPainter>
@@ -57,7 +58,8 @@ void TrayClient::retranslate() {
     open_.setText(tr("Open RedmiBook Manager"));
     restart_.setText(tr("Restart background components"));
     close_.setText(tr("Close tray"));
-    icon_.setToolTip(QStringLiteral("RedmiBook Manager %1").arg(QStringLiteral(MANAGER_DISPLAY_VERSION)));
+    icon_.setToolTip(QStringLiteral("RedmiBook Manager %1")
+                         .arg(QString::fromLatin1(manager::application::build_identity::display_version)));
     status_.setText(preferences_available_ ? runtime_.status_text() : preference_status_);
     status_.setCheckable(true);
     status_.setChecked(preferences_available_ && runtime_.reply().connected &&

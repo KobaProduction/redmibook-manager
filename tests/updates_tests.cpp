@@ -36,7 +36,7 @@ bool identities() {
 }
 bool asset_selection() {
     using manager::adapters::decode_release;
-    const auto data = release(QStringLiteral("v0.1.0-alpha.999999"), true);
+    const auto data = release(QStringLiteral("v0.1.0"));
     const auto windows = decode_release(data, QStringLiteral("windows-x86_64"));
     const auto arm = decode_release(data, QStringLiteral("windows-arm64"));
     // This fixture is older than the installed product; asset selection is still valid.

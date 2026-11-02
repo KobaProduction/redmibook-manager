@@ -1,5 +1,6 @@
 #include "adapters/updates/github_client.hpp"
 #include "adapters/updates/release_feed.hpp"
+#include "application/runtime/build_identity.hpp"
 #include "application/updates/release_identity.hpp"
 #include "application/updates/release_policy.hpp"
 #include <QJsonArray>
@@ -21,7 +22,7 @@ application::UpdateResult decode_release(const QJsonObject &object, const QStrin
     const bool prerelease = object.value(QStringLiteral("prerelease")).toBool();
     if (!identity || !trusted_release_url(page) || object.value(QStringLiteral("draft")).toBool() ||
         prerelease == identity->stable ||
-        (std::string_view(MANAGER_RELEASE_CHANNEL) == "stable" && prerelease)) {
+        (std::string_view(manager::application::build_identity::channel) == "stable" && prerelease)) {
         return {.state = application::UpdateState::Failed};
     }
     const auto &version = identity->version;
@@ -71,7 +72,8 @@ void limit_reply(QNetworkReply *reply) {
 void GitHubUpdates::check(std::function<void(application::UpdateResult)> completion) {
     QNetworkRequest request(QUrl(QStringLiteral(
         "https://api.github.com/repos/KobaProduction/redmibook-manager/releases?per_page=100")));
-    request.setRawHeader("User-Agent", "RedmiBookManager/" MANAGER_APP_VERSION);
+    request.setRawHeader("User-Agent",
+                         QByteArray("RedmiBookManager/") + manager::application::build_identity::version);
     request.setRawHeader("Accept", "application/vnd.github+json");
     request.setTransferTimeout(10000);
     auto *reply = network_.get(request);

@@ -1,3 +1,4 @@
+#include "application/runtime/build_identity.hpp"
 #include "presentation/common/runtime_monitor.hpp"
 #include <QCoreApplication>
 #include <QTimer>
@@ -8,14 +9,17 @@ using manager::application::ConnectionHealth;
 manager::application::SessionReply healthy() {
     manager::application::SessionReply reply;
     reply.connected = true;
-    reply.daemon = {
-        .connected = true, .version = MANAGER_APP_VERSION, .build = MANAGER_BUILD_ID, .process_id = 1};
-    reply.session_version = MANAGER_APP_VERSION;
-    reply.session_build = MANAGER_BUILD_ID;
+    reply.daemon = {.connected = true,
+                    .version = manager::application::build_identity::version,
+                    .build = manager::application::build_identity::payload,
+                    .process_id = 1};
+    reply.session_version = manager::application::build_identity::version;
+    reply.session_build = manager::application::build_identity::payload;
     return reply;
 }
 ConnectionHealth health(const manager::application::SessionReply &reply) {
-    return manager::application::connection_health(reply, {MANAGER_APP_VERSION, MANAGER_BUILD_ID});
+    return manager::application::connection_health(reply, {manager::application::build_identity::version,
+                                                           manager::application::build_identity::payload});
 }
 bool identity_contract() {
     auto reply = healthy();

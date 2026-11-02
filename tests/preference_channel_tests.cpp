@@ -1,4 +1,5 @@
 #include "adapters/local_api/preference_authority.hpp"
+#include "application/runtime/build_identity.hpp"
 #include "presentation/common/preferences.hpp"
 #include <QApplication>
 #include <QEventLoop>
@@ -166,7 +167,7 @@ class HandshakeCase {
     bool rejected_{false};
     void send_hello() {
         const QJsonObject hello{{"protocol", 1},
-                                {"version", MANAGER_APP_VERSION},
+                                {"version", manager::application::build_identity::version},
                                 {"build", "other-build"},
                                 {"op", "hello"},
                                 {"id", 1}};
@@ -176,7 +177,8 @@ class HandshakeCase {
         if (!socket_.canReadLine())
             return;
         const auto reply = QJsonDocument::fromJson(socket_.readLine()).object();
-        rejected_ = reply.value("error") == "incompatible" && reply.value("build") == MANAGER_BUILD_ID &&
+        rejected_ = reply.value("error") == "incompatible" &&
+                    reply.value("build") == manager::application::build_identity::payload &&
                     !reply.value("ok").toBool();
         loop_.quit();
     }

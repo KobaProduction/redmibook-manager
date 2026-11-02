@@ -19,8 +19,8 @@ This instruction overrides the delegated Reviewer requirement while it remains a
 - Product/version decisions: [product contract](docs/product.md). Publication work also
   reads [release policy](docs/releasing.md). Git is the sole version authority.
   Never assign local version/build counters, edit a version file or override build
-  identity with timestamps. The shared resolver derives release version/channel and
-  payload identity from Git tags, commits and uncommitted content. Repeated builds of
+  identity with timestamps. The shared resolver derives plain MAJOR.MINOR.PATCH versions without alpha/beta
+  suffixes and payload identity from Git tags, commits and uncommitted content. Repeated builds of
   unchanged inputs keep the same identity. Major/minor tags require an owner decision.
 - The shared [AI Agent Workflow entry map](https://github.com/ArthurKoba/ai-agent-workflow/blob/93d5e3eebd3b693c33930a3127e168e48cdd4143/AGENTS.md)
   governs task routing. Read selected task skills completely, not the entire library.
@@ -136,6 +136,10 @@ This instruction overrides the delegated Reviewer requirement while it remains a
   does not require another local full pass; CI remains independent.
   Never disable gates or introduce blanket suppressions to pass. Decompose by
   responsibility, not by hiding statements.
+- Keep changing Git version/build values in the generated identity implementation,
+  never global compiler definitions or public generated headers. For small edits use
+  affected targets/checks and reuse successful dependency-aware analysis. Packaging
+  must reuse an applicable verification receipt rather than rerun it unconditionally.
 - Maintain Windows and Linux compile paths. Changes to a public port include both adapters.
 - Significant changes require an independent Reviewer pass. A delegated reviewer owns
   read-only review, never edits the author's implementation. Review one integrated revision.
@@ -144,7 +148,7 @@ This instruction overrides the delegated Reviewer requirement while it remains a
   Do not self-approve or self-merge. Never bypass provider branch restrictions.
 - **Publication authorization:** local builds, tests, documentation and previews do
   not authorize Git mutations. The owner authorized the current checkpoint commit,
-  local-Git push and alpha CI publication after documentation and final verification.
+  local-Git push and CI publication after documentation and final verification.
   Future publication still requires explicit owner authorization; preserve branch
   restrictions and the independent research branch.
 - Verify UI using bounded application-owned smoke tests/screenshots; do not interact with

@@ -26,7 +26,12 @@ string(JSON directory_count LENGTH "${git_version_json}" gitDirectories)
 math(EXPR last_directory "${directory_count} - 1")
 foreach(index RANGE 0 ${last_directory})
     string(JSON directory GET "${git_version_json}" gitDirectories ${index})
-    file(GLOB version_git_inputs CONFIGURE_DEPENDS "${directory}/*")
+    if(index EQUAL 0)
+        # Watch version metadata, not unrelated Git receipts, fetch logs or commit messages.
+        file(GLOB version_git_inputs CONFIGURE_DEPENDS "${directory}/packed-refs")
+    else()
+        file(GLOB_RECURSE version_git_inputs CONFIGURE_DEPENDS "${directory}/*")
+    endif()
 endforeach()
 # Discover newly added source/assets before they have been added to the index.
 file(GLOB version_root_inputs CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*")

@@ -13,6 +13,23 @@ After a change or failure, repeat only the checks it invalidates. Publishing tha
 same verified revision does not require another local full pass. CI remains
 independent, and quality gates must not be disabled.
 
+Small edits use affected build targets and tests, not repeated full workflows.
+Version/payload values are compiled in one generated implementation file behind
+stable declarations; never put changing Git identity in global compiler flags or
+public generated headers. A metadata change recompiles that file and relinks its
+consumers, without recompiling unrelated C++ or generated QML.
+
+Local clang-tidy persists each successful source result using the compiler command,
+compiler-recorded transitive dependency contents, analyzer version/binary, runner,
+header inventory and applicable .clang-tidy files. Missing dependency data forces
+analysis. Failures are never cached. Repeated quality runs analyze only invalidated
+inputs, including after interruption; CI starts with an independent cold cache.
+Packaging uses the same exact-tree verification receipt instead of forcing another
+full verification of already accepted inputs.
+For shared Qt, auxiliary Widgets/test executables do not repeat Manager's QML
+import/deployment scan. Manager retains its QML scan and deployment checks; static
+Qt keeps the normal plugin import behavior.
+
 ## Toolchain
 
 Version metadata comes from Git through the shared resolver described in

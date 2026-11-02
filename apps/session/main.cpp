@@ -9,6 +9,7 @@
 #include "adapters/platform/session_controls.hpp"
 #include "adapters/platform/window_appearance.hpp"
 #include "adapters/storage/ui_preferences/store.hpp"
+#include "application/runtime/build_identity.hpp"
 #include "application/runtime/connection_health.hpp"
 #include "apps/session/device_state_publisher.hpp"
 #include "apps/session/input_actions.hpp"
@@ -41,9 +42,11 @@ int request_status(QApplication &app, const QCommandLineParser &parser) {
                 const QJsonObject value{
                     {QStringLiteral("session"), reply.connected},
                     {QStringLiteral("daemon"), reply.daemon.connected},
-                    {QStringLiteral("compatible"), manager::application::connection_health(
-                                                       reply, {MANAGER_APP_VERSION, MANAGER_BUILD_ID}) ==
-                                                       manager::application::ConnectionHealth::Ready},
+                    {QStringLiteral("compatible"),
+                     manager::application::connection_health(
+                         reply, {manager::application::build_identity::version,
+                                 manager::application::build_identity::payload}) ==
+                         manager::application::ConnectionHealth::Ready},
                     {QStringLiteral("sessionVersion"), QString::fromStdString(reply.session_version)},
                     {QStringLiteral("sessionBuild"), QString::fromStdString(reply.session_build)},
                     {QStringLiteral("sessionPid"), static_cast<qint64>(reply.process_id)},

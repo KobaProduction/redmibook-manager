@@ -1,0 +1,9 @@
+#include "application/runtime/build_identity.hpp"
+
+namespace manager::application::build_identity {
+const char version[] = "@MANAGER_VERSION@";
+const char display_version[] = "@MANAGER_DISPLAY_VERSION@";
+const char payload[] = "@MANAGER_BUILD_ID@";
+const char channel[] = "@MANAGER_RELEASE_CHANNEL@";
+const unsigned sequence = @MANAGER_RELEASE_SEQUENCE@;
+} // namespace manager::application::build_identity

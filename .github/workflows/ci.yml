@@ -127,7 +127,7 @@ jobs:
           pattern: packages-*
           merge-multiple: true
           path: packages
-      - name: Publish development packages
+      - name: Publish packages
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -143,7 +143,7 @@ jobs:
           for identity in identities:
               assert not identity['dirty'] and identity['commit'] == os.environ['GITHUB_SHA']
               assert all(identity[key] == expected[key] for key in ('version', 'build', 'releaseTag', 'channel'))
-          assert expected['channel'] == 'alpha', 'Stable publication requires explicit promotion'
+          assert expected['channel'] == 'stable' and expected['releaseTag'] == 'v' + expected['version']
           print(expected['version'])
           print(expected['releaseTag'])
           PY
@@ -151,5 +151,5 @@ jobs:
           tag="$(sed -n '2p' release-identity.txt)"
           (cd packages && sha256sum ./* > ../SHA256SUMS.txt)
           mv SHA256SUMS.txt packages/
-          printf 'Unsigned alpha build. Application base version: %s.\n\nSource commit: %s\n' "$version" "$GITHUB_SHA" > release-notes.txt
-          gh release create "$tag" packages/* --target "$GITHUB_SHA" --prerelease --title "$tag" --notes-file release-notes.txt
+          printf 'Unsigned build. Application version: %s.\n\nSource commit: %s\n' "$version" "$GITHUB_SHA" > release-notes.txt
+          gh release create "$tag" packages/* --target "$GITHUB_SHA" --title "$tag" --notes-file release-notes.txt

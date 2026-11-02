@@ -1,5 +1,6 @@
 #include "adapters/local_api/device_state_codec.hpp"
 #include "adapters/local_api/battery_telemetry_codec.hpp"
+#include "application/runtime/build_identity.hpp"
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -109,8 +110,8 @@ QByteArray encode_device_state(const application::overview::DeviceState &state) 
                                               : QJsonValue()},
                               {"capability", static_cast<int>(state.performance_capability)}};
     const QJsonObject object{{"schema", 1},
-                             {"version", MANAGER_APP_VERSION},
-                             {"build", MANAGER_BUILD_ID},
+                             {"version", manager::application::build_identity::version},
+                             {"build", manager::application::build_identity::payload},
                              {"revision", QString::number(state.revision)},
                              {"microphone", microphone_json(state.microphone)},
                              {"microphoneFirmware", firmware_microphone_json(state.microphone_firmware)},
@@ -143,8 +144,8 @@ std::optional<application::overview::DeviceState> decode_device_state(const QByt
         return {};
     const auto object = QJsonDocument::fromJson(frame).object();
     if (object.value("schema").toInt() != 1 ||
-        object.value("version").toString() != QLatin1String(MANAGER_APP_VERSION) ||
-        object.value("build").toString() != QLatin1String(MANAGER_BUILD_ID))
+        object.value("version").toString() != QLatin1String(manager::application::build_identity::version) ||
+        object.value("build").toString() != QLatin1String(manager::application::build_identity::payload))
         return {};
     return decode_state_object(object);
 }

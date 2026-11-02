@@ -2,6 +2,7 @@
 #include "adapters/windows/hosting/client_pipe.hpp"
 #include "adapters/windows/hosting/development_host.hpp"
 #include "adapters/windows/hosting/firmware_status.hpp"
+#include "application/runtime/build_identity.hpp"
 #include <array>
 #include <utility>
 namespace manager::adapters {
@@ -75,7 +76,8 @@ wire::Reply validate_reply(wire::Command command, DWORD pid, const std::optional
         failure.detail = "core-reply-missing-or-invalid; native-operation-not-cancelled";
         return failure;
     }
-    if (decoded->version != MANAGER_APP_VERSION || decoded->build != MANAGER_BUILD_ID) {
+    if (decoded->version != manager::application::build_identity::version ||
+        decoded->build != manager::application::build_identity::payload) {
         failure.status = wire::Status::Incompatible;
         failure.detail = "core-payload-incompatible";
         return failure;
@@ -92,9 +94,10 @@ wire::Reply exchange_core(wire::Command command) {
         failure.detail = "authenticated-core-unavailable";
         return failure;
     }
-    return validate_reply(
-        command, pid,
-        transact(pipe.get(), wire::encode(wire::Request{command, MANAGER_APP_VERSION, MANAGER_BUILD_ID})));
+    return validate_reply(command, pid,
+                          transact(pipe.get(), wire::encode(wire::Request{
+                                                   command, manager::application::build_identity::version,
+                                                   manager::application::build_identity::payload})));
 }
 battery::Observation charge_observation(const wire::Reply &reply) {
     std::optional<battery::ChargeLimit> limit;

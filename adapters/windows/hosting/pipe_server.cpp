@@ -1,5 +1,6 @@
 #include "adapters/windows/hosting/pipe_server.hpp"
 #include "adapters/windows/hosting/handle.hpp"
+#include "application/runtime/build_identity.hpp"
 #include <array>
 #include <optional>
 #include <sddl.h>
@@ -136,8 +137,8 @@ int serve_diagnostics(HANDLE stop, const wchar_t *name) {
         if (request != "RMB/1 PING") {
             return {};
         }
-        return std::string("RMB/1 PONG ") + MANAGER_APP_VERSION + " " + MANAGER_BUILD_ID + " " +
-               std::to_string(GetCurrentProcessId());
+        return std::string("RMB/1 PONG ") + manager::application::build_identity::version + " " +
+               manager::application::build_identity::payload + " " + std::to_string(GetCurrentProcessId());
     });
 }
 } // namespace manager::adapters::windows

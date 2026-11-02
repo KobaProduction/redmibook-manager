@@ -1,4 +1,5 @@
 #pragma once
+#include "application/runtime/build_identity.hpp"
 #include "application/updates/update_port.hpp"
 #include <QDateTime>
 #include <QObject>
@@ -35,10 +36,10 @@ class UpdateModel final : public QObject {
         return !result_.download_url.empty();
     }
     QString version() const {
-        return QStringLiteral(MANAGER_DISPLAY_VERSION);
+        return QString::fromLatin1(manager::application::build_identity::display_version);
     }
     QString build() const {
-        return QStringLiteral(MANAGER_BUILD_ID);
+        return QString::fromLatin1(manager::application::build_identity::payload);
     }
     QString target() const {
         return target_;

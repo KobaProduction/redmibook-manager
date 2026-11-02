@@ -57,7 +57,7 @@ try {
         'test' { Invoke-Checked ctest @('--preset', 'release') }
         'format' { Invoke-Checked cmake @('--build', 'build/release', '--target', 'format') }
         'package' {
-            Invoke-Checked cmake @('--workflow', '--preset', 'verify')
+            Invoke-Verification
             Invoke-Checked cpack @('--config', 'build/release/CPackConfig.cmake')
         }
         'package-test' { & (Join-Path $PSScriptRoot 'verify-windows-package.ps1') }
