@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QTimer>
 #include <cstdint>
+#include <functional>
 
 namespace manager::presentation {
 class OsdPresenter final : public RoundedFrame,
@@ -15,7 +16,8 @@ class OsdPresenter final : public RoundedFrame,
                            public application::feedback::Presenter {
     Q_OBJECT
   public:
-    explicit OsdPresenter(Preferences &preferences);
+    using RaiseWindow = std::function<void(std::uintptr_t)>;
+    explicit OsdPresenter(Preferences &preferences, RaiseWindow raise_window = {});
     application::feedback::Delivery present(application::feedback::Event event) override;
     void present(const application::microphone::Observation &observation);
     void show_result(const application::DiagnosticReply &reply) override;
@@ -28,6 +30,7 @@ class OsdPresenter final : public RoundedFrame,
     QString profile_text() const;
     enum class Kind : std::uint8_t { Mi, Profile, Refresh, Microphone, Diagnostic };
     Preferences &preferences_;
+    RaiseWindow raise_window_;
     QLabel icon_;
     QLabel text_;
     application::feedback::DistinctState distinct_;
@@ -39,6 +42,7 @@ class OsdPresenter final : public RoundedFrame,
     application::display::Change refresh_;
     void retranslate();
     void update_icon();
+    void place();
     void reveal();
 };
 } // namespace manager::presentation

@@ -41,7 +41,7 @@ default; any removal of settings must be an explicit user choice and restricted 
 owned product subdirectories. Do not recursively delete the shared Koba Production root.
 
 The Windows installer installs binaries, licenses, shortcuts, uninstall registration,
-a LocalService machine host and an HKLM Run entry for the user's session host.
+a LocalService machine host and a Task Scheduler logon task for the user's session host.
 The native Manager and tray remain ordinary-user processes. The resident session alone persists preferences using AppLocalDataLocation and
 atomic QSaveFile writes. Manager/tray use IPC; installed binaries are never writable data.
 The machine host owns the qualified charge/performance command allowlist; the GUI
@@ -75,14 +75,22 @@ The registered sign-in command starts the resident session with `--with-tray`.
 That host reads per-user `ui.trayAutostart` (default true) before opening the tray.
 Turning it off affects the next sign-in; it does not stop a running tray or disable
 the resident session, OSD or machine service. The main Manager never starts at sign-in.
-The Run entry remains registered because it owns the independent session host.
+The task remains registered because it owns the independent session host.
+It uses the built-in Users group, the signing-in user's interactive token and
+LeastPrivilege; it never runs user UI as SYSTEM or with elevation. No logon delay,
+idle/network requirement, battery restriction or execution time limit is configured.
+Parallel task instances permit separate signed-in users; the existing session lease
+prevents duplicates within one user session. Setup checks task registration before
+removing the legacy HKLM Run entry, and reports registration failure as an installation
+error. Uninstall removes the task. This avoids Windows Explorer's discretionary Run
+startup delay, but does not guarantee a fixed startup time under arbitrary system load.
 Keep the stable Qt application name/data directory separate from the RedmiBook
 display name so presentation branding does not relocate existing user settings.
 
 Registration, SCM start/stop and relaunching the exact sign-in command are separate
 acceptance checks from an actual Windows reboot/sign-in. Only mark reboot acceptance
 after the owner restarts Windows and the resulting automatic processes/diagnostics
-have been inspected; never infer it from the Run entry alone.
+have been inspected; never infer it from task registration alone.
 
 Updates use Restart Manager to quiesce owned executable/DLL users and restore prior
 clients. An upgrade configures the service without starting an intentionally stopped

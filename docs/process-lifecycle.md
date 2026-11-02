@@ -6,7 +6,8 @@ Define shared interfaces before implementing Windows/Linux hosts. Product roles
 do not depend on SCM, systemd, tray availability or a fixed executable count.
 The current application has separate Manager, tray, resident session/OSD
 and machine executables. Windows provides diagnostic and qualified firmware IPC;
-Linux machine hosting remains unavailable. VERSION.txt owns the base version.
+Linux machine hosting remains unavailable. Git owns version and payload identity;
+see [release policy](releasing.md).
 
 | Component | Responsibility | Lifetime |
 | --- | --- | --- |
@@ -87,6 +88,14 @@ availability are capabilities, not universal promises. Never silently fall back 
 root input capture when a desktop denies a shortcut. OSD and notifications are distinct;
 a notification fallback must report that limitation. Desktop security/compositor rules
 may prevent OSD over secure/exclusive surfaces; do not promise unrestricted display.
+
+Windows OSD is a non-activating, input-transparent topmost window. Each feedback
+presentation raises its native HWND above the current ordinary/topmost window stack
+with SetWindowPos(HWND_TOPMOST, SWP_NOACTIVATE); it never activates Manager or takes
+focus away from fullscreen content. The Qt hint remains the portable baseline.
+The isolated Windows layer test creates its own fullscreen/topmost competitor on a
+separate desktop without switching the user's desktop. It verifies z-order and
+non-activation, not game-specific exclusive presentation or secure-desktop visibility.
 
 ## Interfaces and event flow
 

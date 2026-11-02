@@ -49,7 +49,7 @@ function Build-Selected {
     }
     if (-not (Test-Path (Join-Path $buildPath 'CMakeCache.txt'))) {
         Invoke-Checked cmake @('-S', $checkout, '-B', $buildPath, '-G', 'Ninja',
-            '-DCMAKE_BUILD_TYPE=Debug', "-DCMAKE_PREFIX_PATH=$QtRoot", '-DMANAGER_BUILD_ID=dev-local')
+            '-DCMAKE_BUILD_TYPE=Debug', "-DCMAKE_PREFIX_PATH=$QtRoot")
     }
     Invoke-Checked cmake (@('--build', $buildPath, '--parallel', '4', '--target') + $targets[$Target])
 }

@@ -2,8 +2,8 @@
 
 ## Scope and supported hardware
 
-RedmiBook Manager is a native C++20/Qt Quick laptop manager. Current base version:
-**1.1.5**. Windows acceptance targets Redmi Book Pro 16 2024, XIAOMI TM2309/V24C1,
+RedmiBook Manager is a native C++20/Qt Quick laptop manager. Git owns the version
+and payload identity; see [release policy](releasing.md). Windows acceptance targets Redmi Book Pro 16 2024, XIAOMI TM2309/V24C1,
 BIOS RMAMT6B0P0A0A. Linux retains shared contracts and build/package paths; deep
 Linux desktop/hardware acceptance is deferred. No WebView, cloud account or usage
 telemetry is required. See [validation](validation.md) for the acceptance boundary
@@ -109,8 +109,9 @@ The alpha/stable comparison and immutable build rules live in [release policy](r
 
 ## Version ownership
 
-`VERSION.txt` is the single base-version source. Owner-authorized checkpoint commits
-may increment patch at most once. Previews, builds and installations retain the
-current version and use distinct payload identities. CI never bumps versions.
-Major/minor and stable publication require explicit owner decisions. Preserve the
+Git is the single version source. Builds never assign or increment versions.
+The nearest first-parent version tag plus subsequent commits determines the numeric
+version; commit SHA and uncommitted-content hash determine payload compatibility.
+Repeated builds of unchanged inputs keep the same identity. Local and CI builds use
+the same generated identity manifest. Major/minor and stable publication require explicit owner decisions. Preserve the
 independent remote research branch; it is not part of this implementation.

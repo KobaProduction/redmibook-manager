@@ -3,7 +3,7 @@
 ;--------------------------------
 ; You must define these values
 
-  !define VERSION "@CPACK_PACKAGE_VERSION@"
+  !define VERSION "@CPACK_MANAGER_DISPLAY_VERSION@"
   !define PATCH  "@CPACK_PACKAGE_VERSION_PATCH@"
   !define INST_DIR "@CPACK_TEMPORARY_DIRECTORY@"
 

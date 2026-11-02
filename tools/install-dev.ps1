@@ -3,12 +3,16 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 if (-not $IsWindows) { throw 'Installed development updates require Windows.' }
 $projectRoot = Split-Path $PSScriptRoot
-$version = (Get-Content (Join-Path $projectRoot 'VERSION.txt') -Raw).Trim()
+$identity = & (Join-Path $PSScriptRoot 'read-build-identity.ps1') -Artifact $Installer
+$version = $identity.version
+$configuredIdentity = $identity
 if (-not $Installer) {
-    $Installer = Join-Path $projectRoot "dist/RedmibookManager-$version-Windows-x86_64.exe"
+    $Installer = Join-Path $projectRoot "dist/$($identity.packageName).exe"
 }
 $Installer = (Resolve-Path -LiteralPath $Installer).Path
-Write-Host "Updating installed RedmiBook Manager to $version. Windows may request administrator consent."
+$identity = & (Join-Path $PSScriptRoot 'read-build-identity.ps1') -Artifact $Installer
+if ($identity.build -ne $configuredIdentity.build) { throw 'Installer metadata does not match the configured build.' }
+Write-Host "Updating installed RedmiBook Manager to $($identity.displayVersion) [$($identity.build)]. Windows may request administrator consent."
 # Elevate the installer itself, never a PowerShell helper or the GUI.
 $setup = Start-Process -FilePath $Installer -ArgumentList '/S' -Verb RunAs -PassThru
 $deadline = [Threading.CancellationTokenSource]::new([TimeSpan]::FromMinutes(2))
@@ -27,7 +31,8 @@ try {
     finally { $deadline.Dispose() }
     if ($probe.ExitCode -ne 0) { throw "Installed session probe failed: $($probe.ExitCode)." }
     $health = Get-Content -LiteralPath $probePath -Raw | ConvertFrom-Json
-    if (-not $health.compatible -or $health.sessionVersion -ne $version) {
+    if (-not $health.compatible -or $health.sessionVersion -ne $version -or
+        $health.build -ne $identity.build -or $health.sessionBuild -ne $identity.build) {
         throw "Installed components are unavailable or incompatible: $($health | ConvertTo-Json -Compress)"
     }
     Write-Host "Installed $($health.sessionVersion); session/core compatible."

@@ -15,6 +15,12 @@ independent, and quality gates must not be disabled.
 
 ## Toolchain
 
+Version metadata comes from Git through the shared resolver described in
+[release policy](releasing.md). Keep complete history and version tags in development
+and CI checkouts. Do not pass manual MANAGER_BUILD_ID, MANAGER_RELEASE_CHANNEL or
+MANAGER_RELEASE_SEQUENCE overrides. CMake watches source/Git inputs and regenerates
+identity when they change. Package/install helpers consume the generated manifest.
+
 For an isolated build-tree Windows core/session/tray/Manager loop without
 installation or packaging, use [the development runtime](dev-runtime.md).
 

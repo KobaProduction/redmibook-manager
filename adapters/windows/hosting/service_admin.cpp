@@ -2,6 +2,7 @@
 #include "adapters/windows/battery/policy_store.hpp"
 #include "adapters/windows/hosting/client_pipe.hpp"
 #include "adapters/windows/hosting/handle.hpp"
+#include "adapters/windows/hosting/session_autostart.hpp"
 #include <array>
 #include <string>
 #include <winsvc.h>
@@ -106,6 +107,8 @@ int execute(SC_HANDLE service, std::string_view command) {
 } // namespace
 
 int service_command(std::string_view command) {
+    if (command == "--register-session" || command == "--unregister-session")
+        return session_autostart_command(command == "--unregister-session");
     if ((command == "--install" || command == "--configure") &&
         !windows_battery::provision_policy_directory())
         return 1;

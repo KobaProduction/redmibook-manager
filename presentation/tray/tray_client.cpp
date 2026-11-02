@@ -57,7 +57,7 @@ void TrayClient::retranslate() {
     open_.setText(tr("Open RedmiBook Manager"));
     restart_.setText(tr("Restart background components"));
     close_.setText(tr("Close tray"));
-    icon_.setToolTip(QStringLiteral("RedmiBook Manager %1").arg(QStringLiteral(MANAGER_APP_VERSION)));
+    icon_.setToolTip(QStringLiteral("RedmiBook Manager %1").arg(QStringLiteral(MANAGER_DISPLAY_VERSION)));
     status_.setText(preferences_available_ ? runtime_.status_text() : preference_status_);
     status_.setCheckable(true);
     status_.setChecked(preferences_available_ && runtime_.reply().connected &&

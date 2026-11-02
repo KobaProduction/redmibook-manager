@@ -18,7 +18,21 @@ SetErrorLevel 2
 Abort
 rmb_service_ready:
 DetailPrint "$(RmbAutostart)"
-WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "KobaProduction.RedmibookManager.Session" '$\"$INSTDIR\bin\redmibook-session.exe$\" --with-tray'
+nsExec::ExecToLog '"$INSTDIR\bin\redmibook-service.exe" --register-session'
+Pop $0
+StrCmp $0 "0" rmb_autostart_ready
+MessageBox MB_OK|MB_ICONSTOP "$(RmbAutostartError)" /SD IDOK
+StrCmp $RmbMaintenance "" +5
+FileOpen $0 "$RmbMaintenance.commit.tmp" w
+FileWrite $0 "cancel"
+FileClose $0
+Rename "$RmbMaintenance.commit.tmp" "$RmbMaintenance.commit"
+SetErrorLevel 2
+Abort
+rmb_autostart_ready:
+; Migrate only after the replacement task has been registered successfully.
+DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "KobaProduction.RedmibookManager.Session"
+ClearErrors
 StrCmp $RmbMaintenance "" rmb_resume_done
 DetailPrint "$(RmbRestore)"
 FileOpen $0 "$RmbMaintenance.commit.tmp" w

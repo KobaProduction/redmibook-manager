@@ -31,7 +31,7 @@ isolated development scope; automatic child launching remains blocked there to
 preserve launcher process ownership. Installed/non-isolated Mi opens Manager.
 
 Use PowerShell 7 from the checkout. First startup configures a separate Debug
-build under `build/dev` with payload identity `dev-local`, then builds the four
+build under `build/dev` with the automatically resolved Git payload identity, then builds the four
 runtime targets and their dependencies. Subsequent builds are incremental.
 Pass the installed Qt 6.10.2 MinGW directory through `QT_ROOT` or `-QtRoot`.
 

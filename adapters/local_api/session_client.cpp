@@ -38,7 +38,7 @@ void configure_gui_identity() {
     QCoreApplication::setOrganizationName(QStringLiteral("Koba Production"));
     QCoreApplication::setApplicationName(QStringLiteral("Redmibook Manager"));
     QGuiApplication::setApplicationDisplayName(QStringLiteral("RedmiBook Manager"));
-    QCoreApplication::setApplicationVersion(QStringLiteral(MANAGER_APP_VERSION));
+    QCoreApplication::setApplicationVersion(QStringLiteral(MANAGER_DISPLAY_VERSION));
     QGuiApplication::setWindowIcon(QIcon(QStringLiteral(":/icons/app-icon.ico")));
     register_application_restart();
 }

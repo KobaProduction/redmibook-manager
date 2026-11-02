@@ -18,6 +18,10 @@ Sleep 100
 IntOp $0 $0 + 1
 IntCmp $0 300 rmb_remove_failed rmb_remove_wait rmb_remove_failed
 rmb_remove_service:
+nsExec::ExecToLog '"$INSTDIR\bin\redmibook-service.exe" --unregister-session'
+Pop $0
+StrCmp $0 "0" +2
+Goto rmb_remove_failed
 nsExec::ExecToLog '"$INSTDIR\bin\redmibook-service.exe" --uninstall'
 Pop $0
 StrCmp $0 "0" rmb_remove_commit

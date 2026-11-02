@@ -7,10 +7,13 @@
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QScreen>
+#include <utility>
 
 namespace manager::presentation {
-OsdPresenter::OsdPresenter(Preferences &preferences)
-    : RoundedFrame(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint), preferences_(preferences) {
+OsdPresenter::OsdPresenter(Preferences &preferences, RaiseWindow raise_window)
+    : RoundedFrame(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint |
+                   Qt::WindowDoesNotAcceptFocus | Qt::WindowTransparentForInput),
+      preferences_(preferences), raise_window_(std::move(raise_window)) {
     setAttribute(Qt::WA_ShowWithoutActivating);
     set_emphasized(true);
     set_rounded(preferences_.rounded_corners());
@@ -91,6 +94,12 @@ void OsdPresenter::retranslate() {
     }
     update_icon();
 }
+void OsdPresenter::place() {
+    adjustSize();
+    if (const auto *screen = resolve_display(preferences_.osd_screen(), QCursor::pos()))
+        move(feedback_position(screen->availableGeometry(), size(),
+                               preferences_.osd_position().toStdString()));
+}
 void OsdPresenter::reveal() {
     preferences_.refresh();
     if (preferences_.osd_sound())
@@ -101,12 +110,11 @@ void OsdPresenter::reveal() {
         return;
     }
     retranslate();
-    adjustSize();
-    if (const auto *screen = resolve_display(preferences_.osd_screen(), QCursor::pos()))
-        move(feedback_position(screen->availableGeometry(), size(),
-                               preferences_.osd_position().toStdString()));
+    place();
     show();
     raise();
+    if (raise_window_)
+        raise_window_(static_cast<std::uintptr_t>(winId()));
     timeout_.start(2200);
 }
 

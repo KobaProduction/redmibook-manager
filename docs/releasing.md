@@ -17,22 +17,31 @@ release. The workflow creates its immutable tag only after the matrix succeeds.
 
 ## Version and immutable builds
 
-`VERSION.txt` owns the application and package base version, currently `1.1.5`.
-Product versions identify checkpoint commits. A patch increment may be included
-only in an owner-authorized checkpoint commit, at most once per checkpoint.
-Uncommitted iterations, previews, builds, packaging and installations retain the
-current version; distinguish their binaries with the payload build identity.
-Do not commit solely to obtain a version bump or infer Git authorization from an
-installation request. Major/minor changes require an explicit owner decision.
-CI never bumps versions.
+Git is the sole version authority. `tools/git-version.py` is shared by every CMake
+configuration, local packaging and CI. There is no editable version file, local
+build counter, timestamp identity or CI-run-number version override.
 
-An alpha publication from `release` uses `v1.1.5-alpha.<workflow-run-number>`.
-The suffix identifies an immutable build; the executable still reports `1.1.5`.
-CI embeds the same run number as `MANAGER_RELEASE_SEQUENCE` for update comparison.
-The default `MANAGER_RELEASE_CHANNEL` is alpha; stable must be selected explicitly
-when the owner authorizes a stable publication.
-Promoting to beta or stable requires an explicit owner decision and policy update.
-A rerun must not overwrite existing published assets or move an existing tag.
+The nearest first-parent tag `vMAJOR.MINOR.PATCH[-alpha.SEQUENCE]` supplies the release
+series. Each subsequent first-parent commit advances patch once and uses alpha.0;
+at the tag itself its channel/sequence are preserved. For example, one commit after
+v1.1.5-alpha.13 resolves to 1.1.6-alpha.0. Major/minor and stable tags remain explicit
+owner decisions. Tagging that computed candidate does not change its version or SHA.
+Repeated builds never advance anything. Complete history and version tags are required;
+missing/shallow Git metadata fails explicitly instead of inventing a version.
+
+Payload identity is the commit SHA, plus a content hash for uncommitted tracked or
+untracked files. Staging does not change identity; changing bytes does. Ignored build
+outputs do not participate. Components compare both numeric version and this exact
+payload identity. UI shows the Git release label; About/runtime diagnostics expose
+the payload identity. Dirty installer filenames include the content identity.
+
+`build-identity.json` is generated with the binaries and installed beside them.
+Each package has a matching `.identity.json` sidecar. Installer helpers read this
+metadata and verify the installed core/session identity, rather than guessing a
+version from the source checkout or filename. CI fetches complete history/tags,
+checks all package manifests against its source SHA and publishes their computed
+release tag. Dirty payloads cannot be published. A rerun must not overwrite assets
+or move an existing tag. No commit/publication is authorized merely by a local build.
 
 ## Required evidence
 

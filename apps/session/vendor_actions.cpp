@@ -44,11 +44,8 @@ void VendorActions::configure_initial_microphone() {
             const std::lock_guard lock(delivery->mutex);
             return delivery->microphone_generation != 0 || delivery->overflow;
         },
-        [this](bool muted) {
-            desired_mute_ = muted;
-            if (!microphone_busy_)
-                apply_mute();
-        });
+        // Initial firmware/endpoint reconciliation is background work, not a key press.
+        [this](bool) { reconcileMicrophone(); });
 }
 void VendorActions::configure_display() {
     display_deadline_.setSingleShot(true);

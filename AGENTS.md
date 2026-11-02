@@ -17,12 +17,11 @@ This instruction overrides the delegated Reviewer requirement while it remains a
   Centralize System/Light/Dark through QStyleHints and inherited palettes. No custom
   translation dictionaries, per-screen theme tables or duplicated controller owners.
 - Product/version decisions: [product contract](docs/product.md). Publication work also
-  reads [release policy](docs/releasing.md). Current base version is 1.1.5.
-  Version changes belong to owner-authorized checkpoint commits: at most one patch
-  increment per checkpoint. Do not bump the version for uncommitted edits, builds,
-  previews, packaging or installations. Rebuilds before the next checkpoint keep
-  the same version; use payload build identity to distinguish their binaries.
-  Major/minor changes require an explicit owner decision. CI never bumps versions.
+  reads [release policy](docs/releasing.md). Git is the sole version authority.
+  Never assign local version/build counters, edit a version file or override build
+  identity with timestamps. The shared resolver derives release version/channel and
+  payload identity from Git tags, commits and uncommitted content. Repeated builds of
+  unchanged inputs keep the same identity. Major/minor tags require an owner decision.
 - The shared [AI Agent Workflow entry map](https://github.com/ArthurKoba/ai-agent-workflow/blob/93d5e3eebd3b693c33930a3127e168e48cdd4143/AGENTS.md)
   governs task routing. Read selected task skills completely, not the entire library.
 - Implementation: [Clean Architecture / DDD](https://github.com/ArthurKoba/ai-agent-workflow/blob/fdb39e72f330b5e6622895cc31ca8e7b73699629/skills/software-engineering/clean-architecture-ddd.md).
@@ -39,8 +38,9 @@ This instruction overrides the delegated Reviewer requirement while it remains a
   requirement below while this gate is active.
 
 - **Use the host's built-in code navigation and refactoring tools first.**
-  The owner has explicitly disabled Serena for this Codex checkout. Do not call,
-  reconnect, start or re-enable it without a new explicit owner instruction.
+  The owner reauthorized Serena for this checkout on 2026-11-02. The dedicated
+  launcher is `tools/start-serena.ps1`; project-local `.codex/config.toml` registers
+  `serena_redmibook`. Reuse the owned instance recorded in `.serena/server/instance.json`.
   In the current Codex environment, use its available built-in tools; do not start,
   initialize or use Serena when these tools already cover the required work.
   Check actual tool availability and capabilities rather than assuming that a product

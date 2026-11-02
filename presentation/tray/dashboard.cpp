@@ -164,11 +164,11 @@ void TrayDashboard::connect_actions() {
 
 void TrayDashboard::retranslate() {
     title_.setText(tr("RedmiBook Manager"));
-    version_.setText(QStringLiteral(MANAGER_APP_VERSION));
+    version_.setText(QStringLiteral(MANAGER_DISPLAY_VERSION));
     const auto &core = runtime_.reply().daemon;
     version_.setToolTip(tr("Core: %1 (%2)\nTray: %3 (%4)")
                             .arg(QString::fromStdString(core.version), QString::fromStdString(core.build),
-                                 QStringLiteral(MANAGER_APP_VERSION), QStringLiteral(MANAGER_BUILD_ID)));
+                                 QStringLiteral(MANAGER_DISPLAY_VERSION), QStringLiteral(MANAGER_BUILD_ID)));
     update_runtime_icon();
     mode_label_.setText(tr("Performance mode"));
     refresh_label_.setText(tr("Screen refresh rate"));
@@ -259,7 +259,7 @@ void TrayDashboard::update_microphone_icon() {
 
 void TrayDashboard::update_runtime_icon() {
     const auto health =
-        application::connection_health(runtime_.reply(), {MANAGER_APP_VERSION, MANAGER_BUILD_ID});
+        application::connection_health(runtime_.reply(), {MANAGER_DISPLAY_VERSION, MANAGER_BUILD_ID});
     const auto symbol = health == application::ConnectionHealth::Ready && preferences_available_
                             ? QStringLiteral("service-connected")
                         : health == application::ConnectionHealth::VersionMismatch

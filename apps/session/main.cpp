@@ -7,6 +7,7 @@
 #include "adapters/platform/power_scheme.hpp"
 #include "adapters/platform/runtime.hpp"
 #include "adapters/platform/session_controls.hpp"
+#include "adapters/platform/window_appearance.hpp"
 #include "adapters/storage/ui_preferences/store.hpp"
 #include "application/runtime/connection_health.hpp"
 #include "apps/session/device_state_publisher.hpp"
@@ -74,8 +75,9 @@ class SessionRuntime final {
   public:
     SessionRuntime(manager::presentation::Preferences &preferences, const QString &directory,
                    const QCommandLineParser &parser)
-        : read_(diagnostic_), osd_(preferences), updates_(preferences, directory),
-          server_(read_, osd_, &osd_), input_(session_input(osd_, work_, parser)), state_(work_),
+        : read_(diagnostic_), osd_(preferences, manager::adapters::raise_osd_window),
+          updates_(preferences, directory), server_(read_, osd_, &osd_),
+          input_(session_input(osd_, work_, parser)), state_(work_),
           vendor_(
               preferences, osd_, work_,
               [] {

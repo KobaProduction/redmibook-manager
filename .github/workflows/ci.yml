@@ -21,6 +21,8 @@ jobs:
         os: [windows-2022, ubuntu-24.04]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
       - name: Configure without Qt
         run: cmake -S . -B build/core -DMANAGER_BUILD_DESKTOP=OFF -DBUILD_TESTING=ON
       - name: Build
@@ -37,6 +39,8 @@ jobs:
         configuration: [Debug, Release]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
@@ -70,7 +74,7 @@ jobs:
           (Join-Path $qtTools 'mingw1310_64/bin') >> $env:GITHUB_PATH
       - name: Configure
         shell: bash
-        run: cmake -S . -B build/ci -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_TESTING=ON -DMANAGER_BUILD_ID="${{ github.sha }}" -DMANAGER_RELEASE_SEQUENCE=${{ github.run_number }}
+        run: cmake -S . -B build/ci -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_TESTING=ON
       - name: Build
         run: cmake --build build/ci --parallel 4
       - name: Quality
@@ -105,6 +109,7 @@ jobs:
             dist/*.exe
             dist/*.tar.gz
             dist/*.deb
+            dist/*.identity.json
           if-no-files-found: error
 
   release:
@@ -115,6 +120,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           pattern: packages-*
@@ -124,14 +131,25 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          BUILD_NUMBER: ${{ github.run_number }}
+
         shell: bash
         run: |
           set -euo pipefail
-          version="$(cat VERSION.txt)"
-          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
-          tag="v${version}-alpha.${BUILD_NUMBER}"
+          python - <<'PY' > release-identity.txt
+          import glob, json, os
+          identities = [json.load(open(path)) for path in glob.glob('packages/*.identity.json')]
+          assert identities, 'Package identity missing'
+          expected = identities[0]
+          for identity in identities:
+              assert not identity['dirty'] and identity['commit'] == os.environ['GITHUB_SHA']
+              assert all(identity[key] == expected[key] for key in ('version', 'build', 'releaseTag', 'channel'))
+          assert expected['channel'] == 'alpha', 'Stable publication requires explicit promotion'
+          print(expected['version'])
+          print(expected['releaseTag'])
+          PY
+          version="$(sed -n '1p' release-identity.txt)"
+          tag="$(sed -n '2p' release-identity.txt)"
           (cd packages && sha256sum ./* > ../SHA256SUMS.txt)
           mv SHA256SUMS.txt packages/
           printf 'Unsigned alpha build. Application base version: %s.\n\nSource commit: %s\n' "$version" "$GITHUB_SHA" > release-notes.txt
-          gh release create "$tag" packages/* --target "$GITHUB_SHA" --prerelease --title "${version} alpha ${BUILD_NUMBER}" --notes-file release-notes.txt
+          gh release create "$tag" packages/* --target "$GITHUB_SHA" --prerelease --title "$tag" --notes-file release-notes.txt

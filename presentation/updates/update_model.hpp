@@ -35,7 +35,7 @@ class UpdateModel final : public QObject {
         return !result_.download_url.empty();
     }
     QString version() const {
-        return QStringLiteral(MANAGER_APP_VERSION);
+        return QStringLiteral(MANAGER_DISPLAY_VERSION);
     }
     QString build() const {
         return QStringLiteral(MANAGER_BUILD_ID);

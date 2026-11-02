@@ -32,15 +32,25 @@ bool verify_events(manager::presentation::OsdPresenter &osd, const QLabel &icon,
     }
     return true;
 }
+struct RaiseCounter {
+    int count{};
+    void operator()(std::uintptr_t handle) {
+        if (handle != 0)
+            ++count;
+    }
+};
 bool shared_surface(manager::presentation::Preferences &preferences) {
     using namespace manager::application::feedback;
-    manager::presentation::OsdPresenter osd(preferences);
+    RaiseCounter raises;
+    manager::presentation::OsdPresenter osd(preferences, std::ref(raises));
     auto *icon = osd.findChild<QLabel *>(QStringLiteral("osdIcon"));
     auto *text = osd.findChild<QLabel *>(QStringLiteral("osdText"));
     if (!icon || !text || !verify_events(osd, *icon, *text))
         return false;
+    const int previous_raises = raises.count;
     osd.show_result({true, {}, {}, 0});
-    if (!osd.isVisible() || icon->pixmap().isNull() || !text->text().contains("Diagnostic"))
+    if (raises.count != previous_raises + 1 || !osd.isVisible() || icon->pixmap().isNull() ||
+        !text->text().contains("Diagnostic"))
         return false;
     osd.prepare_refresh();
     osd.present_refresh({manager::application::display::Status::Ready, 165, {}});

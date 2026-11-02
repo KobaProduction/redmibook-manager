@@ -221,8 +221,11 @@ Linux composition does not supply this vendor feature. Missing values remain unk
 
 Subscribe first, then query asynchronously after input readiness. Known qualified
 startup intent reconciles both mute and unmute per the owner's LED-authority policy;
-unknown/denied reads never authorize an audio change. A newer native notification,
-overflow or source failure invalidates the initial GET. Ordinary synchronization
+unknown/denied reads never authorize an audio change.
+Initial synchronization and periodic reconciliation do not show microphone OSD or
+play its sound; key-triggered feedback remains separate from background state recovery.
+A newer native notification, overflow or source failure invalidates the initial GET.
+Ordinary synchronization
 also captures native-ingress generation and checks it after endpoint read, before
 any SET; superseded work cannot deliberately apply the observed stale intent and
 its result is discarded. Native calls do not hold the delivery mutex. Physical key

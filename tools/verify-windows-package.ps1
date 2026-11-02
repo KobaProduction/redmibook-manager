@@ -5,8 +5,11 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $projectRoot = Split-Path $PSScriptRoot
-$version = (Get-Content (Join-Path $projectRoot 'VERSION.txt') -Raw).Trim()
-$packageName = "RedmibookManager-$version-Windows-x86_64"
+$identityFiles = @(Get-ChildItem -LiteralPath $PackageDirectory -Filter '*.exe.identity.json')
+if ($identityFiles.Count -ne 1) { throw 'Package verification requires one installer identity in the package directory.' }
+$identity = & (Join-Path $PSScriptRoot 'read-build-identity.ps1') -Artifact ($identityFiles[0].FullName -replace '\.identity\.json$', '')
+$version = $identity.version
+$packageName = $identity.packageName
 $portable = Join-Path $PackageDirectory "$packageName.zip"
 $installer = Join-Path $PackageDirectory "$packageName.exe"
 $previewRoot = Join-Path $PackageDirectory 'preview'

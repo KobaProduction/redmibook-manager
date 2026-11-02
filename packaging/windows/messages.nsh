@@ -11,6 +11,8 @@ LangString RmbService ${LANG_ENGLISH} "Configuring and checking the background s
 LangString RmbService ${LANG_RUSSIAN} "Настройка и проверка фоновой службы..."
 LangString RmbAutostart ${LANG_ENGLISH} "Registering hotkeys, notifications and tray startup at sign-in..."
 LangString RmbAutostart ${LANG_RUSSIAN} "Настройка запуска горячих клавиш, уведомлений и трея при входе в систему..."
+LangString RmbAutostartError ${LANG_ENGLISH} "Windows sign-in startup could not be registered or checked. Installation did not complete. See installation details."
+LangString RmbAutostartError ${LANG_RUSSIAN} "Не удалось зарегистрировать или проверить автозапуск при входе в Windows. Установка не завершена. Подробности — в журнале установки."
 LangString RmbRestore ${LANG_ENGLISH} "Restoring previously running components..."
 LangString RmbRestore ${LANG_RUSSIAN} "Возобновление работы ранее запущенных компонентов..."
 LangString RmbReady ${LANG_ENGLISH} "Installation completed. User settings were preserved."

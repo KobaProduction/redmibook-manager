@@ -25,6 +25,13 @@ Pane {
                 Label { text: "RedmiBook Manager"; font.pixelSize: 22; font.bold: true }
                 Label { text: root.updates.version; color: palette.placeholderText }
             }
+            Label {
+                text: root.updates.build
+                Layout.fillWidth: true
+                wrapMode: Text.WrapAnywhere
+                color: palette.placeholderText
+                font.pixelSize: 11
+            }
             RowLayout {
                 Layout.fillWidth: true
                 Label { text: qsTr("Developer: %1").arg("Koba Production"); Layout.fillWidth: true }
