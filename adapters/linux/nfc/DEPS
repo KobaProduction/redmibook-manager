@@ -1,0 +1,2 @@
+# Native Linux UAPI is confined to this qualified I2C transport.
+include_rules = ['+linux/i2c-dev.h', '+linux/i2c.h', '+sys/file.h', '+sys/ioctl.h']

@@ -183,6 +183,22 @@ if(BUILD_TESTING)
     add_test(NAME native-platform-contract COMMAND platform-tests "${MANAGER_PLATFORM}")
 endif()
 
+add_library(manager_nfc STATIC application/nfc/ndef.cpp adapters/nfc/type5.cpp adapters/nfc/ntag.cpp
+    "adapters/${MANAGER_PLATFORM}/nfc/transport.cpp")
+target_link_libraries(manager_nfc PUBLIC manager_application PRIVATE project_options Threads::Threads)
+set_target_properties(manager_nfc PROPERTIES AUTOMOC OFF)
+if(WIN32)
+    target_sources(manager_nfc PRIVATE adapters/windows/nfc/io.cpp adapters/windows/nfc/discovery.cpp)
+    target_compile_definitions(manager_nfc PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX _WIN32_WINNT=0x0602)
+    target_link_libraries(manager_nfc PRIVATE setupapi bcrypt)
+endif()
+if(BUILD_TESTING)
+    add_executable(nfc-probe tests/nfc_probe.cpp)
+    target_link_libraries(nfc-probe PRIVATE manager_nfc project_options)
+    add_executable(nfc-tests tests/nfc_tests.cpp)
+    target_link_libraries(nfc-tests PRIVATE manager_nfc project_options)
+    add_test(NAME nfc-tag-contract COMMAND nfc-tests)
+endif()
 if(NOT MANAGER_BUILD_DESKTOP)
     return()
 endif()
@@ -219,6 +235,9 @@ target_link_libraries(manager_updates PUBLIC manager_application Qt6::Network PR
 target_compile_definitions(manager_updates PRIVATE MANAGER_TARGET_OS="${MANAGER_PLATFORM}")
 
 qt_add_library(manager_session_api STATIC
+    adapters/local_api/nfc_codec.cpp adapters/local_api/nfc_codec.hpp
+    adapters/local_api/nfc_client.cpp adapters/local_api/nfc_client.hpp
+    adapters/local_api/nfc_server.cpp adapters/local_api/nfc_server.hpp
     adapters/local_api/device_state_codec.cpp adapters/local_api/device_state_codec.hpp
     adapters/local_api/battery_telemetry_codec.cpp
     adapters/local_api/device_state_stream.cpp adapters/local_api/device_state_stream.hpp
@@ -226,7 +245,7 @@ qt_add_library(manager_session_api STATIC
     adapters/local_api/session_client.cpp adapters/local_api/session_client.hpp
     adapters/local_api/session_server.cpp adapters/local_api/session_server.hpp
     adapters/local_api/session_codec.cpp adapters/local_api/session_codec.hpp)
-target_link_libraries(manager_session_api PUBLIC manager_runtime Qt6::Network Qt6::Concurrent Qt6::Gui PRIVATE project_options)
+target_link_libraries(manager_session_api PUBLIC manager_runtime manager_nfc Qt6::Network Qt6::Concurrent Qt6::Gui PRIVATE project_options)
 
 qt_add_library(manager_icons STATIC presentation/common/icons.cpp presentation/common/icons.hpp)
 target_include_directories(manager_icons PUBLIC "${PROJECT_SOURCE_DIR}")
@@ -285,9 +304,9 @@ qt_add_qml_module(manager_presentation
     QML_FILES presentation/qml/Main.qml presentation/qml/ManagerContent.qml presentation/qml/LoadingSkeleton.qml presentation/qml/pages/OverviewPage.qml
         presentation/qml/MonitorPicker.qml presentation/qml/Surface.qml presentation/qml/ChoiceBox.qml presentation/qml/NeutralCheckBox.qml presentation/qml/RefreshRateButtons.qml presentation/qml/AppPalette.qml presentation/qml/LicenseDialog.qml presentation/qml/pages/AboutPage.qml
         presentation/qml/pages/TrayPage.qml presentation/qml/pages/TraySettings.qml presentation/qml/pages/SettingsPage.qml presentation/qml/pages/UnsupportedPage.qml presentation/qml/pages/HardwarePage.qml
-        presentation/qml/pages/BatteryPage.qml presentation/qml/pages/HotkeysPage.qml presentation/qml/pages/DevicePage.qml
+        presentation/qml/pages/BatteryPage.qml presentation/qml/pages/HotkeysPage.qml presentation/qml/pages/DevicePage.qml presentation/qml/pages/NfcCard.qml
         presentation/qml/presets/PresetCard.qml presentation/qml/presets/PresetButtonEditor.qml presentation/qml/presets/ActionEditor.qml presentation/qml/presets/TraySectionToggle.qml
-    SOURCES presentation/about_model.cpp presentation/about_model.hpp presentation/overview_model.hpp presentation/overview_model.cpp
+    SOURCES presentation/nfc_model.cpp presentation/nfc_model.hpp presentation/about_model.cpp presentation/about_model.hpp presentation/overview_model.hpp presentation/overview_model.cpp
         presentation/manager_model.hpp presentation/manager_model.cpp
         presentation/updates/update_model.hpp presentation/updates/update_model.cpp
         presentation/device_controls_model.hpp presentation/device_controls_model.cpp
@@ -301,7 +320,7 @@ target_include_directories(manager_presentation PUBLIC "${PROJECT_SOURCE_DIR}")
 target_include_directories(manager_presentation PRIVATE "${PROJECT_SOURCE_DIR}/presentation" "${PROJECT_SOURCE_DIR}/presentation/updates")
 target_include_directories(manager_presentation PRIVATE "${PROJECT_SOURCE_DIR}/presentation/presets")
 target_link_libraries(manager_presentation PUBLIC manager_application manager_preferences manager_icons Qt6::Quick Qt6::QuickControls2 Qt6::Concurrent
-    PRIVATE project_options manager_device_policy)
+    PRIVATE project_options manager_device_policy manager_nfc)
 
 set_property(TARGET manager_presentation APPEND PROPERTY QT_EXCLUDE_SOURCES_FROM_TRANSLATION
     "${PROJECT_SOURCE_DIR}/LICENSE" "${PROJECT_SOURCE_DIR}/packaging/*")
@@ -335,6 +354,12 @@ qt_import_qml_plugins(redmibook-manager)
 
 if(BUILD_TESTING)
     qt_add_executable(preferences-tests tests/preferences_tests.cpp)
+    qt_add_executable(nfc-channel-tests tests/nfc_channel_tests.cpp)
+    qt_add_executable(nfc-preview tests/nfc_preview.cpp)
+    target_link_libraries(nfc-preview PRIVATE manager_presentation manager_presentationplugin project_options)
+    target_link_libraries(nfc-channel-tests PRIVATE manager_session_api manager_presentation project_options)
+    add_test(NAME nfc-session-contract COMMAND nfc-channel-tests)
+    set_tests_properties(nfc-session-contract PROPERTIES TIMEOUT 10)
     qt_add_executable(device-controls-async-tests tests/device_controls_async_tests.cpp)
     qt_add_executable(preference-channel-tests tests/preference_channel_tests.cpp)
     target_link_libraries(preference-channel-tests PRIVATE manager_preference_ipc project_options)
@@ -407,7 +432,7 @@ if(BUILD_TESTING)
     target_link_libraries(tray-tests PRIVATE manager_session_ui project_options)
     add_test(NAME tray-osd-contract COMMAND tray-tests)
     target_link_libraries(preferences-tests PRIVATE manager_preferences manager_session_ui project_options)
-    set(translation_test_target preference-channel-tests preferences-tests ui-details-tests redmibook-ui-preview presets-tests device-controls-async-tests)
+    set(translation_test_target preference-channel-tests preferences-tests ui-details-tests redmibook-ui-preview presets-tests device-controls-async-tests nfc-preview)
     add_test(NAME ui-preferences-contract COMMAND preferences-tests)
     add_test(NAME ui-live-contract COMMAND redmibook-manager --ui-contract)
     set_tests_properties(ui-preferences-contract ui-live-contract tray-osd-contract PROPERTIES TIMEOUT 15

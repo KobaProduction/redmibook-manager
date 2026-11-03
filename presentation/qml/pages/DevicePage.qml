@@ -9,6 +9,7 @@ Pane {
     required property ManagerModel manager
     required property DeviceControlsModel controls
     required property PowerControlsModel powerControls
+    required property NfcModel nfc
     padding: 0
     ScrollView {
         id: scroll
@@ -23,6 +24,12 @@ Pane {
             Label { text: qsTr("Device"); font.pixelSize: 26; font.bold: true }
             BatteryPage { manager: root.manager; controls: root.controls; powerControls: root.powerControls; Layout.fillWidth: true }
             HardwarePage { manager: root.manager; controls: root.controls; powerControls: root.powerControls; Layout.fillWidth: true }
+            Loader {
+                Layout.fillWidth: true
+                active: root.nfc.present
+                visible: active
+                sourceComponent: NfcCard { nfc: root.nfc }
+            }
         }
     }
 }

@@ -1,8 +1,10 @@
 #include "adapters/integration/preset_executor.hpp"
+#include "adapters/local_api/nfc_server.hpp"
 #include "adapters/local_api/preference_authority.hpp"
 #include "adapters/local_api/session_client.hpp"
 #include "adapters/local_api/session_server.hpp"
 #include "adapters/platform/firmware_controls.hpp"
+#include "adapters/platform/nfc.hpp"
 #include "adapters/platform/power_controls.hpp"
 #include "adapters/platform/power_scheme.hpp"
 #include "adapters/platform/runtime.hpp"
@@ -80,19 +82,24 @@ class SessionRuntime final {
                    const QCommandLineParser &parser)
         : read_(diagnostic_), osd_(preferences, manager::adapters::raise_osd_window),
           updates_(preferences, directory), server_(read_, osd_, &osd_),
-          input_(session_input(osd_, work_, parser)), state_(work_),
-          vendor_(
-              preferences, osd_, work_,
-              [] {
-                  manager::adapters::launch_component(QStringLiteral("redmibook-manager"),
-                                                      {QStringLiteral("--overview")});
-              },
-              [] {
-                  manager::adapters::launch_component(QStringLiteral("redmibook-tray"),
-                                                      {QStringLiteral("--open-dashboard")});
-              },
-              [this] { state_.refresh(); }) {
+          input_(session_input(osd_, work_, parser)),
+          nfc_(manager::adapters::make_nfc_tag(), work_.observations,
+               manager::adapters::session_endpoint() + QStringLiteral(".Nfc.v1"),
+               directory + QStringLiteral("/nfc/backups")),
+          state_(work_), vendor_(
+                             preferences, osd_, work_,
+                             [] {
+                                 manager::adapters::launch_component(QStringLiteral("redmibook-manager"),
+                                                                     {QStringLiteral("--overview")});
+                             },
+                             [] {
+                                 manager::adapters::launch_component(QStringLiteral("redmibook-tray"),
+                                                                     {QStringLiteral("--open-dashboard")});
+                             },
+                             [this] { state_.refresh(); }) {
         state_.setMicrophoneReconciliation([this] { vendor_.reconcileMicrophone(); });
+        state_.setNfcReconciliation([this] { nfc_.refresh(); });
+        nfc_.listen();
         ready = server_.listen();
         QObject::connect(&server_, &manager::adapters::SessionServer::openTray, &server_,
                          [] { manager::adapters::launch_component(QStringLiteral("redmibook-tray")); });
@@ -111,6 +118,7 @@ class SessionRuntime final {
     manager::session::UpdateScheduler updates_;
     manager::adapters::SessionServer server_;
     std::unique_ptr<manager::session::InputActions> input_;
+    manager::adapters::NfcServer nfc_;
     manager::session::DeviceStatePublisher state_;
     manager::session::VendorActions vendor_;
 };

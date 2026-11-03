@@ -2,6 +2,7 @@
 #include "adapters/device_profile/native_profile.hpp"
 #include "adapters/integration/preset_executor.hpp"
 #include "adapters/local_api/device_state_stream.hpp"
+#include "adapters/local_api/nfc_client.hpp"
 #include "adapters/local_api/session_client.hpp"
 #include "adapters/platform/session_controls.hpp"
 #include "adapters/storage/ui_preferences/store.hpp"
@@ -11,6 +12,7 @@
 #include "presentation/common/preferences.hpp"
 #include "presentation/device_controls_model.hpp"
 #include "presentation/manager_model.hpp"
+#include "presentation/nfc_model.hpp"
 #include "presentation/power_controls_model.hpp"
 #include "presentation/presets/presets_model.hpp"
 #include "presentation/updates/update_model.hpp"
@@ -45,6 +47,8 @@ class ManagerHost final {
     std::shared_ptr<adapters::PresetExecutor> preset_executor_;
     presentation::PresetsModel presets_;
     adapters::DeviceStateClient state_client_;
+    std::shared_ptr<adapters::NfcClient> nfc_client_;
+    presentation::NfcModel nfc_;
     adapters::GitHubUpdates update_source_;
     presentation::UpdateModel updates_;
     QQmlApplicationEngine engine_;

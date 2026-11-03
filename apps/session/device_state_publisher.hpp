@@ -21,6 +21,9 @@ class DeviceStatePublisher final : public QObject {
     explicit DeviceStatePublisher(WorkQueues &work);
     ~DeviceStatePublisher() override;
     void refresh();
+    void setNfcReconciliation(std::function<void()> callback) {
+        reconcile_nfc_ = std::move(callback);
+    }
     void setMicrophoneReconciliation(std::function<void()> callback) {
         reconcile_microphone_ = std::move(callback);
     }
@@ -32,6 +35,7 @@ class DeviceStatePublisher final : public QObject {
     };
     WorkQueues &work_;
     std::function<void()> reconcile_microphone_;
+    std::function<void()> reconcile_nfc_;
     std::shared_ptr<application::microphone::FirmwareStatePort> microphone_firmware_;
     std::shared_ptr<Delivery> delivery_;
     adapters::DeviceStateServer server_;
@@ -67,6 +71,7 @@ class DeviceStatePublisher final : public QObject {
     application::overview::DeviceState state_;
     std::uint64_t revision_{};
     void complete();
+    void reconcile();
     void refresh_local();
     void refresh_firmware();
     void complete_firmware();

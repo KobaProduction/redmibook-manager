@@ -16,6 +16,7 @@ Item {
     required property DeviceControlsModel controls
     required property PresetsModel presets
     required property PowerControlsModel powerControls
+    required property NfcModel nfc
     NativeDialogs.MessageDialog {
         id: errorDialog
         title: qsTr("Error")
@@ -47,6 +48,10 @@ Item {
     }
     Connections {
         target: root.powerControls
+        function onErrorOccurred(message: string) { errorDialog.text = message; errorDialog.open() }
+    }
+    Connections {
+        target: root.nfc
         function onErrorOccurred(message: string) { errorDialog.text = message; errorDialog.open() }
     }
     Pane {
@@ -106,7 +111,7 @@ Item {
             Layout.margins: 24
             OverviewPage { manager: root.manager; controls: root.controls; about: root.about }
             HotkeysPage { manager: root.manager }
-            DevicePage { manager: root.manager; controls: root.controls; powerControls: root.powerControls }
+            DevicePage { manager: root.manager; controls: root.controls; powerControls: root.powerControls; nfc: root.nfc }
             SettingsPage { preferencesAvailable: root.preferenceConnection.available; manager: root.manager; controls: root.controls; presets: root.presets }
             AboutPage { preferencesAvailable: root.preferenceConnection.available; manager: root.manager; updates: root.updates; about: root.about }
             TrayPage { manager: root.manager; presets: root.presets; onBackRequested: root.hostWindow.page = 4 }

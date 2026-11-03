@@ -11,6 +11,7 @@ Window {
     required property DeviceControlsModel controls
     required property PresetsModel presets
     required property PowerControlsModel powerControls
+    required property NfcModel nfc
     property int page: 0
     readonly property bool contentReady: content.status === Loader.Ready
     property bool startupPresented: false
@@ -28,7 +29,7 @@ Window {
         content.setSource("ManagerContent.qml", {
             "hostWindow": root, "preferenceConnection": root.preferenceConnection,
             "manager": root.manager, "updates": root.updates, "about": root.about,
-            "controls": root.controls, "presets": root.presets, "powerControls": root.powerControls
+            "controls": root.controls, "presets": root.presets, "powerControls": root.powerControls, "nfc": root.nfc
         })
     }
     Loader {

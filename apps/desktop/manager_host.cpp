@@ -35,7 +35,11 @@ ManagerHost::ManagerHost(bool smoke, std::unique_ptr<application::PreferencePort
                        return executor->choices();
                    return preview::demo_catalog();
                }),
-      update_source_(adapters::update_target()), updates_(update_source_, adapters::update_target()) {
+      nfc_client_(smoke ? nullptr
+                        : std::make_shared<adapters::NfcClient>(adapters::session_endpoint() +
+                                                                QStringLiteral(".Nfc.v1"))),
+      nfc_(nfc_client_), update_source_(adapters::update_target()),
+      updates_(update_source_, adapters::update_target()) {
     if (smoke && QCoreApplication::arguments().contains(QStringLiteral("--preset-preview")))
         if (auto *fixture = dynamic_cast<adapters::UiPreferenceStore *>(store_.get()))
             fixture->configure_starter_defaults(preview::demo_catalog());
@@ -48,6 +52,7 @@ ManagerHost::ManagerHost(bool smoke, std::unique_ptr<application::PreferencePort
     engine_.setInitialProperties(
         {{QStringLiteral("preferenceConnection"), QVariant::fromValue(&preferences_)},
          {QStringLiteral("about"), QVariant::fromValue(&about_)},
+         {QStringLiteral("nfc"), QVariant::fromValue(&nfc_)},
          {QStringLiteral("powerControls"), QVariant::fromValue(&power_controls_)},
          {QStringLiteral("presets"), QVariant::fromValue(&presets_)},
          {QStringLiteral("controls"), QVariant::fromValue(&controls_)},
@@ -98,6 +103,8 @@ void ManagerHost::wire_device_state(bool smoke) {
                      &presentation::DeviceControlsModel::finishRefresh);
     QObject::connect(&model_, &presentation::ManagerModel::changed, &state_client_,
                      &adapters::DeviceStateClient::start);
+    QObject::connect(&preferences_, &presentation::Preferences::changed, &nfc_,
+                     [this] { nfc_client_->start(); });
     state_client_.start();
 }
 

@@ -7,6 +7,14 @@
 #include <utility>
 
 namespace manager::session {
+void DeviceStatePublisher::reconcile() {
+    if (reconcile_microphone_)
+        reconcile_microphone_();
+    if (reconcile_nfc_)
+        reconcile_nfc_();
+    refresh_local();
+    refresh_firmware();
+}
 DeviceStatePublisher::DeviceStatePublisher(WorkQueues &work)
     : work_(work), delivery_(std::make_shared<Delivery>()),
       microphone_(std::make_shared<adapters::NativeMicrophone>()),
@@ -22,12 +30,7 @@ DeviceStatePublisher::DeviceStatePublisher(WorkQueues &work)
     watch_battery();
     reconciliation_.setInterval(10000);
     reconciliation_.setTimerType(Qt::CoarseTimer);
-    connect(&reconciliation_, &QTimer::timeout, this, [this] {
-        if (reconcile_microphone_)
-            reconcile_microphone_();
-        refresh_local();
-        refresh_firmware();
-    });
+    connect(&reconciliation_, &QTimer::timeout, this, &DeviceStatePublisher::reconcile);
     reconciliation_.start();
     refresh();
 }

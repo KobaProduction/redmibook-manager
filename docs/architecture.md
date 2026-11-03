@@ -28,6 +28,7 @@ System/Light/Dark appearance, presentation-controller placement and native Qt AP
 | Runtime diagnostic contracts | `application/runtime/` |
 | Preference contracts, persistence and shared Qt controllers | `application/ui_preferences/`, `adapters/storage/ui_preferences/`, `presentation/common/` |
 | Session IPC and diagnostic routing | `adapters/local_api/` |
+| Built-in NFC tag and NDEF | `application/nfc/`, `adapters/nfc/`, native NFC transports; [NFC contract](nfc.md) |
 | Windows machine host/maintenance | `adapters/windows/hosting/` |
 | Independent OSD and tray/dashboard UI | `presentation/osd/`, `presentation/tray/` |
 | Release identity and update policy | `application/updates/` |
