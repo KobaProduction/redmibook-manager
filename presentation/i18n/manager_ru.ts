@@ -58,6 +58,7 @@ Copyright (c) 2026 ArthurKoba
     </context>
     <context>
         <name>AboutPage</name>
+    <message><source>Checking for updates</source><translation>Проверка обновлений</translation></message>
     <message><source>Updates: %1</source><translation>Обновления: %1</translation></message>
     <message><source>Check daily</source><translation>Проверять ежедневно</translation></message>
     <message><source>Last checked: %1</source><translation>Последняя проверка: %1</translation></message>
@@ -1042,8 +1043,8 @@ Tray: %3 (%4)</source>
             <translation>Доступна версия %1.</translation>
         </message>
         <message>
-            <source>You have the latest version in your update channel.</source>
-            <translation>Установлена последняя версия в вашем канале обновлений.</translation>
+            <source>Latest published version: %1.</source>
+            <translation>Последняя опубликованная версия: %1.</translation>
         </message>
         <message>
             <source>No public release is available.</source>

@@ -106,6 +106,9 @@ the public GitHub API with bounded responses/deadlines. The resident session per
 at most one persisted automatic check per 24 hours. A user click opens the matching
 OS/architecture download or release page; the checker does not install automatically.
 The version comparison and immutable build rules live in [release policy](releasing.md).
+Checking retains the last completed status text and uses a fixed-size indicator
+beside the check button. The current result names the latest published version;
+commits in `main`, Git tags and CI artifacts alone are not public updates.
 
 ## Version ownership
 

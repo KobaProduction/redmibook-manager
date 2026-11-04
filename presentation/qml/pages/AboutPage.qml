@@ -99,6 +99,14 @@ Pane {
                     RowLayout {
                         Layout.fillWidth: true
                         Label { objectName: "updateStatus"; text: qsTr("Updates: %1").arg(root.updates.status); font.pixelSize: 18; font.bold: true; Layout.fillWidth: true; wrapMode: Text.WordWrap }
+                        BusyIndicator {
+                            objectName: "updateBusyIndicator"
+                            running: root.updates.busy
+                            opacity: running ? 1 : 0
+                            Layout.preferredWidth: 24
+                            Layout.preferredHeight: 24
+                            Accessible.name: qsTr("Checking for updates")
+                        }
                         Button { objectName: "checkUpdatesButton"; text: qsTr("Check for updates"); enabled: !root.updates.busy; onClicked: root.updates.check() }
                     }
                     RowLayout {

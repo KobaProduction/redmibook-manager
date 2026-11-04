@@ -4,6 +4,7 @@
 #include "presentation/device_controls_model.hpp"
 #include "presentation/manager_model.hpp"
 #include "presentation/osd/osd_presenter.hpp"
+#include "presentation/updates/update_model.hpp"
 #include <QApplication>
 #include <QTemporaryDir>
 namespace {
@@ -124,6 +125,49 @@ bool telemetry_notifications(manager::presentation::Preferences &preferences) {
     return global == 0 && battery == 2;
 }
 } // namespace
+namespace {
+class PendingUpdates final : public manager::application::UpdatePort {
+  public:
+    int requests{};
+    std::function<void(manager::application::UpdateResult)> pending;
+    void check(std::function<void(manager::application::UpdateResult)> completion) override {
+        ++requests;
+        pending = std::move(completion);
+    }
+    void finish(manager::application::UpdateResult result) {
+        auto completion = std::move(pending);
+        pending = {};
+        completion(std::move(result));
+    }
+};
+bool first_update_pending() {
+    PendingUpdates source;
+    manager::presentation::UpdateModel model(source, QStringLiteral("windows-x86_64"));
+    const auto initial = model.status();
+    model.check();
+    model.check();
+    if (!model.busy() || model.status() != initial || source.requests != 1 || model.checkedAt().isValid())
+        return false;
+    source.finish({manager::application::UpdateState::Current, "1.1.8"});
+    return !model.busy() && model.checkedAt().isValid() && model.status().contains(QStringLiteral("1.1.8"));
+}
+bool repeated_update_pending() {
+    PendingUpdates source;
+    manager::presentation::UpdateModel model(source, QStringLiteral("windows-x86_64"));
+    model.check();
+    source.finish({manager::application::UpdateState::Available, "999.0.0",
+                   "https://github.com/KobaProduction/redmibook-manager/releases/tag/v999.0.0"});
+    const auto status = model.status();
+    const auto checked = model.checkedAt();
+    const auto url = model.downloadUrl();
+    model.check();
+    const bool retained = model.busy() && model.available() && model.status() == status &&
+                          model.checkedAt() == checked && model.downloadUrl() == url;
+    source.finish({manager::application::UpdateState::Failed});
+    return retained && !model.busy() && !model.available() && model.status() != status;
+}
+} // namespace
+
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setStyle(QStringLiteral("Fusion"));
@@ -134,7 +178,8 @@ int main(int argc, char *argv[]) {
     }
     manager::presentation::Preferences preferences(store);
     return licenses(preferences) && rounding(preferences) && design(preferences) && battery_preferences() &&
-                   telemetry_notifications(preferences) && reset_classic_design(preferences)
+                   telemetry_notifications(preferences) && reset_classic_design(preferences) &&
+                   first_update_pending() && repeated_update_pending()
                ? 0
                : 1;
 }

@@ -4,9 +4,6 @@ namespace manager::presentation {
 UpdateModel::UpdateModel(application::UpdatePort &source, QString target)
     : source_(source), target_(std::move(target)) {}
 QString UpdateModel::status() const {
-    if (busy_) {
-        return tr("Checking for updates…");
-    }
     if (!checked_) {
         return tr("Not checked yet.");
     }
@@ -14,7 +11,7 @@ QString UpdateModel::status() const {
     case application::UpdateState::Available:
         return tr("Version %1 is available.").arg(QString::fromStdString(result_.version));
     case application::UpdateState::Current:
-        return tr("You have the latest version in your update channel.");
+        return tr("Latest published version: %1.").arg(QString::fromStdString(result_.version));
     case application::UpdateState::Unavailable:
         return tr("No public release is available.");
     case application::UpdateState::Failed:
