@@ -6,8 +6,38 @@
 #include "presentation/osd/osd_presenter.hpp"
 #include "presentation/updates/update_model.hpp"
 #include <QApplication>
+#include <QEventLoop>
 #include <QTemporaryDir>
+#include <QThread>
+#include <QTimer>
+#include <future>
 namespace {
+class DelayedProfile final : public manager::application::DeviceProfilePort {
+  public:
+    std::shared_future<void> release;
+    manager::application::DeviceProfile read() const override {
+        release.wait();
+        return {.model =
+                    QThread::currentThread() != QCoreApplication::instance()->thread() ? "Background" : "GUI",
+                .status = manager::application::ProfileReadStatus::Available};
+    }
+};
+bool asynchronous_profile(manager::presentation::Preferences &preferences) {
+    auto source = std::make_shared<DelayedProfile>();
+    std::promise<void> release;
+    source->release = release.get_future().share();
+    manager::presentation::AboutModel model(source, preferences);
+    QEventLoop loop;
+    bool responsive = false;
+    QObject::connect(&model, &manager::presentation::AboutModel::profileChanged, &loop, &QEventLoop::quit);
+    QTimer::singleShot(0, &loop, [&] {
+        responsive = model.model().isEmpty();
+        release.set_value();
+    });
+    QTimer::singleShot(2000, &loop, &QEventLoop::quit);
+    loop.exec();
+    return responsive && model.model() == QStringLiteral("Background");
+}
 class SessionFake final : public manager::application::SessionPort {
   public:
     bool request(manager::application::SessionCommand,
@@ -18,7 +48,7 @@ class SessionFake final : public manager::application::SessionPort {
 };
 bool licenses(manager::presentation::Preferences &preferences) {
     manager::adapters::DemoDeviceProfile source;
-    manager::presentation::AboutModel model(source, preferences);
+    manager::presentation::AboutModel model(source.read(), preferences);
     const auto original = model.licenseText(0, true);
     const auto qt = model.licenseText(1, true);
     const auto notices = model.licenseText(2, true);
@@ -149,7 +179,8 @@ bool first_update_pending() {
     if (!model.busy() || model.status() != initial || source.requests != 1 || model.checkedAt().isValid())
         return false;
     source.finish({manager::application::UpdateState::Current, "1.1.8"});
-    return !model.busy() && model.checkedAt().isValid() && model.status().contains(QStringLiteral("1.1.8"));
+    return !model.busy() && model.checkedAt().isValid() &&
+           model.status() == QCoreApplication::translate("manager::presentation::UpdateModel", "Up to date");
 }
 bool repeated_update_pending() {
     PendingUpdates source;
@@ -179,7 +210,7 @@ int main(int argc, char *argv[]) {
     manager::presentation::Preferences preferences(store);
     return licenses(preferences) && rounding(preferences) && design(preferences) && battery_preferences() &&
                    telemetry_notifications(preferences) && reset_classic_design(preferences) &&
-                   first_update_pending() && repeated_update_pending()
+                   first_update_pending() && repeated_update_pending() && asynchronous_profile(preferences)
                ? 0
                : 1;
 }

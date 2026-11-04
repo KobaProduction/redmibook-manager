@@ -1,4 +1,5 @@
 #include "adapters/platform/input_binding.hpp"
+#include "adapters/windows/shortcuts/key_state.hpp"
 #include <QAbstractNativeEventFilter>
 #include <QCoreApplication>
 #include <utility>
@@ -29,6 +30,7 @@ class NativeInput final : public application::shortcuts::InputPort, public QAbst
                     "windows-hotkey-registration-failed"};
         }
         activated_ = std::move(activated);
+        chord_ = chord;
         QCoreApplication::instance()->installNativeEventFilter(this);
         return {BindingStatus::Active, "windows-register-hotkey"};
     }
@@ -47,7 +49,8 @@ class NativeInput final : public application::shortcuts::InputPort, public QAbst
         if (event->message != WM_HOTKEY || event->wParam != hotkey_id || !activated_) {
             return false;
         }
-        activated_();
+        if (application::shortcuts::exact_chord(chord_, windows_shortcuts::capture_held_keys(), true))
+            activated_();
         *result = 0;
         return true;
     }
@@ -55,6 +58,7 @@ class NativeInput final : public application::shortcuts::InputPort, public QAbst
   private:
     static constexpr int hotkey_id = 0x5242;
     std::function<void()> activated_;
+    application::shortcuts::KeyChord chord_;
 };
 } // namespace
 std::unique_ptr<application::shortcuts::InputPort> make_native_input() {

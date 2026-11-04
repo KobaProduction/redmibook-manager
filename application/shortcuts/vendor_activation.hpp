@@ -18,6 +18,7 @@ struct VendorActivation {
 // They must not be turned into duplicate firmware SETs or UI success claims.
 struct FirmwarePerformanceAnnouncement {
     std::uint8_t announced_profile{};
+    bool feedback_allowed{true};
 };
 
 struct RefreshKeyNotification {};

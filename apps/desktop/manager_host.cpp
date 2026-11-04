@@ -9,6 +9,7 @@
 #include "apps/desktop/appearance_setup.hpp"
 #include "apps/desktop/preview_presets.hpp"
 #include "apps/desktop/smoke_test.hpp"
+#include "apps/desktop/startup_trace.hpp"
 #include "apps/desktop/style_setup.hpp"
 #include "apps/desktop/ui_contract_smoke.hpp"
 #include "presentation/common/displays.hpp"
@@ -40,7 +41,9 @@ ManagerHost::ManagerHost(bool smoke, std::unique_ptr<application::PreferencePort
                         : std::make_shared<adapters::NfcClient>(adapters::session_endpoint() +
                                                                 QStringLiteral(".Nfc.v1"))),
       nfc_(nfc_client_, nullptr, smoke ? nullptr : adapters::make_nfc_files()),
-      update_source_(adapters::update_target()), updates_(update_source_, adapters::update_target()) {
+      update_source_(adapters::update_target()),
+      updates_(update_source_, adapters::update_target(), &update_packages_) {
+    trace_startup("models");
     if (smoke && QCoreApplication::arguments().contains(QStringLiteral("--preset-preview")))
         if (auto *fixture = dynamic_cast<adapters::UiPreferenceStore *>(store_.get()))
             fixture->configure_starter_defaults(preview::demo_catalog());
@@ -82,6 +85,7 @@ void ManagerHost::load_content() {
         return;
     configure_controls(preferences_.design());
     content_started_ = true;
+    trace_startup("preferences ready, content requested");
     QMetaObject::invokeMethod(engine_.rootObjects().first(), "loadContent");
 }
 
@@ -126,7 +130,9 @@ void after_content_ready(QQmlApplicationEngine &engine, const std::function<void
     });
 }
 void show_manager(const QQmlApplicationEngine &engine, ManagerActivation activation) {
-    if (activation != ManagerActivation::Overview &&
+    if (activation == ManagerActivation::Updates)
+        QMetaObject::invokeMethod(engine.rootObjects().first(), "openUpdates");
+    if (activation == ManagerActivation::KeepCurrent &&
         QCoreApplication::arguments().contains(QStringLiteral("--settings"))) {
         engine.rootObjects().first()->setProperty("page", 4);
     }
@@ -151,6 +157,15 @@ void ManagerHost::present_when_ready(ManagerActivation activation) {
                      Qt::QueuedConnection);
     QObject::connect(&preferences_, &presentation::Preferences::connectionChanged, &engine_, present,
                      Qt::QueuedConnection);
+    // Keep the loading/recovery shell visible even if the preference handshake stalls.
+    // This presentation deadline does not cancel or mark the IPC request successful.
+    QTimer::singleShot(150, &engine_, [this, activation] {
+        auto *root = engine_.rootObjects().first();
+        if (!root->property("startupPresented").toBool()) {
+            root->setProperty("startupPresented", true);
+            show_manager(engine_, activation);
+        }
+    });
     present();
 }
 
@@ -185,12 +200,14 @@ int ManagerHost::open(bool smoke, const QString &screenshot, bool ui_contract, M
         return 0;
     }
     engine_.loadFromModule(QStringLiteral("Redmibook.Manager"), QStringLiteral("Main"));
+    trace_startup("window shell");
     if (engine_.rootObjects().isEmpty()) {
         return 1;
     }
     if (activation == ManagerActivation::Overview)
         engine_.rootObjects().first()->setProperty("page", 0);
     load_content();
+    after_content_ready(engine_, [] { trace_startup("content ready"); });
     present(smoke, activation);
     schedule_preview(smoke, screenshot, ui_contract, preset_preview);
     return -1;

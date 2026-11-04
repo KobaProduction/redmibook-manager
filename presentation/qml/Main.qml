@@ -32,6 +32,10 @@ Window {
             "controls": root.controls, "presets": root.presets, "powerControls": root.powerControls, "nfc": root.nfc
         })
     }
+    function openUpdates() {
+        page = 5
+        updates.check()
+    }
     Loader {
         id: content
         anchors.fill: parent

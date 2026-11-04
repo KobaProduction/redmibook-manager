@@ -65,7 +65,7 @@ int run(QApplication &app) {
     SessionFake session;
     manager::presentation::ManagerModel model(preferences, session);
     manager::adapters::DemoDeviceProfile profile;
-    manager::presentation::AboutModel about(profile, preferences);
+    manager::presentation::AboutModel about(profile.read(), preferences);
     UpdatesFake source;
     manager::presentation::UpdateModel updates(source, QStringLiteral("windows-x86_64"));
     QQmlApplicationEngine engine;

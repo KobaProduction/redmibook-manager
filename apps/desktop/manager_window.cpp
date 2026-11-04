@@ -16,6 +16,8 @@ void activate_window(QQmlApplicationEngine &engine, const QPoint &anchor, Manage
         if (auto *window = qobject_cast<QQuickWindow *>(object)) {
             if (activation == ManagerActivation::Overview)
                 window->setProperty("page", 0);
+            if (activation == ManagerActivation::Updates)
+                QMetaObject::invokeMethod(window, "openUpdates");
             if (!window->property("startupPresented").toBool())
                 continue;
             presentation::present_window(*window, anchor, [window] {
@@ -42,7 +44,9 @@ bool notify_existing(const QString &name, ManagerActivation activation) {
     }
     allow_owner_activation(name);
     const auto point = QCursor::pos();
-    const auto target = activation == ManagerActivation::Overview ? QStringLiteral(" overview") : QString{};
+    const auto target = activation == ManagerActivation::Updates    ? QStringLiteral(" updates")
+                        : activation == ManagerActivation::Overview ? QStringLiteral(" overview")
+                                                                    : QString{};
     existing.write(QStringLiteral("activate %1 %2%3\n").arg(point.x()).arg(point.y()).arg(target).toUtf8());
     existing.waitForBytesWritten(500);
     return true;
@@ -57,9 +61,13 @@ void process_activation(QLocalSocket &socket, QQmlApplicationEngine &engine) {
     const int x = parts.value(1).toInt(&x_ok);
     const int y = parts.value(2).toInt(&y_ok);
     const bool overview = parts.size() == 4 && parts.at(3) == QStringLiteral("overview");
-    if ((parts.size() == 3 || overview) && parts.first() == QStringLiteral("activate") && x_ok && y_ok) {
+    const bool updates = parts.size() == 4 && parts.at(3) == QStringLiteral("updates");
+    if ((parts.size() == 3 || overview || updates) && parts.first() == QStringLiteral("activate") && x_ok &&
+        y_ok) {
         activate_window(engine, {x, y},
-                        overview ? ManagerActivation::Overview : ManagerActivation::KeepCurrent);
+                        updates    ? ManagerActivation::Updates
+                        : overview ? ManagerActivation::Overview
+                                   : ManagerActivation::KeepCurrent);
     }
     socket.disconnectFromServer();
 }

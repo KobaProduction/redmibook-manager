@@ -127,11 +127,54 @@ bool microphone_is_desired_state_only() {
     return desired_mute && desired_mute->muted && desired_unmute && !desired_unmute->muted;
 }
 
+bool modified_keys() {
+    namespace shortcuts = manager::application::shortcuts;
+    VendorEventDecoder decoder(target());
+    const shortcuts::HeldKeys modified{.shift = true};
+    auto refresh = packet(0x1A);
+    refresh[2] = 0;
+    if (decoder.consume(refresh, 0ms, modified) || !decoder.consume(refresh, 1ms))
+        return false;
+    // Modified leading/trailing edges cannot complete a plain activation later.
+    if (decoder.consume(packet(0x18), 2ms, modified) || decoder.consume(packet(0x19), 3ms) ||
+        decoder.consume(packet(0x18), 4ms) || decoder.consume(packet(0x19), 5ms, modified) ||
+        decoder.consume(packet(0x19), 6ms))
+        return false;
+    const auto notification = decoder.consume(packet(0x16), 7ms, modified);
+    const auto *profile =
+        notification ? std::get_if<shortcuts::FirmwarePerformanceAnnouncement>(&*notification) : nullptr;
+    return profile && profile->announced_profile == 1 && !profile->feedback_allowed;
+}
+
+bool exact_chords() {
+    namespace shortcuts = manager::application::shortcuts;
+    for (std::size_t key = 0; key < 26; ++key) {
+        shortcuts::HeldKeys held;
+        held.letters[key] = true;
+        if (shortcuts::exact_chord({.latin_key = 'S'}, held, true) != (key == 18))
+            return false;
+    }
+    for (unsigned int mask = 1; mask < 32; ++mask) {
+        const shortcuts::HeldKeys held{.control = (mask & 1) != 0,
+                                       .alt = (mask & 2) != 0,
+                                       .shift = (mask & 4) != 0,
+                                       .super = (mask & 8) != 0,
+                                       .other = (mask & 16) != 0};
+        if (shortcuts::exact_chord({.latin_key = 'S'}, held, true) ||
+            shortcuts::exact_chord({.latin_key = 'K'}, held, true))
+            return false;
+    }
+    return !shortcuts::exact_chord({.latin_key = 'S'}, {.valid = false}, true) &&
+           !shortcuts::exact_chord({.latin_key = 'S'}, {}) &&
+           shortcuts::exact_chord({.latin_key = 'S'}, {}, true);
+}
+
 } // namespace
 
 int main() {
     if (!captured_pairs() || !duplicate_edges_and_orphans() || !exact_firmware_gate() || !invalid_packets() ||
-        !stale_and_reordered() || !original_key_notifications() || !microphone_is_desired_state_only()) {
+        !stale_and_reordered() || !original_key_notifications() || !microphone_is_desired_state_only() ||
+        !modified_keys() || !exact_chords()) {
         std::cerr << "Exact TM2309 Mi-button decoder contract failed\n";
         return 1;
     }

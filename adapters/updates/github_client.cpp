@@ -27,13 +27,15 @@ application::UpdateResult decode_release(const QJsonObject &object, const QStrin
     }
     const auto &version = identity->version;
     const auto canonical = QStringLiteral("%1.%2.%3").arg(version[0]).arg(version[1]).arg(version[2]);
-    return {.state = *identity > application::installed_release() ? application::UpdateState::Available
-                                                                  : application::UpdateState::Current,
-            .version = (identity->stable ? canonical
-                                         : canonical + QStringLiteral("-alpha.%1").arg(identity->sequence))
-                           .toStdString(),
-            .release_url = page.toString().toStdString(),
-            .download_url = release_asset(object, version, target).toStdString()};
+    return release_package(
+        {.state = *identity > application::installed_release() ? application::UpdateState::Available
+                                                               : application::UpdateState::Current,
+         .version =
+             (identity->stable ? canonical : canonical + QStringLiteral("-alpha.%1").arg(identity->sequence))
+                 .toStdString(),
+         .release_url = page.toString().toStdString(),
+         .download_url = release_asset(object, version, target).toStdString()},
+        object);
 }
 GitHubUpdates::GitHubUpdates(QString target) : target_(std::move(target)) {}
 GitHubUpdates::~GitHubUpdates() {

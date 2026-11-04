@@ -59,6 +59,17 @@ find_package(Threads REQUIRED)
 target_link_libraries(manager_vendor_input PUBLIC manager_vendor_decoder PRIVATE project_options Threads::Threads)
 set_target_properties(manager_vendor_input PROPERTIES AUTOMOC OFF)
 if(WIN32)
+    add_library(manager_key_state STATIC adapters/windows/shortcuts/key_state.cpp)
+    target_link_libraries(manager_key_state PUBLIC manager_application PRIVATE project_options user32)
+    target_compile_definitions(manager_key_state PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    set_target_properties(manager_key_state PROPERTIES AUTOMOC OFF)
+    target_link_libraries(manager_vendor_input PRIVATE manager_key_state)
+    if(BUILD_TESTING)
+        add_executable(key-state-tests tests/key_state_tests.cpp)
+        target_link_libraries(key-state-tests PRIVATE manager_key_state project_options)
+        target_compile_definitions(key-state-tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+        add_test(NAME exact-key-state-contract COMMAND key-state-tests)
+    endif()
     target_compile_definitions(manager_vendor_input PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
     target_link_libraries(manager_vendor_input PRIVATE ole32 oleaut32 wbemuuid)
 endif()
@@ -229,6 +240,7 @@ target_link_libraries(manager_input PUBLIC manager_application Qt6::Core PRIVATE
 if(WIN32)
     target_compile_definitions(manager_input PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
     target_link_libraries(manager_input PRIVATE user32)
+    target_link_libraries(manager_input PRIVATE manager_key_state)
 endif()
 
 qt_add_library(manager_preferences STATIC
@@ -243,8 +255,16 @@ qt_add_library(manager_preference_ipc STATIC adapters/local_api/preference_chann
     adapters/local_api/preference_authority.cpp adapters/local_api/preference_authority.hpp)
 target_link_libraries(manager_preference_ipc PUBLIC manager_preferences Qt6::Network PRIVATE Qt6::Concurrent project_options)
 
-qt_add_library(manager_updates STATIC adapters/updates/release_feed.cpp adapters/updates/github_client.cpp adapters/updates/history.cpp adapters/updates/target.cpp)
-target_link_libraries(manager_updates PUBLIC manager_application Qt6::Network PRIVATE project_options)
+qt_add_library(manager_updates STATIC adapters/updates/release_feed.cpp adapters/updates/github_client.cpp adapters/updates/history.cpp adapters/updates/target.cpp
+    adapters/updates/asset_metadata.cpp adapters/updates/download_job.cpp adapters/updates/download_job.hpp
+    adapters/updates/package_transfer.cpp
+    adapters/updates/package_client.cpp "adapters/${MANAGER_PLATFORM}/lifecycle/update_installer.cpp")
+target_link_libraries(manager_updates PUBLIC manager_application Qt6::Network PRIVATE Qt6::Concurrent project_options)
+if(WIN32)
+    target_compile_definitions(manager_updates PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    target_link_libraries(manager_updates PRIVATE shell32 ole32)
+    target_link_libraries(manager_vendor_input PRIVATE user32)
+endif()
 target_compile_definitions(manager_updates PRIVATE MANAGER_TARGET_OS="${MANAGER_PLATFORM}")
 
 qt_add_library(manager_session_api STATIC
@@ -316,6 +336,7 @@ qt_add_qml_module(manager_presentation
     OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/qml/Redmibook/Manager"
     RESOURCE_PREFIX /qt/qml
     QML_FILES presentation/qml/Main.qml presentation/qml/ManagerContent.qml presentation/qml/LoadingSkeleton.qml presentation/qml/pages/OverviewPage.qml
+        presentation/qml/LazyPage.qml presentation/qml/ErrorDialog.qml
         presentation/qml/MonitorPicker.qml presentation/qml/Surface.qml presentation/qml/ModalDialog.qml presentation/qml/ChoiceBox.qml presentation/qml/NeutralCheckBox.qml presentation/qml/RefreshRateButtons.qml presentation/qml/AppPalette.qml presentation/qml/LicenseDialog.qml presentation/qml/pages/AboutPage.qml
         presentation/qml/pages/TrayPage.qml presentation/qml/pages/TraySettings.qml presentation/qml/pages/SettingsPage.qml presentation/qml/pages/UnsupportedPage.qml presentation/qml/pages/HardwarePage.qml
         presentation/qml/pages/BatteryPage.qml presentation/qml/pages/HotkeysPage.qml presentation/qml/pages/DevicePage.qml presentation/qml/pages/NfcCard.qml
@@ -327,6 +348,7 @@ qt_add_qml_module(manager_presentation
         presentation/nfc_composer.cpp
         presentation/manager_model.hpp presentation/manager_model.cpp
         presentation/updates/update_model.hpp presentation/updates/update_model.cpp
+        presentation/updates/update_actions.cpp
         presentation/device_controls_model.hpp presentation/device_controls_model.cpp
         presentation/device_controls_firmware.cpp
         presentation/power_controls_model.cpp presentation/power_controls_model.hpp
@@ -420,6 +442,13 @@ if(BUILD_TESTING)
     qt_add_executable(updates-tests tests/updates_tests.cpp)
     target_link_libraries(updates-tests PRIVATE manager_updates project_options)
     add_test(NAME update-policy-contract COMMAND updates-tests)
+    qt_add_executable(update-package-tests tests/update_package_tests.cpp)
+    target_link_libraries(update-package-tests PRIVATE manager_updates project_options)
+    add_test(NAME update-package-contract COMMAND update-package-tests)
+    set_tests_properties(update-package-contract PROPERTIES TIMEOUT 10)
+    qt_add_executable(update-model-tests tests/update_model_tests.cpp tests/update_preview.cpp)
+    target_link_libraries(update-model-tests PRIVATE manager_presentation manager_presentationplugin project_options)
+    add_test(NAME update-model-contract COMMAND update-model-tests)
     qt_add_executable(displays-tests tests/displays_tests.cpp)
     target_link_libraries(displays-tests PRIVATE manager_session_ui project_options)
     add_test(NAME display-placement-contract COMMAND displays-tests)
@@ -462,7 +491,7 @@ if(BUILD_TESTING)
     target_link_libraries(tray-tests PRIVATE manager_session_ui project_options)
     add_test(NAME tray-osd-contract COMMAND tray-tests)
     target_link_libraries(preferences-tests PRIVATE manager_preferences manager_session_ui project_options)
-    set(translation_test_target preference-channel-tests preferences-tests ui-details-tests redmibook-ui-preview presets-tests device-controls-async-tests nfc-preview)
+    set(translation_test_target preference-channel-tests preferences-tests ui-details-tests redmibook-ui-preview presets-tests device-controls-async-tests nfc-preview update-model-tests)
     add_test(NAME ui-preferences-contract COMMAND preferences-tests)
     add_test(NAME ui-live-contract COMMAND redmibook-manager --ui-contract)
     set_tests_properties(ui-preferences-contract ui-live-contract tray-osd-contract PROPERTIES TIMEOUT 15

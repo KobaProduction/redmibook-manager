@@ -1,4 +1,5 @@
 #include "adapters/platform/vendor_input.hpp"
+#include "adapters/windows/shortcuts/key_state.hpp"
 #include "adapters/windows/shortcuts/vendor_decoder.hpp"
 
 #include <windows.h>
@@ -121,6 +122,7 @@ struct Callbacks {
 struct Packet {
     std::vector<std::uint8_t> bytes;
     std::chrono::milliseconds observed_at;
+    application::shortcuts::HeldKeys held;
 };
 
 struct Batch {
@@ -187,17 +189,15 @@ void overflow(State &state) {
 }
 
 void enqueue(State &state, std::vector<std::uint8_t> bytes) {
+    const auto held = windows_shortcuts::capture_held_keys();
+    const auto time = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now().time_since_epoch());
     const std::lock_guard guard(state.mutex);
-    if (state.stopping) {
+    if (state.stopping)
         return;
-    }
-    if (state.incoming.packets.size() == queue_limit) {
+    if (state.incoming.packets.size() == queue_limit)
         state.incoming.overflow = true;
-    } else {
-        const auto time =
-            std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now().time_since_epoch());
-        state.incoming.packets.push_back({std::move(bytes), time});
-    }
+    else
+        state.incoming.packets.push_back({std::move(bytes), time, held});
     SetEvent(state.wake.get());
 }
 
@@ -363,7 +363,7 @@ void dispatch(State &state, windows_shortcuts::VendorEventDecoder &decoder, Batc
         return;
     }
     for (const auto &packet : batch.packets) {
-        const auto notification = decoder.consume(packet.bytes, packet.observed_at);
+        const auto notification = decoder.consume(packet.bytes, packet.observed_at, packet.held);
         const auto callbacks = reserve_callbacks(state);
         if (notification && callbacks && callbacks->notification) {
             callbacks->notification(*notification);

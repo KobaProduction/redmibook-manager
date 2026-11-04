@@ -1,5 +1,45 @@
 # Process lifecycle and update acceptance
 
+## Interactive update delivery
+
+Manager selects the release installer for its own platform/architecture. The update
+page checks, downloads with progress, then offers a separate Install action; neither
+manual checks nor the daily notification open a browser. The notification activates
+Manager's update page, including an already open window.
+
+The application update-package port keeps presentation independent of download and
+OS launch details. Qt network/file work runs on a worker, with a 15-second inactivity
+timeout, a five-minute total deadline and a 256 MiB package bound. GitHub asset metadata
+supplies the expected size and SHA-256. Only a complete verified atomic download in
+the user's cache can become installable. Destruction requests download cancellation;
+the worker owns its dependencies until completion. Windows verifies the file again
+under a read lock, then launches the installer EXE itself with UAC and its visible
+wizard. Linux opens the verified DEB through the desktop package handler. A launched
+installer is never reported as a completed installation.
+
+Manager's loading/recovery shell has a 150 ms presentation deadline after shell
+creation. Slow preference handshakes keep controls disabled and continue independently;
+the deadline does not establish compatibility or cancel IPC. Device identification
+also runs asynchronously with an owned source and a ten-second UI deadline. Optional
+startup timing goes to the application-owned file selected by REDMIBOOK_STARTUP_TRACE.
+QML pages are constructed on first navigation and retained, preserving edits and
+avoiding creation of hidden editors/license dialogs during startup. The main content
+loads page URLs with their initial properties rather than declaring all page components
+inline. Native error dialogs also load on demand, outside the startup import graph.
+
+## Exact shortcut matching
+
+One application matcher compares the complete normalized held-key state against the
+required chord. Windows captures that state on input receipt for both registered
+hotkeys and qualified vendor events. Letters, left/right modifier variants, Windows
+keys and all remaining keys (including Tab, arrows and function keys) participate;
+an extra held key rejects the action. Unavailable input state also rejects actions.
+The capture is event-driven and travels with the vendor packet before queued delivery.
+Fn itself is established by the qualified firmware notification, not invented as a
+Qt key-down event. Performance announcements still reconcile observed state even when
+their feedback is suppressed: the qualified ACPI path changes the profile before WMI
+delivery, and no firmware suppression command is known.
+
 ## Platform-independent roles
 
 Define shared interfaces before implementing Windows/Linux hosts. Product roles

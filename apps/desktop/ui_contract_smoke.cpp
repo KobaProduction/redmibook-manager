@@ -36,8 +36,8 @@ bool check_language(const QQmlApplicationEngine &engine, const QString &expected
     const auto *label = find_item(window->contentItem(), QStringLiteral("navigation4"));
     const auto *status = find_item(window->contentItem(), QStringLiteral("updateStatus"));
     const auto expected_status = expected == QStringLiteral("Settings")
-                                     ? QStringLiteral("Updates: Not checked yet.")
-                                     : QStringLiteral("Обновления: Ещё не проверялись.");
+                                     ? QStringLiteral("Not checked yet.")
+                                     : QStringLiteral("Ещё не проверялись.");
     qInfo() << "Language contract" << expected;
     return label != nullptr && label->property("text").toString() == expected && status != nullptr &&
            status->property("text").toString() == expected_status;
@@ -383,6 +383,8 @@ void preview_hotkeys(QQmlApplicationEngine &engine, presentation::ManagerModel &
 void schedule_ui_contract(QQmlApplicationEngine &engine, presentation::ManagerModel &model,
                           const QString &screenshot) {
     QTimer::singleShot(400, &engine, [&engine, &model, screenshot] {
+        // Visit About explicitly: pages are created on demand and retained.
+        engine.rootObjects().first()->setProperty("page", 5);
         engine.rootObjects().first()->setProperty("page", 4);
         model.setLanguage(2);
         model.setTheme(2);

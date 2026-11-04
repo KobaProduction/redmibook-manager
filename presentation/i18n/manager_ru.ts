@@ -55,6 +55,11 @@ Copyright (c) 2026 ArthurKoba
             <source>License text is unavailable.</source>
             <translation>Текст лицензии недоступен.</translation>
         </message>
+
+        <message>
+            <source>Reading device information…</source>
+            <translation>Чтение сведений об устройстве…</translation>
+        </message>
     </context>
     <context>
         <name>AboutPage</name>
@@ -149,6 +154,19 @@ Copyright (c) 2026 ArthurKoba
         <message>
             <source>Baseboard model</source>
             <translation>Модель системной платы</translation>
+        </message>
+
+        <message>
+            <source>Download</source>
+            <translation>Скачать</translation>
+        </message>
+        <message>
+            <source>Install</source>
+            <translation>Установить</translation>
+        </message>
+        <message>
+            <source>Download progress</source>
+            <translation>Загрузка обновления</translation>
         </message>
     </context>
     <context>
@@ -1054,6 +1072,43 @@ Tray: %3 (%4)</source>
             <source>Could not check for updates. Try again later.</source>
             <translation>Не удалось проверить обновления. Повторите попытку позже.</translation>
         </message>
+
+        <message>
+            <source>Update package unavailable. Try again later.</source>
+            <translation>Установщик недоступен. Повторите позже.</translation>
+        </message>
+        <message>
+            <source>Up to date</source>
+            <translation>Актуальная версия</translation>
+        </message>
+        <message>
+            <source>Downloading…</source>
+            <translation>Скачивание…</translation>
+        </message>
+        <message>
+            <source>Ready to install</source>
+            <translation>Готово к установке</translation>
+        </message>
+        <message>
+            <source>Opening installer…</source>
+            <translation>Запуск установщика…</translation>
+        </message>
+        <message>
+            <source>Installer opened</source>
+            <translation>Установщик запущен</translation>
+        </message>
+        <message>
+            <source>Download failed. Try again.</source>
+            <translation>Не удалось скачать. Повторите попытку.</translation>
+        </message>
+        <message>
+            <source>Could not open the installer. Download the update again.</source>
+            <translation>Не удалось запустить установщик. Скачайте обновление заново.</translation>
+        </message>
+        <message>
+            <source>Installation cancelled</source>
+            <translation>Установка отменена</translation>
+        </message>
     </context>
     <context>
         <name>manager::presentation::UpdateNotice</name>
@@ -1068,6 +1123,11 @@ Tray: %3 (%4)</source>
         <message>
             <source>Later</source>
             <translation>Позже</translation>
+        </message>
+
+        <message>
+            <source>Open update</source>
+            <translation>Открыть обновление</translation>
         </message>
     </context>
     <context>
@@ -1854,4 +1914,34 @@ Tray: %3 (%4)</source>
     </message>
 </context>
 
+    <context>
+        <name>TrayClient</name>
+        <message>
+            <source>Restart failed</source>
+            <translation>Не удалось перезапустить</translation>
+        </message>
+        <message>
+            <source>The session runtime could not be restarted.</source>
+            <translation>Не удалось перезапустить фоновый процесс.</translation>
+        </message>
+        <message>
+            <source>The daemon could not be restarted.</source>
+            <translation>Не удалось перезапустить демон.</translation>
+        </message>
+        <message>
+            <source>Tray already running</source>
+            <translation>Трей уже запущен</translation>
+        </message>
+        <message>
+            <source>The previous tray did not close. A second tray was not started.</source>
+            <translation>Предыдущий экземпляр трея не закрылся. Второй экземпляр не запущен.</translation>
+        </message>
+    </context>
+    <context>
+        <name>ErrorDialog</name>
+        <message>
+            <source>Error</source>
+            <translation>Ошибка</translation>
+        </message>
+    </context>
 </TS>

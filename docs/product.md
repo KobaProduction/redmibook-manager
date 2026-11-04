@@ -22,8 +22,10 @@ unsupported-control placeholder cards.
 Manager uses Fluent controls, System/Light/Dark appearance and System/English/Russian
 language selection. Changes apply live across clients through daemon preferences.
 Light selected controls use a black accent; custom drawing inherits centralized
-palettes. The startup shell applies the saved palette before exposure and loads
-content asynchronously behind a centered animated spinner, without skeletons or
+palettes. The startup shell applies received preferences before exposure; if the
+handshake stalls, it shows the system appearance after a bounded presentation
+deadline and applies the saved palette when the authoritative snapshot arrives.
+It loads content asynchronously behind a centered animated spinner, without skeletons or
 loading text. Offline/retry states stay in the same window. Follow
 [Qt UI conventions](qt-ui-conventions.md).
 

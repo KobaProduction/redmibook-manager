@@ -1,6 +1,7 @@
 #pragma once
 
 #include "application/device_profile/profile_port.hpp"
+#include "application/shortcuts/chord_match.hpp"
 #include "application/shortcuts/vendor_activation.hpp"
 
 #include <chrono>
@@ -18,7 +19,8 @@ class VendorEventDecoder final {
     // Exact P0A0A capture: leading 0x18 then trailing 0x19, both value1; one activation.
     // No press/release, hold or double-click semantics are inferred from these bytes.
     [[nodiscard]] std::optional<application::shortcuts::VendorNotification>
-    consume(std::span<const std::uint8_t> packet, std::chrono::milliseconds observed_at);
+    consume(std::span<const std::uint8_t> packet, std::chrono::milliseconds observed_at,
+            const application::shortcuts::HeldKeys &held = {});
     void reset() noexcept;
 
   private:

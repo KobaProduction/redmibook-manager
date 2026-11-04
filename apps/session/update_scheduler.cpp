@@ -1,15 +1,13 @@
 #include "apps/session/update_scheduler.hpp"
+#include "adapters/local_api/session_client.hpp"
 #include "adapters/updates/target.hpp"
-#include <QDesktopServices>
 #include <QPointer>
 namespace manager::session {
 UpdateScheduler::UpdateScheduler(presentation::Preferences &preferences, const QString &directory)
     : preferences_(preferences), source_(adapters::update_target()), history_(directory),
       notice_(preferences) {
-    connect(&notice_, &presentation::UpdateNotice::downloadRequested, this, [](const QString &url) {
-        if (adapters::trusted_release_url(QUrl(url))) {
-            QDesktopServices::openUrl(QUrl(url));
-        }
+    connect(&notice_, &presentation::UpdateNotice::downloadRequested, this, [](const QString &) {
+        adapters::launch_component(QStringLiteral("redmibook-manager"), {QStringLiteral("--updates")});
     });
     connect(&timer_, &QTimer::timeout, this, &UpdateScheduler::check);
     timer_.start(3600000);

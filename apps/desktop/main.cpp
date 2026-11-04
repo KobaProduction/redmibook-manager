@@ -6,6 +6,7 @@
 #include "apps/desktop/loading_preview.hpp"
 #include "apps/desktop/manager_host.hpp"
 #include "apps/desktop/smoke_test.hpp"
+#include "apps/desktop/startup_trace.hpp"
 #include "apps/desktop/style_setup.hpp"
 #include "presentation/overview_model.hpp"
 #include <QApplication>
@@ -24,6 +25,7 @@ void configure_parser(QCommandLineParser &parser) {
     parser.addHelpOption();
     parser.addOption({QStringLiteral("settings"), QStringLiteral("Open Settings")});
     parser.addOption({QStringLiteral("overview"), QStringLiteral("Open Overview")});
+    parser.addOption({QStringLiteral("updates"), QStringLiteral("Open Updates")});
     parser.addOption({QStringLiteral("restored"), QStringLiteral("Restored by installer lifecycle")});
     parser.addOption(
         {QStringLiteral("ui-contract"), QStringLiteral("Verify live language and theme changes")});
@@ -40,9 +42,10 @@ void configure_parser(QCommandLineParser &parser) {
 
 namespace {
 int run_connected_window(QApplication &app, const QCommandLineParser &parser) {
-    const auto activation = parser.isSet(QStringLiteral("overview"))
-                                ? manager::desktop::ManagerActivation::Overview
-                                : manager::desktop::ManagerActivation::KeepCurrent;
+    const auto activation =
+        parser.isSet(QStringLiteral("updates"))    ? manager::desktop::ManagerActivation::Updates
+        : parser.isSet(QStringLiteral("overview")) ? manager::desktop::ManagerActivation::Overview
+                                                   : manager::desktop::ManagerActivation::KeepCurrent;
     if (manager::desktop::ManagerInstance::activate_existing(activation))
         return 0;
     auto remote =
@@ -64,16 +67,19 @@ int run_window(QApplication &app, const QCommandLineParser &parser) {
         store = std::make_unique<manager::desktop::LoadingPreview>();
     manager::desktop::ManagerHost host(smoke, std::move(store));
     host.setRestored(parser.isSet(QStringLiteral("restored")));
-    const auto activation = parser.isSet(QStringLiteral("overview"))
-                                ? manager::desktop::ManagerActivation::Overview
-                                : manager::desktop::ManagerActivation::KeepCurrent;
+    const auto activation =
+        parser.isSet(QStringLiteral("updates"))    ? manager::desktop::ManagerActivation::Updates
+        : parser.isSet(QStringLiteral("overview")) ? manager::desktop::ManagerActivation::Overview
+                                                   : manager::desktop::ManagerActivation::KeepCurrent;
     const int opened =
         host.open(smoke, parser.value(QStringLiteral("screenshot")), ui_contract, activation, preset_preview);
     return opened >= 0 ? opened : app.exec();
 }
 } // namespace
 int main(int argc, char *argv[]) {
+    manager::desktop::trace_startup("process");
     QApplication app(argc, argv);
+    manager::desktop::trace_startup("QApplication");
     manager::adapters::configure_gui_identity();
     app.setStyle(QStringLiteral("Fusion"));
     QCommandLineParser parser;

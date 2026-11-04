@@ -22,11 +22,12 @@ bool recognized(std::span<const std::uint8_t> packet) {
            std::ranges::all_of(packet.subspan(3), [](std::uint8_t byte) { return byte == 0; });
 }
 
-std::optional<application::shortcuts::VendorNotification> announcement(std::span<const std::uint8_t> packet) {
+std::optional<application::shortcuts::VendorNotification>
+announcement(std::span<const std::uint8_t> packet, const application::shortcuts::HeldKeys &held) {
     using namespace application::shortcuts;
     if (packet[1] == 0x16 && packet[2] >= 1 && packet[2] <= 3)
-        return FirmwarePerformanceAnnouncement{packet[2]};
-    if (packet[1] == 0x1A && packet[2] == 0)
+        return FirmwarePerformanceAnnouncement{packet[2], exact_chord({.latin_key = 'K'}, held, true)};
+    if (packet[1] == 0x1A && packet[2] == 0 && exact_chord({.latin_key = 'S'}, held, true))
         return RefreshKeyNotification{};
     if (packet[1] == 0x21 && packet[2] <= 1)
         return FirmwareMicrophoneDesiredState{packet[2] == 0};
@@ -57,11 +58,16 @@ bool VendorEventDecoder::valid_time(std::chrono::milliseconds observed_at) {
 }
 
 std::optional<application::shortcuts::VendorNotification>
-VendorEventDecoder::consume(std::span<const std::uint8_t> packet, std::chrono::milliseconds observed_at) {
+VendorEventDecoder::consume(std::span<const std::uint8_t> packet, std::chrono::milliseconds observed_at,
+                            const application::shortcuts::HeldKeys &held) {
     if (!supported_ || !valid_time(observed_at) || !recognized(packet))
         return {};
     if (packet[1] != 0x18 && packet[1] != 0x19)
-        return announcement(packet);
+        return announcement(packet, held);
+    if (!application::shortcuts::exact_chord({}, held, true)) {
+        leading_.reset();
+        return {};
+    }
     if (packet[2] != 1)
         return {};
     if (packet[1] == 0x18) {

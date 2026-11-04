@@ -184,7 +184,7 @@ void VendorActions::handle(const shortcuts::VendorNotification &notification) {
         dispatch_application_action(
             action == shortcuts::BindingAction::Default ? shortcuts::BindingAction::OpenManager : action);
     } else if (const auto *profile = std::get_if<shortcuts::FirmwarePerformanceAnnouncement>(&notification)) {
-        handle_profile(profile->announced_profile);
+        handle_profile(*profile);
     } else if (std::holds_alternative<shortcuts::RefreshKeyNotification>(notification)) {
         handle_refresh();
     } else if (const auto *microphone =
@@ -246,10 +246,11 @@ void VendorActions::publish_state_changed() {
         state_changed_();
 }
 
-void VendorActions::handle_profile(std::uint8_t profile) {
-    // This is a profile announcement, including software SETs, not a rebindable Fn+K press.
+void VendorActions::handle_profile(const shortcuts::FirmwarePerformanceAnnouncement &profile) {
+    // A firmware announcement reconciles state even when shortcut feedback is excluded.
     publish_state_changed();
-    osd_.present_profile(profile);
+    if (profile.feedback_allowed)
+        osd_.present_profile(profile.announced_profile);
 }
 
 void VendorActions::handle_refresh() {

@@ -42,7 +42,7 @@ void UpdateNotice::show_result(const application::UpdateResult &result) {
 
 void UpdateNotice::retranslate() {
     title_.setText(tr("Update available: %1").arg(version_));
-    download_.setText(tr("Download update"));
+    download_.setText(tr("Open update"));
     dismiss_.setText(tr("Later"));
     adjustSize();
 }

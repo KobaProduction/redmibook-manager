@@ -98,7 +98,8 @@ Pane {
                     spacing: 12
                     RowLayout {
                         Layout.fillWidth: true
-                        Label { objectName: "updateStatus"; text: qsTr("Updates: %1").arg(root.updates.status); font.pixelSize: 18; font.bold: true; Layout.fillWidth: true; wrapMode: Text.WordWrap }
+                        Label { text: qsTr("Updates"); font.pixelSize: 18; font.bold: true }
+                        Item { Layout.fillWidth: true }
                         BusyIndicator {
                             objectName: "updateBusyIndicator"
                             running: root.updates.busy
@@ -107,13 +108,25 @@ Pane {
                             Layout.preferredHeight: 24
                             Accessible.name: qsTr("Checking for updates")
                         }
-                        Button { objectName: "checkUpdatesButton"; text: qsTr("Check for updates"); enabled: !root.updates.busy; onClicked: root.updates.check() }
+                        Button { id: checkUpdates; objectName: "checkUpdatesButton"; text: qsTr("Check for updates"); enabled: !root.updates.busy; onClicked: root.updates.check() }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.minimumHeight: checkUpdates.implicitHeight
+                        Label { objectName: "updateStatus"; text: root.updates.status; Layout.fillWidth: true; wrapMode: Text.WordWrap }
+                        Button { text: qsTr("Download"); visible: root.updates.canDownload; onClicked: root.updates.download() }
+                        Button { text: qsTr("Install"); visible: root.updates.canInstall; onClicked: root.updates.install() }
+                    }
+                    ProgressBar {
+                        Layout.fillWidth: true
+                        visible: root.updates.downloading
+                        value: root.updates.progress
+                        Accessible.name: qsTr("Download progress")
                     }
                     RowLayout {
                         Layout.fillWidth: true
                         CheckBox { enabled: root.preferencesAvailable; text: qsTr("Check daily"); font.pixelSize: 13; checked: root.manager.autoUpdates; onClicked: root.manager.setAutoUpdates(checked) }
                         Label { text: qsTr("Last checked: %1").arg(Qt.formatDateTime(root.updates.checkedAt, Qt.locale(), Locale.ShortFormat)); visible: !isNaN(root.updates.checkedAt.getTime()); font.pixelSize: 13; color: palette.placeholderText; Layout.fillWidth: true; wrapMode: Text.WordWrap }
-                        Button { text: root.updates.directDownload ? qsTr("Download for %1").arg(root.updates.target) : qsTr("View release"); visible: root.updates.available; onClicked: Qt.openUrlExternally(root.updates.downloadUrl) }
                     }
                 }
             }

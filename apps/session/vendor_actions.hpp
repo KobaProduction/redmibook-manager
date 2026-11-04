@@ -80,7 +80,7 @@ class VendorActions final : public QObject {
     void apply_mute();
     std::function<bool()> microphone_intent_guard();
     void cycle_refresh();
-    void handle_profile(std::uint8_t profile);
+    void handle_profile(const application::shortcuts::FirmwarePerformanceAnnouncement &profile);
     void handle_refresh();
     void publish_state_changed();
 };

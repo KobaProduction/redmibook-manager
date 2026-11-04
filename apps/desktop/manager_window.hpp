@@ -7,7 +7,7 @@
 #include <memory>
 
 namespace manager::desktop {
-enum class ManagerActivation : std::uint8_t { KeepCurrent, Overview };
+enum class ManagerActivation : std::uint8_t { KeepCurrent, Overview, Updates };
 
 class ManagerInstance final : public QObject {
     Q_OBJECT

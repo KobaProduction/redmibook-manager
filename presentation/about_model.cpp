@@ -1,7 +1,36 @@
 #include "presentation/about_model.hpp"
 #include <QFile>
+#include <QtConcurrentRun>
 namespace manager::presentation {
+AboutModel::AboutModel(std::shared_ptr<const application::DeviceProfilePort> source, Preferences &preferences)
+    : AboutModel(application::DeviceProfile{.status = application::ProfileReadStatus::Failed}, preferences) {
+    loading_ = true;
+    deadline_.setSingleShot(true);
+    connect(&deadline_, &QTimer::timeout, this, [this] {
+        loading_ = false;
+        emit textsChanged();
+    });
+    connect(&watcher_, &QFutureWatcher<application::DeviceProfile>::finished, this,
+            &AboutModel::completeProfile);
+    deadline_.start(10000);
+    watcher_.setFuture(QtConcurrent::run([source = std::move(source)] { return source->read(); }));
+}
+void AboutModel::completeProfile() {
+    if (!loading_)
+        return; // A deadline does not cancel the native read or release its owned source.
+    deadline_.stop();
+    loading_ = false;
+    try {
+        profile_ = watcher_.result();
+    } catch (...) {
+        profile_.status = application::ProfileReadStatus::Failed;
+    }
+    emit profileChanged();
+    emit textsChanged();
+}
 QString AboutModel::profileStatus() const {
+    if (loading_)
+        return tr("Reading device information…");
     if (demo()) {
         return tr("Sample data, not detected hardware.");
     }

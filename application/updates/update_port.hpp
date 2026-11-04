@@ -10,6 +10,8 @@ struct UpdateResult {
     std::string version{};
     std::string release_url{};
     std::string download_url{};
+    std::string download_sha256{};
+    std::uint64_t download_size{};
 };
 class UpdatePort {
   public:

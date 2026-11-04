@@ -7,6 +7,7 @@
 #include "adapters/platform/session_controls.hpp"
 #include "adapters/storage/ui_preferences/store.hpp"
 #include "adapters/updates/github_client.hpp"
+#include "adapters/updates/package_client.hpp"
 #include "apps/desktop/manager_window.hpp"
 #include "presentation/about_model.hpp"
 #include "presentation/common/preferences.hpp"
@@ -36,7 +37,8 @@ class ManagerHost final {
     presentation::Preferences preferences_;
     adapters::SessionClient client_;
     presentation::ManagerModel model_;
-    adapters::NativeDeviceProfile profile_source_;
+    std::shared_ptr<adapters::NativeDeviceProfile> profile_source_{
+        std::make_shared<adapters::NativeDeviceProfile>()};
     presentation::AboutModel about_;
     std::shared_ptr<adapters::NativeMicrophone> microphone_{std::make_shared<adapters::NativeMicrophone>()};
     std::shared_ptr<adapters::NativeRefresh> refresh_{std::make_shared<adapters::NativeRefresh>()};
@@ -50,6 +52,7 @@ class ManagerHost final {
     std::shared_ptr<adapters::NfcClient> nfc_client_;
     presentation::NfcModel nfc_;
     adapters::GitHubUpdates update_source_;
+    adapters::UpdatePackages update_packages_;
     presentation::UpdateModel updates_;
     QQmlApplicationEngine engine_;
     ManagerInstance instance_;

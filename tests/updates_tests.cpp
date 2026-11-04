@@ -1,5 +1,6 @@
 #include "adapters/updates/github_client.hpp"
 #include "adapters/updates/history.hpp"
+#include "adapters/updates/package_client.hpp"
 #include "adapters/updates/release_feed.hpp"
 #include "application/updates/release_identity.hpp"
 #include <QCoreApplication>
@@ -90,14 +91,32 @@ bool history_contract() {
     file.close();
     return history.claim_daily_check() && !history.claim_daily_check();
 }
+void verify_download(QCoreApplication &app, manager::adapters::UpdatePackages &packages,
+                     manager::application::UpdateResult release) {
+    release.state =
+        UpdateState::Available; // Read-only integration probe can fetch the installed release too.
+    packages.download(
+        release, [](std::uint64_t, std::uint64_t) {},
+        [&app](bool verified) {
+            QTextStream(stdout) << "Downloaded and verified: " << verified << Qt::endl;
+            app.exit(verified ? 0 : 1);
+        });
+}
 int network_probe(QCoreApplication &app) {
+    QTemporaryDir directory;
+    manager::adapters::UpdatePackages packages(directory.path());
     manager::adapters::GitHubUpdates source(QStringLiteral("windows-x86_64"));
-    source.check([&app](const manager::application::UpdateResult &result) {
+    source.check([&app, &packages](const manager::application::UpdateResult &result) {
         QTextStream(stdout) << "Update state: " << static_cast<int>(result.state)
                             << " version: " << QString::fromStdString(result.version) << Qt::endl;
+        if (app.arguments().contains(QStringLiteral("--download")) && result.state != UpdateState::Failed) {
+            verify_download(app, packages, result);
+            return;
+        }
         app.exit(result.state == UpdateState::Failed ? 1 : 0);
     });
-    QTimer::singleShot(12000, &app, [] { QCoreApplication::exit(2); });
+    QTimer::singleShot(app.arguments().contains(QStringLiteral("--download")) ? 120000 : 12000, &app,
+                       [] { QCoreApplication::exit(2); });
     return app.exec();
 }
 } // namespace
