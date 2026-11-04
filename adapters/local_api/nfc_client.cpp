@@ -59,6 +59,8 @@ void NfcClient::finish(Status status) {
         callback(status);
 }
 void NfcClient::unavailable(Status status) {
+    if (completion_ && status == Status::Unavailable)
+        status = Status::UnknownOutcome;
     if (state_.status == Status::Incompatible)
         status = Status::Incompatible;
     state_.status = status;
@@ -83,8 +85,8 @@ void NfcClient::accept(const QJsonObject &object) {
     if (object.value("kind").toString() == "result" &&
         object.value("token").toString() == QString::number(token_)) {
         const int status = object.value("status").toInt(-1);
-        finish(status >= 0 && status <= static_cast<int>(Status::Incompatible) ? static_cast<Status>(status)
-                                                                               : Status::Failed);
+        finish(status >= 0 && status <= static_cast<int>(Status::DriverMissing) ? static_cast<Status>(status)
+                                                                                : Status::Failed);
     }
 }
 void NfcClient::receive() {

@@ -84,8 +84,7 @@ class SessionRuntime final {
           updates_(preferences, directory), server_(read_, osd_, &osd_),
           input_(session_input(osd_, work_, parser)),
           nfc_(manager::adapters::make_nfc_tag(), work_.observations,
-               manager::adapters::session_endpoint() + QStringLiteral(".Nfc.v1"),
-               directory + QStringLiteral("/nfc/backups")),
+               manager::adapters::session_endpoint() + QStringLiteral(".Nfc.v1")),
           state_(work_), vendor_(
                              preferences, osd_, work_,
                              [] {

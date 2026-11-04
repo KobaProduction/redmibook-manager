@@ -3,6 +3,8 @@ include(cmake/GitVersion.cmake)
 project(RedmibookManager VERSION "${MANAGER_VERSION}" LANGUAGES CXX)
 set(MANAGER_PACKAGE_NAME "RedmibookManager-${PROJECT_VERSION}${MANAGER_PACKAGE_SUFFIX}-${CMAKE_SYSTEM_NAME}-x86_64")
 string(JSON MANAGER_IDENTITY_JSON SET "${MANAGER_IDENTITY_JSON}" packageName "\"${MANAGER_PACKAGE_NAME}\"")
+set(MANAGER_INSTALLER_NAME "RedmibookManager-${PROJECT_VERSION}${MANAGER_PACKAGE_SUFFIX}-x86_64")
+string(JSON MANAGER_IDENTITY_JSON SET "${MANAGER_IDENTITY_JSON}" installerName "\"${MANAGER_INSTALLER_NAME}\"")
 file(CONFIGURE OUTPUT "${CMAKE_BINARY_DIR}/build-identity.json" CONTENT "${MANAGER_IDENTITY_JSON}\n" @ONLY)
 include(CTest)
 if(BUILD_TESTING)
@@ -183,9 +185,12 @@ if(BUILD_TESTING)
     add_test(NAME native-platform-contract COMMAND platform-tests "${MANAGER_PLATFORM}")
 endif()
 
-add_library(manager_nfc STATIC application/nfc/ndef.cpp adapters/nfc/type5.cpp adapters/nfc/ntag.cpp
+add_library(manager_nfc_application STATIC application/nfc/ndef.cpp application/nfc/encode.cpp application/nfc/draft.cpp)
+target_link_libraries(manager_nfc_application PUBLIC manager_application PRIVATE project_options)
+set_target_properties(manager_nfc_application PROPERTIES AUTOMOC OFF)
+add_library(manager_nfc STATIC adapters/nfc/type5.cpp adapters/nfc/ntag.cpp
     "adapters/${MANAGER_PLATFORM}/nfc/transport.cpp")
-target_link_libraries(manager_nfc PUBLIC manager_application PRIVATE project_options Threads::Threads)
+target_link_libraries(manager_nfc PUBLIC manager_nfc_application PRIVATE project_options Threads::Threads)
 set_target_properties(manager_nfc PROPERTIES AUTOMOC OFF)
 if(WIN32)
     target_sources(manager_nfc PRIVATE adapters/windows/nfc/io.cpp adapters/windows/nfc/discovery.cpp)
@@ -196,13 +201,21 @@ if(BUILD_TESTING)
     add_executable(nfc-probe tests/nfc_probe.cpp)
     target_link_libraries(nfc-probe PRIVATE manager_nfc project_options)
     add_executable(nfc-tests tests/nfc_tests.cpp)
+    add_executable(nfc-message-tests tests/nfc_message_tests.cpp)
+    target_link_libraries(nfc-message-tests PRIVATE manager_nfc project_options)
+    add_test(NAME nfc-message-contract COMMAND nfc-message-tests)
     target_link_libraries(nfc-tests PRIVATE manager_nfc project_options)
     add_test(NAME nfc-tag-contract COMMAND nfc-tests)
+    add_executable(nfc-draft-tests tests/nfc_draft_tests.cpp)
+    target_link_libraries(nfc-draft-tests PRIVATE manager_nfc_application project_options)
+    add_test(NAME nfc-draft-contract COMMAND nfc-draft-tests)
 endif()
 if(NOT MANAGER_BUILD_DESKTOP)
     return()
 endif()
 find_package(Qt6 6.10.2 EXACT REQUIRED COMPONENTS Core Gui Widgets Svg Network Concurrent Qml Quick QuickControls2 LinguistTools)
+add_library(manager_nfc_files STATIC adapters/storage/nfc_files.cpp)
+target_link_libraries(manager_nfc_files PUBLIC manager_nfc_application PRIVATE Qt6::Concurrent project_options)
 qt_standard_project_setup(REQUIRES 6.10 I18N_SOURCE_LANGUAGE en I18N_TRANSLATED_LANGUAGES ru)
 add_executable(redmibook-device apps/device/main.cpp apps/device/vendor_events.cpp "apps/device/firmware_${MANAGER_PLATFORM}.cpp")
 if(WIN32)
@@ -245,7 +258,7 @@ qt_add_library(manager_session_api STATIC
     adapters/local_api/session_client.cpp adapters/local_api/session_client.hpp
     adapters/local_api/session_server.cpp adapters/local_api/session_server.hpp
     adapters/local_api/session_codec.cpp adapters/local_api/session_codec.hpp)
-target_link_libraries(manager_session_api PUBLIC manager_runtime manager_nfc Qt6::Network Qt6::Concurrent Qt6::Gui PRIVATE project_options)
+target_link_libraries(manager_session_api PUBLIC manager_runtime manager_nfc_application Qt6::Network Qt6::Concurrent Qt6::Gui PRIVATE project_options)
 
 qt_add_library(manager_icons STATIC presentation/common/icons.cpp presentation/common/icons.hpp)
 target_include_directories(manager_icons PUBLIC "${PROJECT_SOURCE_DIR}")
@@ -286,6 +299,7 @@ qt_add_resources(manager_icons "manager_symbols"
 qt_add_executable(redmibook-session apps/session/main.cpp apps/session/update_scheduler.cpp apps/session/input_actions.cpp apps/session/vendor_actions.cpp apps/session/device_state_publisher.cpp apps/session/battery_observer.cpp)
 target_sources(redmibook-session PRIVATE apps/session/initial_microphone.cpp)
 target_link_libraries(redmibook-session PRIVATE manager_preference_ipc manager_session_api manager_session_ui manager_updates manager_input manager_session_controls manager_device_profile manager_vendor_input project_options)
+target_link_libraries(redmibook-session PRIVATE manager_nfc)
 add_library(manager_preset_actions STATIC adapters/integration/preset_executor.cpp)
 target_link_libraries(redmibook-session PRIVATE manager_preset_actions)
 target_link_libraries(manager_preset_actions PUBLIC manager_session_controls manager_device_policy PRIVATE project_options)
@@ -302,11 +316,15 @@ qt_add_qml_module(manager_presentation
     OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/qml/Redmibook/Manager"
     RESOURCE_PREFIX /qt/qml
     QML_FILES presentation/qml/Main.qml presentation/qml/ManagerContent.qml presentation/qml/LoadingSkeleton.qml presentation/qml/pages/OverviewPage.qml
-        presentation/qml/MonitorPicker.qml presentation/qml/Surface.qml presentation/qml/ChoiceBox.qml presentation/qml/NeutralCheckBox.qml presentation/qml/RefreshRateButtons.qml presentation/qml/AppPalette.qml presentation/qml/LicenseDialog.qml presentation/qml/pages/AboutPage.qml
+        presentation/qml/MonitorPicker.qml presentation/qml/Surface.qml presentation/qml/ModalDialog.qml presentation/qml/ChoiceBox.qml presentation/qml/NeutralCheckBox.qml presentation/qml/RefreshRateButtons.qml presentation/qml/AppPalette.qml presentation/qml/LicenseDialog.qml presentation/qml/pages/AboutPage.qml
         presentation/qml/pages/TrayPage.qml presentation/qml/pages/TraySettings.qml presentation/qml/pages/SettingsPage.qml presentation/qml/pages/UnsupportedPage.qml presentation/qml/pages/HardwarePage.qml
         presentation/qml/pages/BatteryPage.qml presentation/qml/pages/HotkeysPage.qml presentation/qml/pages/DevicePage.qml presentation/qml/pages/NfcCard.qml
+        presentation/qml/pages/NfcRecordManager.qml presentation/qml/pages/NfcRecordsDialog.qml
+        presentation/qml/pages/NfcDraftList.qml presentation/qml/pages/NfcRecordDialog.qml
         presentation/qml/presets/PresetCard.qml presentation/qml/presets/PresetButtonEditor.qml presentation/qml/presets/ActionEditor.qml presentation/qml/presets/TraySectionToggle.qml
     SOURCES presentation/nfc_model.cpp presentation/nfc_model.hpp presentation/about_model.cpp presentation/about_model.hpp presentation/overview_model.hpp presentation/overview_model.cpp
+        presentation/nfc_records.cpp presentation/nfc_records.hpp
+        presentation/nfc_composer.cpp
         presentation/manager_model.hpp presentation/manager_model.cpp
         presentation/updates/update_model.hpp presentation/updates/update_model.cpp
         presentation/device_controls_model.hpp presentation/device_controls_model.cpp
@@ -320,7 +338,7 @@ target_include_directories(manager_presentation PUBLIC "${PROJECT_SOURCE_DIR}")
 target_include_directories(manager_presentation PRIVATE "${PROJECT_SOURCE_DIR}/presentation" "${PROJECT_SOURCE_DIR}/presentation/updates")
 target_include_directories(manager_presentation PRIVATE "${PROJECT_SOURCE_DIR}/presentation/presets")
 target_link_libraries(manager_presentation PUBLIC manager_application manager_preferences manager_icons Qt6::Quick Qt6::QuickControls2 Qt6::Concurrent
-    PRIVATE project_options manager_device_policy manager_nfc)
+    PRIVATE project_options manager_device_policy manager_nfc_application)
 
 set_property(TARGET manager_presentation APPEND PROPERTY QT_EXCLUDE_SOURCES_FROM_TRANSLATION
     "${PROJECT_SOURCE_DIR}/LICENSE" "${PROJECT_SOURCE_DIR}/packaging/*")
@@ -333,6 +351,7 @@ qt_add_executable(redmibook-manager apps/desktop/main.cpp apps/desktop/smoke_tes
     apps/desktop/ui_contract_smoke.cpp)
 target_link_libraries(redmibook-manager PRIVATE manager_preference_ipc manager_platform manager_device_profile manager_session_controls manager_session_api manager_presentation manager_presentationplugin manager_updates project_options)
 target_link_libraries(redmibook-manager PRIVATE manager_preference_ipc manager_preset_actions)
+target_link_libraries(redmibook-manager PRIVATE manager_nfc_files)
 set_target_properties(redmibook-manager PROPERTIES WIN32_EXECUTABLE TRUE)
 foreach(gui_host IN ITEMS redmibook-manager redmibook-session redmibook-tray)
     qt_add_resources(${gui_host} "${gui_host}_icon"
@@ -355,10 +374,21 @@ qt_import_qml_plugins(redmibook-manager)
 if(BUILD_TESTING)
     qt_add_executable(preferences-tests tests/preferences_tests.cpp)
     qt_add_executable(nfc-channel-tests tests/nfc_channel_tests.cpp)
+    qt_add_executable(nfc-composer-tests tests/nfc_composer_tests.cpp)
+    target_link_libraries(nfc-composer-tests PRIVATE manager_presentation manager_nfc_files project_options)
+    add_test(NAME nfc-composer-contract COMMAND nfc-composer-tests)
     qt_add_executable(nfc-preview tests/nfc_preview.cpp)
     target_link_libraries(nfc-preview PRIVATE manager_presentation manager_presentationplugin project_options)
     target_link_libraries(nfc-channel-tests PRIVATE manager_session_api manager_presentation project_options)
     add_test(NAME nfc-session-contract COMMAND nfc-channel-tests)
+    add_test(NAME nfc-editor-contract COMMAND nfc-preview
+        "${CMAKE_CURRENT_BINARY_DIR}/nfc-editor-contract.png" --editor-check)
+    set_tests_properties(nfc-editor-contract PROPERTIES TIMEOUT 10
+        ENVIRONMENT "QT_QUICK_BACKEND=software")
+    if(WIN32)
+        set_property(TEST nfc-editor-contract APPEND PROPERTY ENVIRONMENT
+            "QT_QPA_FONTDIR=$ENV{SystemRoot}/Fonts")
+    endif()
     set_tests_properties(nfc-session-contract PROPERTIES TIMEOUT 10)
     qt_add_executable(device-controls-async-tests tests/device_controls_async_tests.cpp)
     qt_add_executable(preference-channel-tests tests/preference_channel_tests.cpp)

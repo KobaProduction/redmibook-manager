@@ -68,6 +68,18 @@ bool present() {
     SetupDiDestroyDeviceInfoList(devices);
     return found;
 }
+application::nfc::Status driver_availability() {
+    using application::nfc::Status;
+    std::array<wchar_t, MAX_PATH> root{};
+    if (!GetSystemDirectoryW(root.data(), static_cast<UINT>(root.size())))
+        return Status::Failed;
+    std::error_code error;
+    const bool exists =
+        std::filesystem::exists(std::filesystem::path(root.data()) / "drivers" / "NTAG5Driver.sys", error);
+    if (error)
+        return Status::Denied;
+    return exists ? Status::Ready : Status::DriverMissing;
+}
 bool supported_driver() {
     return driver_hash_matches(driver_bytes());
 }

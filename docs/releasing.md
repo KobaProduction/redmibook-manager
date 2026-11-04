@@ -34,7 +34,13 @@ Payload identity is the commit SHA, plus a content hash for uncommitted tracked 
 untracked files. Staging does not change identity; changing bytes does. Ignored build
 outputs do not participate. Components compare both numeric version and this exact
 payload identity. UI shows the Git release label; About/runtime diagnostics expose
-the payload identity. Dirty installer filenames include the content identity.
+the payload identity. Local package filenames use `-dirty-<12 hex characters>`:
+one shortened SHA-256 of the complete payload identity, covering both the commit
+and uncommitted content. For example,
+`RedmibookManager-1.2.0-dirty-0123456789ab-x86_64.exe`.
+Windows installers omit the redundant OS name; archives retain their platform.
+Clean release filenames keep the version and architecture without the dirty suffix.
+The full identity remains in the manifest and is used for compatibility checks.
 
 `build-identity.json` is generated with the binaries and installed beside them.
 Each package has a matching `.identity.json` sidecar. Installer helpers read this

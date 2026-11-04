@@ -43,6 +43,7 @@ Status Ntag::read_content() {
     if (!parsed)
         return Status::InvalidData;
     state_.capacity = static_cast<std::uint32_t>(parsed->limit - parsed->offset);
+    state_.max_content_size = max_type5_content(*parsed);
     state_.content = parsed->content;
     state_.writable = parsed->writable && state_.field.has_value();
     return Status::Ready;
@@ -85,8 +86,6 @@ void Ntag::update_field() {
         return;
     }
     const bool field = (value & 1U) != 0;
-    if (field && state_.field != true)
-        ++state_.encounters;
     state_.field = field;
 }
 application::nfc::Snapshot Ntag::read_unlocked() {

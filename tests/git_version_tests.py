@@ -37,6 +37,7 @@ class GitVersionTests(unittest.TestCase):
         self.assertEqual(identity["displayVersion"], "1.2.3")
         self.assertEqual(identity["build"], "g" + self.git("rev-parse", "HEAD"))
         self.assertFalse(identity["dirty"])
+        self.assertEqual(identity["packageSuffix"], "")
         self.assertEqual(identity, self.identity())
 
     def test_commit_advances_patch_and_tagging_preserves_identity(self):
@@ -55,12 +56,24 @@ class GitVersionTests(unittest.TestCase):
         edited = self.identity()
         self.assertNotEqual(edited["build"], clean["build"])
         self.assertLessEqual(len(edited["build"]), 96)
+        self.assertRegex(edited["packageSuffix"], r"^-dirty-[0-9a-f]{12}$")
         self.git("add", ".")
         self.assertEqual(edited["build"], self.identity()["build"])
+        self.assertEqual(edited["packageSuffix"], self.identity()["packageSuffix"])
         (self.source / "new.cpp").write_text("new", encoding="utf-8")
         first = self.identity()
         (self.source / "new.cpp").write_text("changed", encoding="utf-8")
-        self.assertNotEqual(first["build"], self.identity()["build"])
+        changed = self.identity()
+        self.assertNotEqual(first["build"], changed["build"])
+        self.assertNotEqual(first["packageSuffix"], changed["packageSuffix"])
+
+    def test_local_package_name_includes_commit_and_content_identity(self):
+        (self.source / "source.txt").write_text("edited\n", encoding="utf-8")
+        before = self.identity()
+        self.git("commit", "--allow-empty", "-qm", "new base")
+        after = self.identity()
+        self.assertNotEqual(before["packageSuffix"], after["packageSuffix"])
+        self.assertEqual(after["packageSuffix"], self.identity()["packageSuffix"])
 
     def test_staging_new_files_and_rename_preserves_identity(self):
         (self.source / "new.cpp").write_text("new\n", encoding="utf-8")

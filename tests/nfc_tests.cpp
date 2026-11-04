@@ -112,7 +112,7 @@ bool stale_and_field_barriers() {
     bus->field = true;
     if (tag.write({original.content, app::make_text_record("New")}).status != app::Status::Busy)
         return false;
-    return bus->writes == 0 && tag.read().encounters == 1 && tag.read().encounters == 1;
+    return bus->writes == 0 && tag.read().field == true;
 }
 bool absent_and_read_only() {
     const auto bus = std::make_shared<Bus>();

@@ -11,6 +11,7 @@ struct Type5Image {
     bool writable{};
     application::nfc::Bytes content;
 };
+[[nodiscard]] std::uint32_t max_type5_content(const Type5Image &image);
 [[nodiscard]] std::optional<Type5Image> parse_type5(std::span<const std::uint8_t> memory);
 [[nodiscard]] std::optional<application::nfc::Bytes> replace_type5(std::span<const std::uint8_t> memory,
                                                                    const application::nfc::Bytes &content);

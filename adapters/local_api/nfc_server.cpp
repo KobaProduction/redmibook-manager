@@ -1,10 +1,7 @@
 #include "adapters/local_api/nfc_server.hpp"
 #include "adapters/local_api/nfc_codec.hpp"
-#include <QCryptographicHash>
-#include <QDir>
-#include <QFile>
+#include "application/nfc/draft.hpp"
 #include <QJsonDocument>
-#include <QSaveFile>
 #include <QtConcurrentRun>
 #include <algorithm>
 
@@ -13,22 +10,6 @@ namespace {
 using application::nfc::Bytes;
 using application::nfc::Result;
 using application::nfc::Status;
-QByteArray raw(const Bytes &bytes) {
-    return {reinterpret_cast<const char *>(bytes.data()), static_cast<qsizetype>(bytes.size())};
-}
-bool preserve(const QString &directory, const Bytes &bytes) {
-    if (!QDir().mkpath(directory))
-        return false;
-    const auto content = raw(bytes);
-    const auto digest = QCryptographicHash::hash(content, QCryptographicHash::Sha256).toHex();
-    const auto path = QDir(directory).filePath(QString::fromLatin1(digest) + QStringLiteral(".ndef"));
-    if (QFile::exists(path)) {
-        QFile existing(path);
-        return existing.open(QIODevice::ReadOnly) && existing.readAll() == content;
-    }
-    QSaveFile file(path);
-    return file.open(QIODevice::WriteOnly) && file.write(content) == content.size() && file.commit();
-}
 void send(QLocalSocket *socket, const QJsonObject &object) {
     if (socket->bytesToWrite() > 16384)
         socket->abort();
@@ -37,9 +18,8 @@ void send(QLocalSocket *socket, const QJsonObject &object) {
 }
 } // namespace
 NfcServer::NfcServer(std::shared_ptr<application::nfc::TagPort> tag, QThreadPool &pool, QString endpoint,
-                     QString backup_directory, QObject *parent)
-    : QObject(parent), tag_(std::move(tag)), pool_(pool), endpoint_(std::move(endpoint)),
-      backup_directory_(std::move(backup_directory)) {
+                     QObject *parent)
+    : QObject(parent), tag_(std::move(tag)), pool_(pool), endpoint_(std::move(endpoint)) {
     delivery_->target = this;
     deadline_.setSingleShot(true);
     deadline_.setInterval(10000);
@@ -148,12 +128,9 @@ void NfcServer::write(QLocalSocket *socket, const QJsonObject &object) {
     writer_ = socket;
     token_ = token;
     begin();
-    pending_.setFuture(
-        QtConcurrent::run(&pool_, [tag = tag_, directory = backup_directory_,
-                                   request = application::nfc::WriteRequest{*expected, *content}] {
-            if (!preserve(directory, request.expected))
-                return Result{Status::Failed, tag->read()};
-            return tag->write(request);
+    pending_.setFuture(QtConcurrent::run(
+        &pool_, [tag = tag_, request = application::nfc::WriteRequest{*expected, *content}] {
+            return application::nfc::write_tag(*tag, request);
         }));
 }
 void NfcServer::watch() {
@@ -162,8 +139,19 @@ void NfcServer::watch() {
     const auto delivery = delivery_;
     watch_ = tag_->subscribe([delivery] {
         const std::lock_guard lock(delivery->mutex);
-        if (auto *target = delivery->target)
-            QMetaObject::invokeMethod(target, [target] { target->refresh(); }, Qt::QueuedConnection);
+        auto *target = delivery->target;
+        if (!target || std::exchange(delivery->queued, true))
+            return;
+        QMetaObject::invokeMethod(
+            target,
+            [target, delivery] {
+                {
+                    const std::lock_guard delivery_lock(delivery->mutex);
+                    delivery->queued = false;
+                }
+                target->refresh();
+            },
+            Qt::QueuedConnection);
     });
 }
 void NfcServer::publish(const application::nfc::Snapshot &state) {

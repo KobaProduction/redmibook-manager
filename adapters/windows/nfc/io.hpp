@@ -25,5 +25,6 @@ Completion transfer(const std::shared_ptr<Handle> &device, DWORD code, applicati
                     DWORD deadline = 1500, const std::stop_token &stop = {});
 application::nfc::Status status(DWORD error);
 bool supported_driver();
+application::nfc::Status driver_availability();
 bool present();
 } // namespace manager::adapters::nfc::windows

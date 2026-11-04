@@ -34,8 +34,8 @@ QJsonObject snapshot(const application::nfc::Snapshot &state) {
             {"name", QString::fromStdString(state.name)},
             {"uid", QString::fromStdString(state.uid)},
             {"field", state.field ? QJsonValue(*state.field) : QJsonValue()},
-            {"encounters", QString::number(state.encounters)},
             {"capacity", static_cast<int>(state.capacity)},
+            {"maxContent", static_cast<int>(state.max_content_size)},
             {"writable", state.writable},
             {"eventDriven", state.event_driven},
             {"content", bytes(state.content)}};
@@ -43,10 +43,8 @@ QJsonObject snapshot(const application::nfc::Snapshot &state) {
 std::optional<application::nfc::Snapshot> parse_snapshot(const QJsonObject &object) {
     const int status = object.value("status").toInt(-1);
     const auto content = parse_bytes(object.value("content"));
-    bool counter_ok{};
-    const auto counter = object.value("encounters").toString().toULongLong(&counter_ok);
-    if (status < 0 || status > static_cast<int>(application::nfc::Status::Incompatible) || !content ||
-        !counter_ok || !object.value("present").isBool() || !object.value("writable").isBool() ||
+    if (status < 0 || status > static_cast<int>(application::nfc::Status::DriverMissing) || !content ||
+        !object.value("present").isBool() || !object.value("writable").isBool() ||
         !object.value("eventDriven").isBool())
         return {};
     application::nfc::Snapshot state{
@@ -56,12 +54,13 @@ std::optional<application::nfc::Snapshot> parse_snapshot(const QJsonObject &obje
         .uid = object.value("uid").toString().left(64).toStdString(),
         .field =
             object.value("field").isBool() ? std::optional{object.value("field").toBool()} : std::nullopt,
-        .encounters = counter,
         .capacity = static_cast<std::uint32_t>(object.value("capacity").toInt(0)),
+        .max_content_size = static_cast<std::uint32_t>(object.value("maxContent").toInt(0)),
         .writable = object.value("writable").toBool(),
         .event_driven = object.value("eventDriven").toBool(),
         .content = *content};
-    return state.capacity <= 2048 ? std::optional{state} : std::nullopt;
+    return state.capacity <= 2048 && state.max_content_size <= state.capacity ? std::optional{state}
+                                                                              : std::nullopt;
 }
 QByteArray frame(const QJsonObject &object) {
     return QJsonDocument(object).toJson(QJsonDocument::Compact) + '\n';

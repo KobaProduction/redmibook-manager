@@ -5,15 +5,26 @@ namespace manager::adapters {
 QString release_asset(const QJsonObject &object, const application::ReleaseVersion &version,
                       const QString &target) {
     const auto name = QString::fromStdString(application::package_asset(version, target.toStdString()));
+    const auto legacy =
+        target == QStringLiteral("windows-x86_64")
+            ? QString(name).replace(QStringLiteral("-x86_64.exe"), QStringLiteral("-Windows-x86_64.exe"))
+            : QString{};
+    QString fallback;
     for (const auto &asset : object.value(QStringLiteral("assets")).toArray()) {
         const auto metadata = asset.toObject();
         const QUrl url(metadata.value(QStringLiteral("browser_download_url")).toString());
-        if (!name.isEmpty() && metadata.value(QStringLiteral("name")).toString() == name &&
-            trusted_release_url(url)) {
+        if (!trusted_release_url(url)) {
+            continue;
+        }
+        const auto candidate = metadata.value(QStringLiteral("name")).toString();
+        if (!name.isEmpty() && candidate == name) {
             return url.toString();
         }
+        if (!legacy.isEmpty() && candidate == legacy) {
+            fallback = url.toString();
+        }
     }
-    return {};
+    return fallback;
 }
 application::UpdateResult decode_releases(const QJsonArray &releases, const QString &target) {
     application::UpdateResult result;

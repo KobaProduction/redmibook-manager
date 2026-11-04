@@ -28,7 +28,7 @@ Pane {
                 Layout.fillWidth: true
                 active: root.nfc.present
                 visible: active
-                sourceComponent: NfcCard { nfc: root.nfc }
+                sourceComponent: NfcCard { nfc: root.nfc; cornerRadius: root.manager.cornerRadius }
             }
         }
     }

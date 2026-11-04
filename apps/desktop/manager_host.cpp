@@ -4,6 +4,7 @@
 #include "adapters/platform/power_controls.hpp"
 #include "adapters/platform/power_scheme.hpp"
 #include "adapters/platform/window_appearance.hpp"
+#include "adapters/storage/nfc_files.hpp"
 #include "adapters/updates/target.hpp"
 #include "apps/desktop/appearance_setup.hpp"
 #include "apps/desktop/preview_presets.hpp"
@@ -38,8 +39,8 @@ ManagerHost::ManagerHost(bool smoke, std::unique_ptr<application::PreferencePort
       nfc_client_(smoke ? nullptr
                         : std::make_shared<adapters::NfcClient>(adapters::session_endpoint() +
                                                                 QStringLiteral(".Nfc.v1"))),
-      nfc_(nfc_client_), update_source_(adapters::update_target()),
-      updates_(update_source_, adapters::update_target()) {
+      nfc_(nfc_client_, nullptr, smoke ? nullptr : adapters::make_nfc_files()),
+      update_source_(adapters::update_target()), updates_(update_source_, adapters::update_target()) {
     if (smoke && QCoreApplication::arguments().contains(QStringLiteral("--preset-preview")))
         if (auto *fixture = dynamic_cast<adapters::UiPreferenceStore *>(store_.get()))
             fixture->configure_starter_defaults(preview::demo_catalog());

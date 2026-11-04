@@ -37,6 +37,7 @@ class WindowsTransport final : public Transport {
     std::shared_ptr<std::atomic<bool>> event_pending_{std::make_shared<std::atomic<bool>>(false)};
     Status exchange(Bytes command, std::span<std::uint8_t> output);
     Status set_event_mode(std::uint8_t mode);
+    Status open_device();
 };
 Status WindowsTransport::set_event_mode(std::uint8_t mode) {
     Status status{};
@@ -56,18 +57,23 @@ Discovery WindowsTransport::discover() {
         return {*pending_ ? Status::Busy : Status::Ready, true};
     if (!windows::present())
         return {};
+    if (const auto driver = windows::driver_availability(); driver != Status::Ready)
+        return {driver, true};
     if (!windows::supported_driver())
         return {Status::Incompatible, true};
+    return {open_device(), true};
+}
+Status WindowsTransport::open_device() {
     const auto device = CreateFileW(L"\\\\.\\SPBNFC01", GENERIC_READ | GENERIC_WRITE, 0, nullptr,
                                     OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr);
     if (device == INVALID_HANDLE_VALUE)
-        return {windows::status(GetLastError()), true};
+        return windows::status(GetLastError());
     auto handle = std::make_shared<windows::Handle>(device);
     const auto opened = windows::transfer(handle, open_controller, {}, 0, pending_);
     if (opened.error != ERROR_SUCCESS)
-        return {windows::status(opened.error), true};
+        return windows::status(opened.error);
     handle_ = std::move(handle);
-    return {Status::Ready, true};
+    return Status::Ready;
 }
 Status WindowsTransport::exchange(Bytes command, std::span<std::uint8_t> output) {
     const std::lock_guard lock(io_);
@@ -103,7 +109,7 @@ Status WindowsTransport::configure_events(bool enable) {
     if (status != Status::Ready)
         return status;
     if (enable)
-        original_event_mode_ = current & 0x0fU;
+        original_event_mode_ = static_cast<std::uint8_t>(current & 0x0fU);
     else if (!original_event_mode_ || (current & 0x0fU) != 1)
         return Status::Ready;
     const auto mode = enable ? std::uint8_t{1} : *original_event_mode_;

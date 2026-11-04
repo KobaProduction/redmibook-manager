@@ -15,7 +15,7 @@ class NfcServer final : public QObject {
     Q_OBJECT
   public:
     NfcServer(std::shared_ptr<application::nfc::TagPort> tag, QThreadPool &pool, QString endpoint,
-              QString backup_directory, QObject *parent = nullptr);
+              QObject *parent = nullptr);
     ~NfcServer() override;
     bool listen();
     void refresh();
@@ -24,11 +24,11 @@ class NfcServer final : public QObject {
     struct Delivery {
         std::mutex mutex;
         NfcServer *target{};
+        bool queued{};
     };
     std::shared_ptr<application::nfc::TagPort> tag_;
     QThreadPool &pool_;
     QString endpoint_;
-    QString backup_directory_;
     QLocalServer server_;
     std::vector<QPointer<QLocalSocket>> clients_;
     QFutureWatcher<application::nfc::Result> pending_;

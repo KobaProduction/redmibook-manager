@@ -7,7 +7,8 @@ $identity = & (Join-Path $PSScriptRoot 'read-build-identity.ps1') -Artifact $Ins
 $version = $identity.version
 $configuredIdentity = $identity
 if (-not $Installer) {
-    $Installer = Join-Path $projectRoot "dist/$($identity.packageName).exe"
+    $installerName = if ($identity.PSObject.Properties['installerName']) { $identity.installerName } else { $identity.packageName }
+    $Installer = Join-Path $projectRoot "dist/$installerName.exe"
 }
 $Installer = (Resolve-Path -LiteralPath $Installer).Path
 $identity = & (Join-Path $PSScriptRoot 'read-build-identity.ps1') -Artifact $Installer

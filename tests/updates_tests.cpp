@@ -47,6 +47,24 @@ bool asset_selection() {
                    .version == "0.1.0" &&
            manager::adapters::decode_releases({}, {}).state == UpdateState::Unavailable;
 }
+
+bool renamed_installer_selection() {
+    auto data = release(QStringLiteral("v0.1.0"));
+    auto assets = data.value(QStringLiteral("assets")).toArray();
+    auto installer = assets.first().toObject();
+    const auto name = QStringLiteral("RedmibookManager-0.1.0-x86_64.exe");
+    const auto url =
+        QStringLiteral("https://github.com/KobaProduction/redmibook-manager/releases/download/v0.1.0/") +
+        name;
+    installer.insert(QStringLiteral("name"), name);
+    installer.insert(QStringLiteral("browser_download_url"), url);
+    assets.append(installer);
+    data.insert(QStringLiteral("assets"), assets);
+    const auto preferred = manager::adapters::decode_release(data, QStringLiteral("windows-x86_64"));
+    data.insert(QStringLiteral("assets"), QJsonArray{installer});
+    const auto only = manager::adapters::decode_release(data, QStringLiteral("windows-x86_64"));
+    return preferred.download_url == url.toStdString() && only.download_url == preferred.download_url;
+}
 bool url_validation() {
     using manager::adapters::trusted_release_url;
     return !trusted_release_url(QUrl(QStringLiteral("https://evil.example/releases/"))) &&
@@ -88,5 +106,8 @@ int main(int argc, char *argv[]) {
     if (app.arguments().contains(QStringLiteral("--network"))) {
         return network_probe(app);
     }
-    return identities() && asset_selection() && url_validation() && history_contract() ? 0 : 1;
+    return identities() && asset_selection() && renamed_installer_selection() && url_validation() &&
+                   history_contract()
+               ? 0
+               : 1;
 }

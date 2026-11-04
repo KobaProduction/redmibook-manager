@@ -254,6 +254,18 @@ Copyright (c) 2026 ArthurKoba
         <source>5 milliseconds</source>
         <translation>5 миллисекунд</translation>
     </message>
+    <message>
+        <source>100 ms</source>
+        <translation>100 мс</translation>
+    </message>
+    <message>
+        <source>1 sec</source>
+        <translation>1 сек.</translation>
+    </message>
+    <message>
+        <source>5 sec</source>
+        <translation>5 сек.</translation>
+    </message>
 </context>
     <context>
         <name>manager::tray::DeviceControls</name>
@@ -1149,6 +1161,10 @@ Tray: %3 (%4)</source>
             <source>No supported actions are available for the example.</source>
             <translation>Нет доступных действий для стартового примера.</translation>
         </message>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
+    </message>
 </context>
     <context>
         <name>PresetCard</name>
@@ -1481,210 +1497,359 @@ Tray: %3 (%4)</source>
         <translation>NFC</translation>
     </message>
     <message>
-        <location filename="../qml/pages/NfcCard.qml" line="20" />
-        <source>Refresh</source>
-        <translation>Обновить</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/NfcCard.qml" line="25" />
-        <source>Live approach detection</source>
-        <translation>Обнаружение поднесения в реальном времени</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/NfcCard.qml" line="25" />
-        <source>Periodic NFC field observation</source>
-        <translation>Периодическая проверка поля NFC</translation>
-    </message>
-    <message>
         <location filename="../qml/pages/NfcCard.qml" line="26" />
-        <source>Observed approaches: %1</source>
-        <translation>Зафиксировано поднесений: %1</translation>
+        <source>State</source>
+        <translation>Состояние</translation>
     </message>
     <message>
-        <location filename="../qml/pages/NfcCard.qml" line="27" />
-        <source>NDEF: %1 bytes · available area: %2 bytes</source>
-        <translation>NDEF: %1 байт · доступная область: %2 байт</translation>
+        <location filename="../qml/pages/NfcCard.qml" line="28" />
+        <source>Memory</source>
+        <translation>Память</translation>
     </message>
     <message>
         <location filename="../qml/pages/NfcCard.qml" line="29" />
-        <source>This built-in tag responds to an NFC reader, such as a phone. It does not read cards.</source>
-        <translation>Встроенная метка отвечает NFC-считывателю, например телефону. Считывать карты она не может.</translation>
+        <source>%1 / %2 bytes</source>
+        <translation>%1 / %2 байт</translation>
     </message>
     <message>
         <location filename="../qml/pages/NfcCard.qml" line="35" />
-        <source>Records: %1</source>
-        <translation>Записи: %1</translation>
+        <source>Records</source>
+        <translation>Записи</translation>
     </message>
     <message>
         <location filename="../qml/pages/NfcCard.qml" line="36" />
-        <source>No decoded NDEF records</source>
-        <translation>Нет распознанных записей NDEF</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/NfcCard.qml" line="49" />
-        <source>Current NDEF contents</source>
-        <translation>Текущее содержимое NDEF</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/NfcCard.qml" line="53" />
-        <source>Save backup</source>
-        <translation>Сохранить копию</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/NfcCard.qml" line="54" />
-        <source>Load backup</source>
-        <translation>Загрузить копию</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/NfcCard.qml" line="56" />
-        <source>Replace tag contents</source>
-        <translation>Заменить содержимое метки</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/NfcCard.qml" line="60" />
-        <source>Text</source>
-        <translation>Текст</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/NfcCard.qml" line="60" />
-        <source>Web link</source>
-        <translation>Веб-ссылка</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/NfcCard.qml" line="60" />
-        <source>NDEF bytes (hex)</source>
-        <translation>Байты NDEF (hex)</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/NfcCard.qml" line="72" />
-        <location filename="../qml/pages/NfcCard.qml" line="73" />
-        <source>New tag contents</source>
-        <translation>Новое содержимое метки</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/NfcCard.qml" line="77" />
-        <source>Write to tag</source>
-        <translation>Записать в метку</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/NfcCard.qml" line="84" />
-        <source>Replace NFC tag contents?</source>
-        <translation>Заменить содержимое NFC-метки?</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/NfcCard.qml" line="91" />
-        <source>The current NDEF records will be replaced. A backup is saved before writing. Factory and protection settings are preserved.</source>
-        <translation>Текущие записи NDEF будут заменены. Перед записью будет сохранена резервная копия. Заводские параметры и настройки защиты сохранятся.</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/NfcCard.qml" line="102" />
-        <source>Save NFC backup</source>
-        <translation>Сохранить резервную копию NFC</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/NfcCard.qml" line="105" />
-        <location filename="../qml/pages/NfcCard.qml" line="112" />
-        <source>NDEF data (*.ndef)</source>
-        <translation>Данные NDEF (*.ndef)</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/NfcCard.qml" line="110" />
-        <source>Load NFC backup</source>
-        <translation>Загрузить резервную копию NFC</translation>
+        <source>Refresh</source>
+        <translation>Обновить</translation>
     </message>
 </context>
 
 <context>
     <name>manager::presentation::NfcModel</name>
     <message>
-        <location filename="../nfc_model.cpp" line="49" />
+        <source>The file operation timed out. Its completion could not be confirmed.</source>
+        <translation>Операция с файлом превысила время ожидания. Подтвердить её завершение не удалось.</translation>
+    </message>
+    <message>
+        <location filename="../nfc_composer.cpp" line="98" />
+        <source>Enter a valid record value.</source>
+        <translation>Введите корректное содержимое записи.</translation>
+    </message>
+    <message>
+        <location filename="../nfc_composer.cpp" line="171" />
+        <source>Could not read the NDEF file.</source>
+        <translation>Не удалось прочитать файл NDEF.</translation>
+    </message>
+    <message>
+        <location filename="../nfc_composer.cpp" line="189" />
+        <location filename="../nfc_model.cpp" line="146" />
+        <location filename="../nfc_model.cpp" line="152" />
+        <source>Could not save the NDEF file.</source>
+        <translation>Не удалось сохранить файл NDEF.</translation>
+    </message>
+    <message>
+        <location filename="../nfc_model.cpp" line="50" />
         <source>Ready</source>
         <translation>Готово</translation>
     </message>
     <message>
-        <location filename="../nfc_model.cpp" line="51" />
+        <location filename="../nfc_model.cpp" line="52" />
         <source>NFC module not detected</source>
         <translation>Модуль NFC не обнаружен</translation>
     </message>
     <message>
-        <location filename="../nfc_model.cpp" line="53" />
+        <location filename="../nfc_model.cpp" line="54" />
         <source>Access to the NFC module was denied.</source>
         <translation>Доступ к модулю NFC запрещён.</translation>
     </message>
     <message>
-        <location filename="../nfc_model.cpp" line="55" />
+        <location filename="../nfc_model.cpp" line="56" />
         <source>The NFC module is in use. Try again after removing the phone.</source>
         <translation>Модуль NFC занят. Уберите телефон и повторите попытку.</translation>
     </message>
     <message>
-        <location filename="../nfc_model.cpp" line="57" />
+        <location filename="../nfc_model.cpp" line="58" />
         <source>The tag is write-protected.</source>
         <translation>Метка защищена от записи.</translation>
     </message>
     <message>
-        <location filename="../nfc_model.cpp" line="59" />
+        <location filename="../nfc_model.cpp" line="60" />
         <source>The tag changed. Refresh its contents before writing.</source>
         <translation>Содержимое метки изменилось. Обновите его перед записью.</translation>
     </message>
     <message>
-        <location filename="../nfc_model.cpp" line="61" />
+        <location filename="../nfc_model.cpp" line="62" />
         <source>The NFC data is invalid or exceeds the tag capacity.</source>
         <translation>Некорректные данные NFC или превышен объём памяти метки.</translation>
     </message>
     <message>
-        <location filename="../nfc_model.cpp" line="63" />
+        <location filename="../nfc_model.cpp" line="64" />
         <source>The NFC operation timed out.</source>
         <translation>Истекло время ожидания операции NFC.</translation>
     </message>
     <message>
-        <location filename="../nfc_model.cpp" line="65" />
+        <location filename="../nfc_model.cpp" line="66" />
         <source>The write could not be confirmed. Refresh and inspect the tag before another write.</source>
         <translation>Запись не подтверждена. Обновите и проверьте содержимое метки перед следующей записью.</translation>
     </message>
     <message>
-        <location filename="../nfc_model.cpp" line="67" />
+        <location filename="../nfc_model.cpp" line="68" />
+        <source>The NXP NFC driver is not installed. Install the laptop manufacturer's NFC driver.</source>
+        <translation>Драйвер NFC NXP не установлен. Установите драйвер NFC от производителя ноутбука.</translation>
+    </message>
+    <message>
+        <location filename="../nfc_model.cpp" line="70" />
         <source>The NFC components or driver are incompatible.</source>
         <translation>Компоненты NFC или драйвер несовместимы.</translation>
     </message>
     <message>
-        <location filename="../nfc_model.cpp" line="69" />
+        <location filename="../nfc_model.cpp" line="72" />
         <source>The NFC session is unavailable.</source>
         <translation>Сеанс NFC недоступен.</translation>
     </message>
     <message>
-        <location filename="../nfc_model.cpp" line="71" />
+        <location filename="../nfc_model.cpp" line="74" />
         <source>The NFC operation failed.</source>
         <translation>Не удалось выполнить операцию NFC.</translation>
     </message>
     <message>
-        <location filename="../nfc_model.cpp" line="80" />
+        <location filename="../nfc_model.cpp" line="83" />
         <source>NFC field state is unknown</source>
         <translation>Состояние поля NFC неизвестно</translation>
     </message>
     <message>
-        <location filename="../nfc_model.cpp" line="81" />
+        <location filename="../nfc_model.cpp" line="84" />
         <source>NFC device nearby</source>
         <translation>Рядом NFC-устройство</translation>
     </message>
     <message>
-        <location filename="../nfc_model.cpp" line="81" />
-        <source>No NFC field</source>
-        <translation>Поля NFC нет</translation>
+        <location filename="../nfc_model.cpp" line="84" />
+        <source>Bring a phone near the NFC area</source>
+        <translation>Поднесите телефон к области NFC</translation>
     </message>
     <message>
-        <location filename="../nfc_model.cpp" line="131" />
+        <location filename="../nfc_model.cpp" line="135" />
         <source>Enter a valid HTTP or HTTPS link.</source>
         <translation>Введите корректную ссылку HTTP или HTTPS.</translation>
     </message>
+</context>
+
+
+
+<context>
+    <name>NfcRecords</name>
     <message>
-        <location filename="../nfc_model.cpp" line="157" />
-        <source>Could not save the NFC backup.</source>
-        <translation>Не удалось сохранить резервную копию NFC.</translation>
+        <location filename="../nfc_records.cpp" line="75" />
+        <source>Phone number</source>
+        <translation>Номер телефона</translation>
     </message>
     <message>
-        <location filename="../nfc_model.cpp" line="162" />
-        <source>Could not read the NFC backup.</source>
-        <translation>Не удалось прочитать резервную копию NFC.</translation>
+        <location filename="../nfc_records.cpp" line="77" />
+        <source>Email address</source>
+        <translation>Электронная почта</translation>
+    </message>
+    <message>
+        <location filename="../nfc_records.cpp" line="78" />
+        <source>Link / URI</source>
+        <translation>Ссылка / URI</translation>
+    </message>
+    <message>
+        <location filename="../nfc_records.cpp" line="83" />
+        <source>Text</source>
+        <translation>Текст</translation>
+    </message>
+    <message>
+        <location filename="../nfc_records.cpp" line="87" />
+        <source>Xiaomi connection record</source>
+        <translation>Запись подключения Xiaomi</translation>
+    </message>
+    <message>
+        <location filename="../nfc_records.cpp" line="90" />
+        <source>NFC record</source>
+        <translation>Запись NFC</translation>
+    </message>
+</context>
+
+<context>
+    <name>NfcDraftList</name>
+    <message>
+        <location filename="../qml/pages/NfcDraftList.qml" line="46" />
+        <source>Replace</source>
+        <translation>Заменить</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcDraftList.qml" line="46" />
+        <source>Edit</source>
+        <translation>Изменить</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcDraftList.qml" line="51" />
+        <source>Remove</source>
+        <translation>Удалить</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcDraftList.qml" line="57" />
+        <source>The list is empty. Add a record to begin.</source>
+        <translation>Список пуст. Добавьте запись.</translation>
+    </message>
+</context>
+<context>
+    <name>NfcRecordDialog</name>
+    <message>
+        <location filename="../qml/pages/NfcRecordDialog.qml" line="13" />
+        <source>Add record</source>
+        <translation>Добавить запись</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordDialog.qml" line="13" />
+        <source>Replace record</source>
+        <translation>Заменить запись</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordDialog.qml" line="13" />
+        <source>Edit record</source>
+        <translation>Изменить запись</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordDialog.qml" line="40" />
+        <source>Record type</source>
+        <translation>Тип записи</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordDialog.qml" line="41" />
+        <source>Text</source>
+        <translation>Текст</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordDialog.qml" line="41" />
+        <source>Link / URI</source>
+        <translation>Ссылка / URI</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordDialog.qml" line="41" />
+        <source>Phone number</source>
+        <translation>Номер телефона</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordDialog.qml" line="41" />
+        <source>Email address</source>
+        <translation>Электронная почта</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordDialog.qml" line="52" />
+        <source>Text to store</source>
+        <translation>Текст для записи</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordDialog.qml" line="53" />
+        <source>Record value</source>
+        <translation>Содержимое записи</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordDialog.qml" line="58" />
+        <source>Cancel</source>
+        <translation>Отмена</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordDialog.qml" line="59" />
+        <source>Add</source>
+        <translation>Добавить</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordDialog.qml" line="59" />
+        <source>Apply</source>
+        <translation>Применить</translation>
+    </message>
+</context>
+<context>
+    <name>NfcRecordManager</name>
+    <message>
+        <location filename="../qml/pages/NfcRecordManager.qml" line="30" />
+        <source>Add record</source>
+        <translation>Добавить запись</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordManager.qml" line="51" />
+        <source>The tag changed. Cancel your changes and try again.</source>
+        <translation>Содержимое метки изменилось. Отмените правки и попробуйте снова.</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordManager.qml" line="51" />
+        <source>Not enough space on the tag.</source>
+        <translation>На метке недостаточно места.</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordManager.qml" line="73" />
+        <source>Cancel</source>
+        <translation>Отмена</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordManager.qml" line="64" />
+        <source>Write records to the tag?</source>
+        <translation>Записать список на метку?</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordManager.qml" line="71" />
+        <source>The list shown here will replace the current contents of the tag.</source>
+        <translation>Показанный список заменит текущее содержимое метки.</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordManager.qml" line="74" />
+        <source>Write</source>
+        <translation>Записать</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordManager.qml" line="78" />
+        <source>Import records</source>
+        <translation>Импорт записей</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordManager.qml" line="78" />
+        <location filename="../qml/pages/NfcRecordManager.qml" line="79" />
+        <source>NDEF data (*.ndef)</source>
+        <translation>Данные NDEF (*.ndef)</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordManager.qml" line="79" />
+        <source>Export records</source>
+        <translation>Экспорт записей</translation>
+    </message>
+</context>
+<context>
+    <name>NfcRecordsDialog</name>
+    <message>
+        <location filename="../qml/pages/NfcRecordsDialog.qml" line="44" />
+        <source>Import</source>
+        <translation>Импорт</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordsDialog.qml" line="45" />
+        <source>Export</source>
+        <translation>Экспорт</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordsDialog.qml" line="24" />
+        <source>%1 / %2 bytes</source>
+        <translation>%1 / %2 байт</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordsDialog.qml" line="9" />
+        <source>Records</source>
+        <translation>Записи</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordsDialog.qml" line="25" />
+        <source>Save to tag</source>
+        <translation>Сохранить на метку</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordsDialog.qml" line="32" />
+        <source>Cancel</source>
+        <translation>Отмена</translation>
+    </message>
+    <message>
+        <location filename="../qml/pages/NfcRecordsDialog.qml" line="32" />
+        <source>Close</source>
+        <translation>Закрыть</translation>
     </message>
 </context>
 

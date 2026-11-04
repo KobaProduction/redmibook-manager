@@ -34,7 +34,7 @@ std::string package_asset(const ReleaseVersion &version, std::string_view target
     const auto prefix = "RedmibookManager-" + std::to_string(version[0]) + "." + std::to_string(version[1]) +
                         "." + std::to_string(version[2]);
     if (target == "windows-x86_64") {
-        return prefix + "-Windows-x86_64.exe";
+        return prefix + "-x86_64.exe";
     }
     if (target == "linux-x86_64") {
         return prefix + "-Linux-x86_64.deb";

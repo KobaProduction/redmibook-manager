@@ -83,6 +83,12 @@ std::optional<Type5Image> parse_type5(std::span<const std::uint8_t> memory) {
     }
     return {};
 }
+std::uint32_t max_type5_content(const Type5Image &image) {
+    const auto space = image.limit - image.offset - (image.used - image.end);
+    if (space < 2)
+        return 0;
+    return static_cast<std::uint32_t>(space >= 259 ? space - 4 : std::min<std::size_t>(254, space - 2));
+}
 std::optional<Bytes> replace_type5(std::span<const std::uint8_t> memory, const Bytes &content) {
     const auto area = parse_type5(memory);
     if (!area || !area->writable || !application::nfc::decode_ndef(content))

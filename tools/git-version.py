@@ -44,7 +44,8 @@ def resolve(source):
     # Keep the full commit plus a 128-bit content fingerprint within the IPC's 96-character identity limit.
     dirty_hash = digest.hexdigest()[:32] if dirty else ""
     build = f"g{revision}" + (f".dirty.{dirty_hash}" if dirty else "")
-    suffix = f"-g{revision[:12]}-dirty-{dirty_hash[:12]}" if dirty else ""
+    package_hash = hashlib.sha256(build.encode("ascii")).hexdigest()[:12]
+    suffix = f"-dirty-{package_hash}" if dirty else ""
     files = git(source, "ls-files", "--cached", "--others", "--exclude-standard", "-z", binary=True)
     inputs = [(source / name.decode("utf-8")).as_posix() for name in files.split(b"\0") if name and (source / name.decode("utf-8")).exists()]
     for name in ("HEAD", "index", "packed-refs", f"refs/tags/{tag}"):

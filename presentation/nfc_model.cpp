@@ -1,26 +1,15 @@
 #include "presentation/nfc_model.hpp"
 #include "application/nfc/ndef.hpp"
+#include "presentation/nfc_records.hpp"
 #include <QCoreApplication>
 #include <QEvent>
-#include <QFile>
 #include <QPointer>
-#include <QRegularExpression>
-#include <QSaveFile>
 
 namespace manager::presentation {
-namespace {
-using application::nfc::Bytes;
 using application::nfc::Status;
-QByteArray raw(const Bytes &bytes) {
-    return {reinterpret_cast<const char *>(bytes.data()), static_cast<qsizetype>(bytes.size())};
-}
-QString record_type(const application::nfc::Record &record) {
-    return QString::fromUtf8(reinterpret_cast<const char *>(record.type.data()),
-                             static_cast<qsizetype>(record.type.size()));
-}
-} // namespace
-NfcModel::NfcModel(std::shared_ptr<application::nfc::ClientPort> client, QObject *parent)
-    : QObject(parent), client_(std::move(client)) {
+NfcModel::NfcModel(std::shared_ptr<application::nfc::ClientPort> client, QObject *parent,
+                   std::shared_ptr<application::nfc::FilePort> files)
+    : QObject(parent), client_(std::move(client)), files_(std::move(files)) {
     QCoreApplication::instance()->installEventFilter(this);
     if (client_)
         client_->observe([guard = QPointer<NfcModel>(this)](const auto &state) {
@@ -35,12 +24,18 @@ NfcModel::~NfcModel() {
 void NfcModel::acceptState(const application::nfc::Snapshot &state) {
     if (state_ == state)
         return;
+    const bool draft_invalidated = draft_.open() && (state_.content != state.content ||
+                                                     state_.max_content_size != state.max_content_size);
     state_ = state;
     emit changed();
+    if (draft_invalidated)
+        emit draftChanged();
 }
 bool NfcModel::eventFilter(QObject *watched, QEvent *event) {
-    if (event->type() == QEvent::LanguageChange)
+    if (event->type() == QEvent::LanguageChange) {
         emit changed();
+        emit draftChanged();
+    }
     return QObject::eventFilter(watched, event);
 }
 QString NfcModel::statusMessage(Status status) {
@@ -63,6 +58,8 @@ QString NfcModel::statusMessage(Status status) {
         return tr("The NFC operation timed out.");
     case Status::UnknownOutcome:
         return tr("The write could not be confirmed. Refresh and inspect the tag before another write.");
+    case Status::DriverMissing:
+        return tr("The NXP NFC driver is not installed. Install the laptop manufacturer's NFC driver.");
     case Status::Incompatible:
         return tr("The NFC components or driver are incompatible.");
     case Status::Unavailable:
@@ -78,37 +75,25 @@ QString NfcModel::statusText() const {
 QString NfcModel::fieldText() const {
     if (!state_.field)
         return tr("NFC field state is unknown");
-    return *state_.field ? tr("NFC device nearby") : tr("No NFC field");
-}
-QString NfcModel::contentHex() const {
-    return QString::fromLatin1(raw(state_.content).toHex(' '));
+    return *state_.field ? tr("NFC device nearby") : tr("Bring a phone near the NFC area");
 }
 QVariantList NfcModel::records() const {
-    QVariantList result;
-    const auto decoded = application::nfc::decode_ndef(state_.content);
-    if (!decoded)
-        return result;
-    for (const auto &record : *decoded)
-        result.append(
-            QVariantMap{{"type", record_type(record)}, {"bytes", static_cast<int>(record.payload.size())}});
-    return result;
+    return nfcRecords(state_.content);
 }
 void NfcModel::refresh() {
     if (client_)
         client_->refresh();
 }
-void NfcModel::write(Bytes content) {
-    if (!writable() || !client_ || !application::nfc::decode_ndef(content)) {
-        emit errorOccurred(statusMessage(Status::InvalidData));
+void NfcModel::write(application::nfc::WriteRequest request) {
+    if (busy_ || !client_)
         return;
-    }
     busy_ = true;
     emit changed();
-    const auto accepted = client_->write({state_.content, std::move(content)},
-                                         [guard = QPointer<NfcModel>(this)](Status status) {
-                                             if (guard)
-                                                 guard->finish(status);
-                                         });
+    const auto accepted =
+        client_->write(std::move(request), [guard = QPointer<NfcModel>(this)](Status status) {
+            if (guard)
+                guard->finish(status);
+        });
     if (!accepted)
         finish(Status::Unavailable);
 }
@@ -117,59 +102,16 @@ void NfcModel::finish(Status status) {
     emit changed();
     if (status != Status::Ready)
         emit errorOccurred(statusMessage(status));
-}
-void NfcModel::writeText(const QString &text) {
-    auto content = application::nfc::make_text_record(text.toUtf8().toStdString());
-    if (content.empty())
-        emit errorOccurred(statusMessage(Status::InvalidData));
-    else
-        write(std::move(content));
-}
-void NfcModel::writeUri(const QString &uri) {
-    const auto url = QUrl(uri);
-    if (!url.isValid() || (url.scheme() != "https" && url.scheme() != "http")) {
-        emit errorOccurred(tr("Enter a valid HTTP or HTTPS link."));
-        return;
+    else {
+        endDraft();
+        emit writeFinished();
     }
-    auto content = application::nfc::make_uri_record(url.toEncoded().toStdString());
-    if (content.empty())
-        emit errorOccurred(statusMessage(Status::InvalidData));
-    else
-        write(std::move(content));
-}
-void NfcModel::writeHex(const QString &hex) {
-    auto compact = hex;
-    compact.remove(QRegularExpression(QStringLiteral("\\s")));
-    if (compact.size() > 4096 || compact.size() % 2 != 0 ||
-        compact.contains(QRegularExpression(QStringLiteral("[^0-9a-fA-F]")))) {
-        emit errorOccurred(statusMessage(Status::InvalidData));
-        return;
-    }
-    const auto bytes = QByteArray::fromHex(compact.toLatin1());
-    write(Bytes(bytes.begin(), bytes.end()));
 }
 void NfcModel::exportTag(const QUrl &url) {
-    if (!url.isLocalFile() || state_.status != Status::Ready) {
-        emit errorOccurred(tr("Could not save the NFC backup."));
+    if (!ready()) {
+        emit errorOccurred(tr("Could not save the NDEF file."));
         return;
     }
-    const auto bytes = raw(state_.content);
-    QSaveFile file(url.toLocalFile());
-    if (!file.open(QIODevice::WriteOnly) || file.write(bytes) != bytes.size() || !file.commit())
-        emit errorOccurred(tr("Could not save the NFC backup."));
-}
-QString NfcModel::readBackup(const QUrl &url) {
-    QFile file(url.toLocalFile());
-    if (!url.isLocalFile() || !file.open(QIODevice::ReadOnly) || file.size() > 2048) {
-        emit errorOccurred(tr("Could not read the NFC backup."));
-        return {};
-    }
-    const auto bytes = file.readAll();
-    const Bytes content(bytes.begin(), bytes.end());
-    if (!application::nfc::decode_ndef(content)) {
-        emit errorOccurred(statusMessage(Status::InvalidData));
-        return {};
-    }
-    return QString::fromLatin1(bytes.toHex(' '));
+    saveFile(url, state_.content);
 }
 } // namespace manager::presentation

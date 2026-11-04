@@ -20,7 +20,8 @@ enum class Status : std::uint8_t {
     ReadOnly,
     InvalidData,
     UnknownOutcome,
-    Incompatible
+    Incompatible,
+    DriverMissing
 };
 struct Snapshot {
     Status status{Status::Unavailable};
@@ -28,8 +29,8 @@ struct Snapshot {
     std::string name;
     std::string uid;
     std::optional<bool> field;
-    std::uint64_t encounters{};
     std::uint32_t capacity{};
+    std::uint32_t max_content_size{};
     bool writable{};
     bool event_driven{};
     Bytes content;

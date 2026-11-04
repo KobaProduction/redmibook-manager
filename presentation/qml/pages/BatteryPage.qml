@@ -36,7 +36,7 @@ ColumnLayout {
         Label { text: qsTr("Auto-refresh"); color: palette.placeholderText }
         ChoiceBox {
             id: refreshInterval
-            model: ["100 ms", "1 sec", "5 sec"]
+                model: [qsTr("100 ms"), qsTr("1 sec"), qsTr("5 sec")]
             currentIndex: Math.max(0, [100, 1000, 5000].indexOf(root.samplingInterval))
             onActivated: root.manager.setBatteryIntervalMs([100, 1000, 5000][currentIndex])
             Layout.preferredWidth: 140
