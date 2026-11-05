@@ -247,10 +247,9 @@ void VendorActions::publish_state_changed() {
 }
 
 void VendorActions::handle_profile(const shortcuts::FirmwarePerformanceAnnouncement &profile) {
-    // A firmware announcement reconciles state even when shortcut feedback is excluded.
+    // This reports an observed firmware change, not an application shortcut activation.
     publish_state_changed();
-    if (profile.feedback_allowed)
-        osd_.present_profile(profile.announced_profile);
+    osd_.present_profile(profile.announced_profile);
 }
 
 void VendorActions::handle_refresh() {

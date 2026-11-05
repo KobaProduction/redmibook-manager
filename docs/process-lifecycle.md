@@ -36,9 +36,10 @@ keys and all remaining keys (including Tab, arrows and function keys) participat
 an extra held key rejects the action. Unavailable input state also rejects actions.
 The capture is event-driven and travels with the vendor packet before queued delivery.
 Fn itself is established by the qualified firmware notification, not invented as a
-Qt key-down event. Performance announcements still reconcile observed state even when
-their feedback is suppressed: the qualified ACPI path changes the profile before WMI
-delivery, and no firmware suppression command is known.
+Qt key-down event. Performance announcements are state observations, not shortcut
+activations: they reconcile observed state and enter the shared OSD change/deduplication
+path independently of held keys or keyboard-snapshot availability. The qualified ACPI
+path changes the profile before WMI delivery; no firmware suppression command is known.
 
 ## Platform-independent roles
 

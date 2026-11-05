@@ -143,7 +143,7 @@ bool modified_keys() {
     const auto notification = decoder.consume(packet(0x16), 7ms, modified);
     const auto *profile =
         notification ? std::get_if<shortcuts::FirmwarePerformanceAnnouncement>(&*notification) : nullptr;
-    return profile && profile->announced_profile == 1 && !profile->feedback_allowed;
+    return profile && profile->announced_profile == 1;
 }
 
 bool exact_chords() {

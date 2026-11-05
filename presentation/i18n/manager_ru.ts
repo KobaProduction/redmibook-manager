@@ -22,7 +22,7 @@
         <message>
             <source>MIT License
 
-Copyright (c) 2026 ArthurKoba
+Copyright (c) 2026 Koba Production
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -43,7 +43,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.</source>
             <translation>Лицензия MIT
 
-Copyright (c) 2026 ArthurKoba
+Copyright (c) 2026 Koba Production
 
 Настоящим бесплатно предоставляется разрешение любому лицу, получившему копию данного программного обеспечения и сопутствующей документации (далее — «Программное обеспечение»), использовать Программное обеспечение без ограничений, включая, помимо прочего, права на использование, копирование, изменение, объединение, публикацию, распространение, сублицензирование и/или продажу копий Программного обеспечения, а также разрешать лицам, которым предоставляется Программное обеспечение, совершать указанные действия при соблюдении следующих условий:
 

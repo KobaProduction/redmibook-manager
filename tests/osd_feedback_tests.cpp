@@ -1,6 +1,7 @@
 #include "adapters/local_api/feedback_channel.hpp"
 #include "adapters/local_api/session_server.hpp"
 #include "adapters/storage/ui_preferences/store.hpp"
+#include "adapters/windows/shortcuts/vendor_decoder.hpp"
 #include "application/runtime/build_identity.hpp"
 #include "presentation/osd/osd_presenter.hpp"
 #include <QApplication>
@@ -75,6 +76,33 @@ bool independent_feedback(manager::presentation::Preferences &preferences) {
         return false;
     return preferences.set_osd_enabled(false) && !osd.isVisible() && preferences.set_osd_enabled(true);
 }
+manager::application::DeviceProfile firmware_fixture() {
+    return {.evidence = manager::application::ProfileEvidence::Observed,
+            .bios_version = "RMAMT6B0P0A0A",
+            .manufacturer = "XIAOMI",
+            .board_model = "TM2309",
+            .status = manager::application::ProfileReadStatus::Available};
+}
+bool firmware_state_feedback(manager::presentation::Preferences &preferences) {
+    namespace shortcuts = manager::application::shortcuts;
+    using namespace manager::application::feedback;
+    manager::adapters::windows_shortcuts::VendorEventDecoder decoder(firmware_fixture());
+    manager::presentation::OsdPresenter osd(preferences);
+    const std::array states{shortcuts::HeldKeys{}, shortcuts::HeldKeys{.other = true},
+                            shortcuts::HeldKeys{.control = true, .alt = true, .shift = true},
+                            shortcuts::HeldKeys{.super = true}, shortcuts::HeldKeys{.valid = false}};
+    auto observed = std::chrono::milliseconds(0);
+    for (std::size_t index = 0; index < states.size(); ++index) {
+        std::array<std::uint8_t, 32> packet{1, 0x16, static_cast<std::uint8_t>(index % 3 + 1)};
+        const auto notification = decoder.consume(packet, observed++, states[index]);
+        const auto *profile =
+            notification ? std::get_if<shortcuts::FirmwarePerformanceAnnouncement>(&*notification) : nullptr;
+        if (!profile || osd.present({Kind::Performance, profile->announced_profile}) != Delivery::Presented ||
+            !osd.isVisible())
+            return false;
+    }
+    return true;
+}
 class DiagnosticFake final : public manager::application::DiagnosticPort {
   public:
     mutable int calls{};
@@ -122,7 +150,8 @@ int main(int argc, char *argv[]) {
     if (!store.update("language", "en") || !store.update("osdSound", "false"))
         return 1;
     manager::presentation::Preferences preferences(store);
-    if (!wire_contract() || !shared_surface(preferences) || !independent_feedback(preferences))
+    if (!wire_contract() || !shared_surface(preferences) || !independent_feedback(preferences) ||
+        !firmware_state_feedback(preferences))
         return 1;
     return transport_contract(app, preferences);
 }

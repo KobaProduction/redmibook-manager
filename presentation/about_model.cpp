@@ -47,7 +47,7 @@ QString AboutModel::profileStatus() const {
 QString AboutModel::mitTranslation() const {
     return tr(R"MIT(MIT License
 
-Copyright (c) 2026 ArthurKoba
+Copyright (c) 2026 Koba Production
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
